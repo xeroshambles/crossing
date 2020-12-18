@@ -1,0 +1,8 @@
+<configuration>
+    <input>
+		<additional-files value="intersection.add.xml"/>
+		<gui-settings-file value="intersection.settings.xml"/>
+        <net-file value="intersection.net.xml"/>
+        <route-files value="routes.rou.xml"/>
+    </input>
+</configuration>

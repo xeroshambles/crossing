@@ -1,0 +1,8 @@
+<configuration>
+	<input>
+		<net-file value="autonomousDrivingSimulator.net.xml"/>
+		<route-files value="autonomousDrivingSimulator.rou.xml"/>
+<!--		<additional-files value="autonomousDrivingSimulator.add.xml"/>-->
+	</input>
+</configuration>
+

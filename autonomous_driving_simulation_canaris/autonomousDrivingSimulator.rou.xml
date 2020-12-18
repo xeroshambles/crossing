@@ -1,0 +1,8 @@
+<routes>
+<!--	<vType id="car" accel="0.5" decel="10" length="5.0" minGap="2.5" maxSpeed="50.0" sigma="0.5" />-->
+<!--	<vType id="autonomousCar" accel="0.7" decel="10" length="5.0" minGap="2.5" maxSpeed="50.0" sigma="0.5" />-->
+	<vType id="car" accel="0.5" decel="10" length="5.0" impatience='off' maxSpeed="50.0"/>
+	<vType id="autonomousCar" accel="0.7" decel="10" length="5.0" impatience='off' maxSpeed="50.0" />
+<!--	<flow id="carflow" type="car" beg="0" end="0" number="3" from="e1_2" to="e24_25"/>-->
+<!--	<flow id="carFlowO" tyoe="car" beg="0" end="0" number ="3" from="e25_24" to="e2_1"/>-->
+</routes>

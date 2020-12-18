@@ -1,0 +1,38 @@
+avgTJ:  11.194029850746269
+stdDvTJ:  12.38766874512126
+avgTJ without 0:  12.840837032339886
+stdDvTJ without 0:  12.445214121533969
+maxTJ:  22.0
+minTJ:  6.090909090909091
+
+avgTT:  15.602674307545367
+stdDvTT:  15.743427321642546
+avgTT without 0:  15.602674307545367
+stdDvTT without 0:  15.743427321642546
+maxTT:  32.57142857142857
+minTT:  6.888888888888889
+
+avgTotT:  14.973985021679148
+stdDvTotT:  16.3674581607001
+avgTotT without 0:  15.53107113654947
+stdDvTotT without 0:  16.407563850555796
+maxTotT:  25.36
+minTotT:  7.758620689655173
+
+avgMGT:  12.828448275862069
+stdDvMGT:  13.573200687475813
+avgMGT without 0:  13.485274127775261
+stdDvMGT without 0:  13.594377542735202
+maxMGT:  19.92
+minMGT:  7.555555555555555
+
+avgSGT:  12.037878787878787
+stdDvSGT:  11.226595387084515
+avgSGT without 0:  12.037878787878787
+stdDvSGT without 0:  11.226595387084515
+maxSGT:  27.0
+minSGT:  4.25
+
+free lanes %:  47.98681422180363 %, number of free traverse:  4076 num of traverse 8494
+number of times in traffic %:  12.326348010360254 %, numero di volte nel traffico:  1047 num of traverse 8494
+not free passage %:  52.26041911937839 %, number of not free passage:  4439 num of traverse 8494
