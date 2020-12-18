@@ -112,7 +112,7 @@ class Vehicle:
             self.wallet = 0
 
     def checkPosition(self, junction):
-        """Funzione che controlla se, dalla corsia corrente, il veicolo può raggiungere la corsia obbiettivo"""
+        """Funzione che controlla se, dalla corsia corrente, il veicolo può raggiungere la corsia obiettivo"""
         currentRoute = junction.fromEdgesToLanes(self)
         nextLane = self.getNextEdge()
         if currentRoute[1] != nextLane:
@@ -298,7 +298,7 @@ class Vehicle:
         # print('allowing', self.getID())
 
     def setEdgeObjective(self, edge):
-        """Memorizza la corsia obbiettivo prima di un cambio temporaneo (effettuato a seguito di errori di
+        """Memorizza la corsia obiettivo prima di un cambio temporaneo (effettuato a seguito di errori di
         posizionamento)."""
         self.edgeObjective = edge
 
@@ -307,7 +307,7 @@ class Vehicle:
         dell'immediata gestione del caso in cui un veicolo si sia trovato nella corsia sbagliata e sia impossibilitato a
         muoversi."""
         if not momentaryChange:
-            """Da una nuova corsia obbiettivo ad un veicolo che ha completato il suo percorso."""
+            """Da una nuova corsia obiettivo ad un veicolo che ha completato il suo percorso."""
             dest = traci.vehicle.getRoute(self.getID())[-1]
             # print(dest)
             if dest == traci.vehicle.getLaneID(self.getID())[:len(dest)]:
@@ -318,8 +318,7 @@ class Vehicle:
                 self.setEdgeObjective(target)
                 # print('newR', self.getID(), self.getCurrentLane(), traci.route.getEdges(traci.vehicle.getRouteID(self.getID())))
         else:
-            """Cambia momentaneamente la corsia obbiettivo in modo da poter far muovere il veicolo attraverso 
-            l'incrocio."""
+            """Cambia momentaneamente la corsia obiettivo in modo da poter far muovere il veicolo attraverso l'incrocio."""
             junction: Junction
             self.isLaneWrong = True
             frontLane = junction.possibleRoutes[self.getCurrentLane()]['front']
@@ -331,11 +330,11 @@ class Vehicle:
             self.checkPosition(junction)
 
     def resetTarget(self):
-        """Funzione che resetta l'obbiettivo a quello memorizzato prima di un cambio temporaneo."""
+        """Funzione che resetta l'obiettivo a quello memorizzato prima di un cambio temporaneo."""
         traci.vehicle.changeTarget(self.getID(), self.edgeObjective)
 
     def generateRoute(self, initEdge=None, static=False):
-        """Metodo che genera una coppiq di edge seguendo una serie di vincoli"""
+        """Metodo che genera una coppia di edge seguendo una serie di vincoli"""
         from random import randint, choice
         if initEdge is None:
             junction = [randint(1, 25)]
@@ -345,7 +344,7 @@ class Vehicle:
             # listOfChoice = [7, 8, 9, 12, 13, 14, 17, 18, 19]
             # listOfChoice = [i for i in range(1, 26)]
             # listOfChoice = [1, 5, 7, 8, 9, 12, 13, 14, 17, 18, 19, 21, 25]
-            """Restringendo il set di incroci che possono essere obbiettivo di un veicolo posso concentrare il traffico
+            """Restringendo il set di incroci che possono essere obiettivo di un veicolo posso concentrare il traffico
             al centro della rete aumentando le congestioni."""
             listOfChoice = [3, 7, 8, 9, 12, 13, 14, 17, 18, 19, 23]
             if initEdge is not None:
@@ -384,9 +383,9 @@ class Vehicle:
             return f"e{0 if edge[1][0] <= 9 else ''}{edge[1][0]}_{0 if edge[1][1] <= 9 else ''}{edge[1][1]}"
 
     def generatorOfStaticRoute(self):
-        """Funzione utilizzabile per ottenere il prossimo incrocio obbiettivo nel caso statico"""
+        """Funzione utilizzabile per ottenere il prossimo incrocio obiettivo nel caso statico"""
         random.seed(self.numericID)
-        """Restringendo il set di incroci che possono essere obbiettivo di un veicolo posso concentrare il traffico
+        """Restringendo il set di incroci che possono essere obiettivo di un veicolo posso concentrare il traffico
         al centro della rete aumentando le congestioni."""
         # choicesList = [7, 8, 9, 12, 13, 14, 17, 18, 19]
         # choicesList = [i for i in range(1, 26)]
@@ -398,7 +397,7 @@ class Vehicle:
             yield random.choice(choicesList)
 
     def getNextRoute_Static(self):
-        """Funzione che ottiene il nuovo incrocio obbiettivo, curandosi di controllare che non sia uguale al
+        """Funzione che ottiene il nuovo incrocio obiettivo, curandosi di controllare che non sia uguale al
         precedente."""
         newObjective = next(self.staticRouteGenerator)
         if self.edgeObjective is not None:
