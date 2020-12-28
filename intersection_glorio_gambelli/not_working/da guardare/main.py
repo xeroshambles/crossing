@@ -15,6 +15,7 @@ else:
 
 from sumolib import checkBinary  # noqa
 import traci  # noqa
+from vehicle import Vehicle
 
 lanes = ['e01_05_0', 'e01_05_1',
          'e02_05_0', 'e02_05_1',
@@ -58,20 +59,30 @@ maxDimensionOfGroups = -1
 def getVehiclesAtJunction():
     """Funzione che restituisce tutti i veicoli che viaggiano verso un incrocio"""
     vehiclesAtJunction = []
-    for l in lanes:
-        if int(l[1:3]) != 5:  # si lavora sui veicoli che viaggiano verso l'incrocio
-            vehiclesAtJunction += reversed(traci.lane.getLastStepVehicleIDs(l))
+    for lane in lanes:
+        if int(lane[1:3]) != 5:  # si lavora sui veicoli che viaggiano verso l'incrocio
+            vehiclesAtJunction += reversed(traci.lane.getLastStepVehicleIDs(lane))
     return vehiclesAtJunction
 
 
 def isFrontalTrajectory(vehicle):
-    """Funzione che restituisce True se il veicolo passato in argomento deve andare dritto, False altrimenti"""
+    """Funzione che restituisce True se il veicolo passato deve andare dritto, False altrimenti"""
     route = traci.vehicle.getRoute(vehicle)
     currentEdge = (int(route[0][1:3]), int(route[0][4:6]))
     nextEdge = (int(route[1][1:3]), int(route[1][4:6]))
     if abs(currentEdge[0] - currentEdge[1]) == abs(nextEdge[0] - nextEdge[1]):
         return True
     return False
+
+
+def findPossibleRoutes():
+    counter = -1
+    for i in lanes:
+        counter += 1
+        if int(i[1:3]) == 5:
+            continue
+        nextEdge = lanes[(counter + 2) % 8]
+        possibleRoutes[i] = [nextEdge]
 
 
 def fromEdgesToLanes(vehicle):
@@ -87,13 +98,13 @@ def fromEdgesToLanes(vehicle):
     lane1 = f'{route[0]}_1'
     laneBase = ''
     laneObjective = ''
-    for direction, lane in possibleRoutes[lane0].items():
+    for lane in possibleRoutes[lane0]:
         if lane[:-2] == route[1]:
             laneBase = lane0
             laneObjective = lane
             break
     if laneBase == '':
-        for direction, lane in possibleRoutes[lane1].items():
+        for lane in possibleRoutes[lane1]:
             if lane[:-2] == route[1]:
                 laneBase = lane1
                 laneObjective = lane
@@ -101,7 +112,7 @@ def fromEdgesToLanes(vehicle):
     return laneBase, laneObjective
 
 
-def updateCrossingStatus(vehicles):
+def findHeadVehicles(vehicles):
     """Funzione che trova i veicoli attualmente in testa ad ogni corsia. Questi saranno i veicoli papabili per un
     attraversamento"""
     # con il seguente ciclo determino i veicoli attualmente in testa alle corsie che vanno verso l'incrocio
@@ -174,35 +185,6 @@ def updateVehicleStatus(vehicle):
     pass
 
 
-def saveAuctionResults():
-    """Funzione utilizzata per salvare i risultati di un'asta nel caso di non bufferizzazione e quindi di non
-    necessità di un merge dei vincitori. Evita di utilizzare la struttura delle precedenze, in modo da risparmiare
-    complessità computazionale."""
-    winnersLanes[winners[0].getCurrentLane()] = winners
-    for i in winners:
-        if i not in partecipants:
-            partecipants.append(i)
-            if not i.isStopped():
-                i.stopVehicle()
-            partecipantsRoutes[i] = fromEdgesToLanes(i)
-        if i in currentLosers:
-            currentLosers.remove(i)
-            vehiclesInAuction.remove(i)
-        currentWinners.append(i)
-        vehiclesInAuction.append(i)
-        precedences[i] = losers
-    for i in losers:
-        currentLosers.append(i)
-        vehiclesInAuction.append(i)
-        partecipantsRoutes[i] = fromEdgesToLanes(i)
-        i.nVehiclesToWait += len(winners)
-        if i not in partecipants:
-            partecipants.append(i)
-            if not i.isStopped():
-                i.stopVehicle()
-            precedences[i] = []
-
-
 def getVehiclesNowCrossing():
     """Funzione che restituisce i veicoli in fase di attraversamento."""
     vehiclesCrossing = []
@@ -229,15 +211,6 @@ def allowCrossing_nonBuffered():
     for wv in winningVehicles:
         wv.restartVehicle()
         nonStoppedVehicles.append(wv)
-        """Salvo i tempi di attesa"""
-        if not wv.hasPassedFreely:
-            wv.saveTimePassedAtJunction()
-            wv.saveMainGroupWaitingTime()
-            wv.saveTotalWaitingTime()
-        wv.resetJunctionWaitingTime()
-        wv.resetTotalWaitingTime()
-        wv.resetMainGroupWaitingTime()
-
     # ricreiamo veh in head perchè alcuni veicoli potrebbero dover essere rimossi
     vehiclesInHead = [i for i in crossingStatus.values() if i is not None and
                       i.distanceFromEndLane() <= 15 and i not in nonStoppedVehicles]
@@ -270,6 +243,36 @@ def isClashing(route1, route2):
     return False
 
 
+def getNextEdge(vehicle):
+    """funzione che ritorna l'edge verso cui il veicolo si sta dirigendo"""
+    try:
+        route = traci.vehicle.getRoute(vehicle.getID())
+    except:
+        return None
+    pos = traci.vehicle.getLaneID(vehicle.getID())
+    find = False
+    route_corrected = []
+    for i in reversed(route):
+        if i not in route_corrected:
+            route_corrected.insert(0, i)
+    for i in route_corrected:
+        if i == pos[:-2]:
+            find = True
+            continue
+        if find:
+            return f'{i}_{pos[-1]}'
+
+
+def checkPosition(vehicle):
+    """Funzione che controlla se, dalla corsia corrente, il veicolo può raggiungere la corsia obiettivo"""
+    currentRoute = fromEdgesToLanes(vehicle)
+    nextLane = getNextEdge(vehicle)
+    if currentRoute[1] != nextLane:
+        return False
+    else:
+        return True
+
+
 def createAuction(idVeh, vehicles):
     """Funzione che permette di aggiungere un'asta all'elenco di quelle attualmente in corso nell'incrocio
        :param idVeh: ID del veicolo di cui si cercheranno i rivali.
@@ -283,22 +286,18 @@ def createAuction(idVeh, vehicles):
     all'incrocio."""
     for veh in reversed(traci.lane.getLastStepVehicleIDs(idVeh.getCurrentLane())):
         veh = vehicles[veh]
-        #       f'auction {veh not in self.crossingManager.vehiclesInAuction}, veicoli riattivati {veh not in self.crossingManager.nonStoppedVehicles}, '
-        #       f'distanza {veh.distanceFromEndLane() < 40}, maxLength {len(lp) < maxLength}')
-        if veh.checkPosition() and veh not in vehiclesInAuction \
+        if checkPosition(veh) and veh not in vehiclesInAuction \
                 and veh not in nonStoppedVehicles:
             if veh.distanceFromEndLane() < 40 and len(lp) < maxLength:
                 lp.append(veh)
             else:
                 ls.append(veh)
-
     clashingLists = [[lp, ls]]
     clashingVehicles = [idVeh]
     vehiclesInHead = [i for i in crossingStatus.values() if i is not None
                       and i not in vehiclesInAuction
                       and i not in nonStoppedVehicles
-                      and i.distanceFromEndLane() < 15 and i.checkPosition()]
-
+                      and i.distanceFromEndLane() < 15 and checkPosition(i)]
     """Cerco i veicoli in traiettoria incidentale con quelli pronti a partecipare all'asta."""
     for veh in clashingVehicles:
         for otherVeh in vehiclesInHead:
@@ -311,11 +310,7 @@ def createAuction(idVeh, vehicles):
                     maxLength = maxDimensionCalc(otherVeh.getCurrentLane())
                     for v in reversed(traci.lane.getLastStepVehicleIDs(otherVeh.getCurrentLane())):
                         v = vehicles[v]
-                        # print(
-                        #     f'conditions on {v.getID()} ({v.getCurrentLane()}): posizione {v.checkPosition(self)}, '
-                        #     f'auction {v not in self.crossingManager.vehiclesInAuction}, veicoli riattivati {v not in self.crossingManager.nonStoppedVehicles}, '
-                        #     f'distanza {v.distanceFromEndLane() < 40}, maxLength {len(vlp) < maxLength}')
-                        if v.checkPosition() and v not in vehiclesInAuction \
+                        if checkPosition(v) and v not in vehiclesInAuction \
                                 and v not in nonStoppedVehicles:
                             if v.distanceFromEndLane() < 40 and len(vlp) < maxLength:
                                 vlp.append(v)
@@ -325,7 +320,6 @@ def createAuction(idVeh, vehicles):
                                 # print(f'adding {veh.getID()} to vls')
                     if vlp:
                         clashingLists.append([vlp, vls])
-
     # ######################################################################################################## #
     """Blocco di codice che impedisce ai veicoli in traiettoria incidentale con l'insieme dei bloccanti di 
     prendere parte alle aste. Tutti i veicoli dopo un veicolo che non può prendere parte ad un'asta vengono
@@ -391,64 +385,61 @@ def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=
             print('Inserire un numero intero')
     numberOfSteps = choice
     traci.start([sumoBinary, "-c", "intersection.sumocfg", "--time-to-teleport", "-1"])
-    vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
+    vehicles = {}  # dizionario contenente i veicoli della simulazione
     """Con il seguente ciclo inizializzo i veicoli e gli assegno una route generata casualmente"""
     for i in range(1, numberOfVehicles + 1):
+        idV = f"idV{i}"
+        vehicles[idV] = Vehicle(idV, instantPay)
         listOfChoice = [1, 2, 3, 4]
         start = random.choice(listOfChoice)
         listOfChoice.remove(start)
         end = random.choice(listOfChoice)
-        traci.route.add(f'{i}', [f'e0{start}_05', f'e05_0{end}'])
-        traci.vehicle.add(f'{i}', f'{i}')
+        traci.route.add(idV, [f'e0{start}_05', f'e05_0{end}'])
+        traci.vehicle.add(idV, idV)
     """Ciclo che si limita ad assegnare un colore ai veicoli, per renderli distinguibili nella simulazione"""
     for i in range(1, numberOfVehicles + 1):
         if i % 8 == 1:
-            traci.vehicle.setColor(f'{i}', (0, 255, 255))  # azzurro
+            traci.vehicle.setColor(f'idV{i}', (0, 255, 255))  # azzurro
         if i % 8 == 2:
-            traci.vehicle.setColor(f'{i}', (160, 100, 100))  # rosa
+            traci.vehicle.setColor(f'idV{i}', (160, 100, 100))  # rosa
         if i % 8 == 3:
-            traci.vehicle.setColor(f'{i}', (255, 0, 0))  # rosso
+            traci.vehicle.setColor(f'idV{i}', (255, 0, 0))  # rosso
         if i % 8 == 4:
-            traci.vehicle.setColor(f'{i}', (0, 255, 0))  # verde
+            traci.vehicle.setColor(f'idV{i}', (0, 255, 0))  # verde
         if i % 8 == 5:
-            traci.vehicle.setColor(f'{i}', (0, 0, 255))  # blu
+            traci.vehicle.setColor(f'idV{i}', (0, 0, 255))  # blu
         if i % 8 == 6:
-            traci.vehicle.setColor(f'{i}', (255, 255, 255))  # bianco
+            traci.vehicle.setColor(f'idV{i}', (255, 255, 255))  # bianco
         if i % 8 == 7:
-            traci.vehicle.setColor(f'{i}', (255, 0, 255))  # viola
+            traci.vehicle.setColor(f'idV{i}', (255, 0, 255))  # viola
         if i % 8 == 8:
-            traci.vehicle.setColor(f'{i}', (255, 100, 0))  # arancione
-    """Di seguito inizializzo gli incroci che fanno parte della simulazione, assegnando loro una classe che ne descriva
-        il comportamento specifico (o incroci a 3 strade o a 4 strade). Solo gli incroci a 4 strade sono stati usati nelle 
-        simulazioni finali."""
-    # junctions = []  # dovrà contenere l'incrocio centrale
-    # junctions.append(FourWayJunction(5, vehicles, iP=instantPay, sM=simulationMode, bM=False,
-    #                                  groupDimension=dimensionOfGroups))
+            traci.vehicle.setColor(f'idV{i}', (255, 100, 0))  # arancione
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
     step = 0
     while traci.simulation.getMinExpectedNumber() > 0 and step < numberOfSteps:
         traci.simulationStep()
         step += 1
         # """Ciclo principale dell'applicazione"""
-        # for junction in junctions:
         """Prime operazioni sull'incrocio"""
-        vehAtJunction = getVehiclesAtJunction()
-        updateCrossingStatus(vehicles)
+        vehsAtJunction = getVehiclesAtJunction()
+        # trovo i veicoli in testa per ogni lane
+        findHeadVehicles(vehicles)
         # Prendo i tempi dei veicoli qualora fossero costretti a fermarsi
         vehiclesInHead = crossingStatus.values()
         """Flusso principale"""
-        for idVeh in vehAtJunction:
+        for idVeh in vehsAtJunction:
             if idVeh in vehicles:
                 objVeh = vehicles[idVeh]
                 if objVeh.distanceFromEndLane() < 50:
                     if objVeh not in partecipants:
+                        # non fa nulla!
                         updateVehicleStatus(objVeh)
                     if objVeh.distanceFromEndLane() < 15:
                         """Ramo d'interesse"""
                         if objVeh in crossingStatus.values() and objVeh not in \
                                 vehiclesInAuction and objVeh not in nonStoppedVehicles:
                             createAuction(objVeh, vehicles)
-        if len(vehAtJunction) > 0:
+        if len(vehsAtJunction) > 0:
             allowCrossing()
 
 
@@ -462,4 +453,5 @@ if __name__ == "__main__":
         sumoBinary = checkBinary('sumo')
     else:
         sumoBinary = checkBinary('sumo-gui')
+    findPossibleRoutes()
     run(True, True, True, 1, 1000, 500)
