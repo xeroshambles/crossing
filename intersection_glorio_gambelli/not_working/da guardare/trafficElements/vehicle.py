@@ -14,7 +14,7 @@ class Vehicle:
 
     def __init__(self, ID, iP=False, bB=False):
         self.idVehicle = ID
-        self.numericID = int(ID[3:])
+        self.numericID = int(ID[4:])
         self.isOnAStop = False
         self.isSlowed = False
         self.isRestarted = False

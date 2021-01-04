@@ -15,7 +15,7 @@ else:
 
 from sumolib import checkBinary  # noqa
 import traci  # noqa
-from vehicle import Vehicle
+from trafficElements.vehicle import Vehicle
 
 lanes = ['e01_05_0', 'e01_05_1',
          'e02_05_0', 'e02_05_1',
@@ -55,6 +55,9 @@ clashingEdges = {}
 
 maxDimensionOfGroups = -1
 
+vehicles = {}  # dizionario contenente i veicoli della simulazione
+
+junction_id = 5
 
 def getVehiclesAtJunction():
     """Funzione che restituisce tutti i veicoli che viaggiano verso un incrocio"""
@@ -112,7 +115,7 @@ def fromEdgesToLanes(vehicle):
     return laneBase, laneObjective
 
 
-def findHeadVehicles(vehicles):
+def findHeadVehicles():
     """Funzione che trova i veicoli attualmente in testa ad ogni corsia. Questi saranno i veicoli papabili per un
     attraversamento"""
     # con il seguente ciclo determino i veicoli attualmente in testa alle corsie che vanno verso l'incrocio
@@ -273,18 +276,18 @@ def checkPosition(vehicle):
         return True
 
 
-def createAuction(idVeh, vehicles):
+def createAuction(v_ideh, vehicles):
     """Funzione che permette di aggiungere un'asta all'elenco di quelle attualmente in corso nell'incrocio
-       :param idVeh: ID del veicolo di cui si cercheranno i rivali.
+       :param v_ideh: ID del veicolo di cui si cercheranno i rivali.
        :param vehicles: veicoli raggruppati per corsia d'appartenenza;"""
     """Ramo importante della funzione."""
     lp = []
     ls = []
     """Se è variabile otterrò una dimensione dipendente dal numero di veicoli in corsia."""
-    maxLength = maxDimensionCalc(idVeh.getCurrentLane())
+    maxLength = maxDimensionCalc(v_ideh.getCurrentLane())
     """Ciclo sulla reversed del getLastStepVehicleIDs() per selezionare prima i veicoli più vicini 
     all'incrocio."""
-    for veh in reversed(traci.lane.getLastStepVehicleIDs(idVeh.getCurrentLane())):
+    for veh in reversed(traci.lane.getLastStepVehicleIDs(v_ideh.getCurrentLane())):
         veh = vehicles[veh]
         if checkPosition(veh) and veh not in vehiclesInAuction \
                 and veh not in nonStoppedVehicles:
@@ -293,7 +296,7 @@ def createAuction(idVeh, vehicles):
             else:
                 ls.append(veh)
     clashingLists = [[lp, ls]]
-    clashingVehicles = [idVeh]
+    clashingVehicles = [v_ideh]
     vehiclesInHead = [i for i in crossingStatus.values() if i is not None
                       and i not in vehiclesInAuction
                       and i not in nonStoppedVehicles
@@ -303,7 +306,7 @@ def createAuction(idVeh, vehicles):
         for otherVeh in vehiclesInHead:
             if otherVeh != veh and otherVeh not in clashingVehicles:
                 if isClashing(fromEdgesToLanes(veh),
-                                   fromEdgesToLanes(otherVeh)):
+                              fromEdgesToLanes(otherVeh)):
                     clashingVehicles.append(otherVeh)
                     vlp = []
                     vls = []
@@ -353,67 +356,98 @@ def createAuction(idVeh, vehicles):
         clashingLists.remove(li)
 
 
+def deb(s, v):
+    """debug helper function to avoid typing same input 10000 times """
+    print(s + f'= {v} ')
+
+
+def generateRandomRoutes(numberOfVehicles, pay_mode, vehicles = vehicles, junction_id = junction_id):
+    """Con il seguente ciclo inizializzo i veicoli e gli assegno una route generata casualmente"""
+    for i in range(1, numberOfVehicles + 1):
+        v_id = f"v_id{i}"
+        vehicles[v_id] = Vehicle(v_id, pay_mode)
+        node_ids = [1, 2, 3, 4]
+        start = random.choice(node_ids)
+        node_ids.remove(start)
+        end = random.choice(node_ids)
+        traci.route.add(v_id, [f'e0{start}_0{junction_id}', f'e0{junction_id}_0{end}'])
+        traci.vehicle.add(v_id, v_id)
+
+def assignColorsToVehicles(numberOfVehicles):
+    """Ciclo che si limita ad assegnare un colore ai veicoli, per renderli distinguibili nella simulazione"""
+    for i in range(1, numberOfVehicles + 1):
+        if i % 8 == 1:
+            traci.vehicle.setColor(f'v_id{i}', (0, 255, 255))  # azzurro
+        if i % 8 == 2:
+            traci.vehicle.setColor(f'v_id{i}', (160, 100, 100))  # rosa
+        if i % 8 == 3:
+            traci.vehicle.setColor(f'v_id{i}', (255, 0, 0))  # rosso
+        if i % 8 == 4:
+            traci.vehicle.setColor(f'v_id{i}', (0, 255, 0))  # verde
+        if i % 8 == 5:
+            traci.vehicle.setColor(f'v_id{i}', (0, 0, 255))  # blu
+        if i % 8 == 6:
+            traci.vehicle.setColor(f'v_id{i}', (255, 255, 255))  # bianco
+        if i % 8 == 7:
+            traci.vehicle.setColor(f'v_id{i}', (255, 0, 255))  # viola
+        if i % 8 == 8:
+            traci.vehicle.setColor(f'v_id{i}', (255, 100, 0))  # arancione
+
 def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=1,
         numberOfVehicles=1000, numberOfSteps=500):
     """Inserimento delle informazioni per il setup della simulazione"""
-    choice = ''
+
+    """STATIC/DINAMIC ROUTE GENERATION"""
+    '''choice = ''
     while choice not in ['s', 'S', 'd', 'D']:
         choice = input('Le route devono essere statiche o dinamiche? [s = statiche, d = dinamiche]\n: ')
         if choice not in ['s', 'S', 'd', 'D']:
             print('Inserire un carattere fra s e d')
-    routeMode = True if choice in ['s', 'S'] else False
-    choice = ''
+    routeMode = True if choice in ['s', 'S'] else False'''
+
+    deb('routeMode', routeMode)
+
+    """VEHICLE DIMENSION"""
+    '''choice = ''
     while choice not in [str(i) for i in range(1, 8)] + ['-1']:
         choice = input('Quale dimensione deve avere il numero di veicoli considerato? Per usare dimensioni '
                        'proporzionali inserire -1,\n'
                        '(i gruppi possono avere una dimensione che va da 1 a 7): ')
         if choice not in [str(i) for i in range(1, 8)] + ['-1']:
             print('Inserire un numero fra 1 e 7, oppure -1')
-    dimensionOfGroups = int(choice)
-    while True:
+    dimensionOfGroups = int(choice)'''
+
+    deb('dimensionOfGroups', dimensionOfGroups)
+
+    """NUMBER OF VEHICLES"""
+    '''while True:
         try:
             choice = int(input('Quanti veicoli deve avere la simulazione?: '))
             break
         except:
             print('Inserire un numero intero')
     numberOfVehicles = choice
-    while True:
+    '''
+    deb('numberOfVehicles', numberOfVehicles)
+
+    """NUMBER OF STEPS"""
+    '''
+        while True:
         try:
             choice = int(input('Quanti step deve avere la simulazione?: '))
             break
         except:
             print('Inserire un numero intero')
     numberOfSteps = choice
+    '''
+    deb('numberOfSteps', numberOfSteps)
+
     traci.start([sumoBinary, "-c", "intersection.sumocfg", "--time-to-teleport", "-1"])
-    vehicles = {}  # dizionario contenente i veicoli della simulazione
-    """Con il seguente ciclo inizializzo i veicoli e gli assegno una route generata casualmente"""
-    for i in range(1, numberOfVehicles + 1):
-        idV = f"idV{i}"
-        vehicles[idV] = Vehicle(idV, instantPay)
-        listOfChoice = [1, 2, 3, 4]
-        start = random.choice(listOfChoice)
-        listOfChoice.remove(start)
-        end = random.choice(listOfChoice)
-        traci.route.add(idV, [f'e0{start}_05', f'e05_0{end}'])
-        traci.vehicle.add(idV, idV)
-    """Ciclo che si limita ad assegnare un colore ai veicoli, per renderli distinguibili nella simulazione"""
-    for i in range(1, numberOfVehicles + 1):
-        if i % 8 == 1:
-            traci.vehicle.setColor(f'idV{i}', (0, 255, 255))  # azzurro
-        if i % 8 == 2:
-            traci.vehicle.setColor(f'idV{i}', (160, 100, 100))  # rosa
-        if i % 8 == 3:
-            traci.vehicle.setColor(f'idV{i}', (255, 0, 0))  # rosso
-        if i % 8 == 4:
-            traci.vehicle.setColor(f'idV{i}', (0, 255, 0))  # verde
-        if i % 8 == 5:
-            traci.vehicle.setColor(f'idV{i}', (0, 0, 255))  # blu
-        if i % 8 == 6:
-            traci.vehicle.setColor(f'idV{i}', (255, 255, 255))  # bianco
-        if i % 8 == 7:
-            traci.vehicle.setColor(f'idV{i}', (255, 0, 255))  # viola
-        if i % 8 == 8:
-            traci.vehicle.setColor(f'idV{i}', (255, 100, 0))  # arancione
+
+    generateRandomRoutes(numberOfVehicles, instantPay)
+
+    assignColorsToVehicles(numberOfVehicles)
+    
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
     step = 0
     while traci.simulation.getMinExpectedNumber() > 0 and step < numberOfSteps:
@@ -421,15 +455,15 @@ def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=
         step += 1
         # """Ciclo principale dell'applicazione"""
         """Prime operazioni sull'incrocio"""
-        vehsAtJunction = getVehiclesAtJunction()
+        vehicles_at_junction = getVehiclesAtJunction()
         # trovo i veicoli in testa per ogni lane
-        findHeadVehicles(vehicles)
+        findHeadVehicles()
         # Prendo i tempi dei veicoli qualora fossero costretti a fermarsi
         vehiclesInHead = crossingStatus.values()
         """Flusso principale"""
-        for idVeh in vehsAtJunction:
-            if idVeh in vehicles:
-                objVeh = vehicles[idVeh]
+        for v_ideh in vehicles_at_junction:
+            if v_ideh in vehicles:
+                objVeh = vehicles[v_ideh]
                 if objVeh.distanceFromEndLane() < 50:
                     if objVeh not in partecipants:
                         # non fa nulla!
@@ -439,12 +473,12 @@ def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=
                         if objVeh in crossingStatus.values() and objVeh not in \
                                 vehiclesInAuction and objVeh not in nonStoppedVehicles:
                             createAuction(objVeh, vehicles)
-        if len(vehsAtJunction) > 0:
+        if len(vehicles_at_junction) > 0:
             allowCrossing()
 
 
 if __name__ == "__main__":
-    choice = ''
+    '''choice = ''
     while choice not in ['d', 'D', 'g', 'G']:
         choice = input('Vuoi raccogliere dati o avere una visualizzazione grafica? [d = dati, g = grafica]\n: ')
         if choice not in ['d', 'D', 'g', 'G']:
@@ -453,5 +487,7 @@ if __name__ == "__main__":
         sumoBinary = checkBinary('sumo')
     else:
         sumoBinary = checkBinary('sumo-gui')
+    '''
+    sumoBinary = 'sumo-gui'
     findPossibleRoutes()
     run(True, True, True, 1, 1000, 500)

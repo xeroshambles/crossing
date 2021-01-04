@@ -6,7 +6,8 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="C:\Users\marco\PycharmProjects\crossing\intersection_glorio_gambelli\not_working\da%20guardare\intersection.net.xml"/>
+        <net-file value="/home/nik/Desktop/crossing/intersection_glorio_gambelli/not_working/da guardare/intersection.net.xml
+"/>
     </input>
 
 </configuration>
