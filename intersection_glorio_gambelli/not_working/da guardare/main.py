@@ -17,6 +17,8 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 from trafficElements.vehicle import Vehicle
 
+lanes = []
+''' 
 lanes = ['e01_05_0', 'e01_05_1',
          'e02_05_0', 'e02_05_1',
          'e03_05_0', 'e03_05_1',
@@ -26,6 +28,22 @@ lanes = ['e01_05_0', 'e01_05_1',
          'e05_03_0', 'e05_03_1',
          'e05_04_0', 'e05_04_1',
          ]
+'''
+
+junction_ids = [1, 2, 3, 4]
+lanes_per_road = 2
+
+junction_id = 5
+
+""" Automatic lane names generation"""
+for i in junction_ids:
+    for l in range(0, lanes_per_road):
+        lanes.append(f'e0{i}_0{junction_id}_{l}')
+for i in junction_ids:
+    for l in range(0, lanes_per_road):
+        lanes.append(f'e0{junction_id}_0{i}_{l}')
+
+print(f'lanes generated have ids: {lanes}')
 
 crossingStatus = {}
 
@@ -57,7 +75,7 @@ maxDimensionOfGroups = -1
 
 vehicles = {}  # dizionario contenente i veicoli della simulazione
 
-junction_id = 5
+
 
 def getVehiclesAtJunction():
     """Funzione che restituisce tutti i veicoli che viaggiano verso un incrocio"""
