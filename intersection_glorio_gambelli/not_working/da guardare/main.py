@@ -36,6 +36,7 @@ lanes_per_road = 2
 junction_id = 5
 
 """ Automatic lane names generation"""
+
 for i in junction_ids:
     for l in range(0, lanes_per_road):
         lanes.append(f'e0{i}_0{junction_id}_{l}')
@@ -294,18 +295,18 @@ def checkPosition(vehicle):
         return True
 
 
-def createAuction(v_ideh, vehicles):
+def createAuction(v_id, vehicles):
     """Funzione che permette di aggiungere un'asta all'elenco di quelle attualmente in corso nell'incrocio
-       :param v_ideh: ID del veicolo di cui si cercheranno i rivali.
+       :param v_id: ID del veicolo di cui si cercheranno i rivali.
        :param vehicles: veicoli raggruppati per corsia d'appartenenza;"""
     """Ramo importante della funzione."""
     lp = []
     ls = []
     """Se è variabile otterrò una dimensione dipendente dal numero di veicoli in corsia."""
-    maxLength = maxDimensionCalc(v_ideh.getCurrentLane())
+    maxLength = maxDimensionCalc(v_id.getCurrentLane())
     """Ciclo sulla reversed del getLastStepVehicleIDs() per selezionare prima i veicoli più vicini 
     all'incrocio."""
-    for veh in reversed(traci.lane.getLastStepVehicleIDs(v_ideh.getCurrentLane())):
+    for veh in reversed(traci.lane.getLastStepVehicleIDs(v_id.getCurrentLane())):
         veh = vehicles[veh]
         if checkPosition(veh) and veh not in vehiclesInAuction \
                 and veh not in nonStoppedVehicles:
@@ -314,7 +315,7 @@ def createAuction(v_ideh, vehicles):
             else:
                 ls.append(veh)
     clashingLists = [[lp, ls]]
-    clashingVehicles = [v_ideh]
+    clashingVehicles = [v_id]
     vehiclesInHead = [i for i in crossingStatus.values() if i is not None
                       and i not in vehiclesInAuction
                       and i not in nonStoppedVehicles
@@ -479,9 +480,9 @@ def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=
         # Prendo i tempi dei veicoli qualora fossero costretti a fermarsi
         vehiclesInHead = crossingStatus.values()
         """Flusso principale"""
-        for v_ideh in vehicles_at_junction:
-            if v_ideh in vehicles:
-                objVeh = vehicles[v_ideh]
+        for v_id in vehicles_at_junction:
+            if v_id in vehicles:
+                objVeh = vehicles[v_id]
                 if objVeh.distanceFromEndLane() < 50:
                     if objVeh not in partecipants:
                         # non fa nulla!
