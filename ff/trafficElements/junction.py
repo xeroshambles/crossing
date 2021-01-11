@@ -154,39 +154,38 @@ class Junction(ABC):
         nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
         generalizzabili."""
         # TODO: controlla la def bs => è refactoring
-        neso = {0: 'N', 1: 'E', 2: 'S', 3: 'O'}
 
-        for c in neso:
-            for i in self.mapNESO[neso[c]]:
-                e1 = int(i[1:3])
-                e2 = int(i[4:6])
-                suffix = i[-1]
-                if e1 > e2:
-                    continue
-                #solo le entranti
-                #if e1 == self.nID:
-                #    continue
+        for l in self.getLanes():
+            print(f'lane currently considered: {l}')
+            e1 = int(l[1:3])
+            e2 = int(l[4:6])
+            suffix = l[-1]
+            if e1 > e2:
+                continue
+            #solo le entranti
+            #if e1 == self.nID:
+            #    continue
 
-                frontEdge = rightEdge = leftEdge = ''
-                """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
-                j = 5
-                if self.mapNESO[neso[(c + 2) % 4]]:
-                    frontEdge = f'e0{j}_0{(e1 + 2) % 4}_{suffix}'
+            frontEdge = rightEdge = leftEdge = ''
+            """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+            j = 5
 
-                """Determino se sono presenti curve a destra e ne calcolo l'id"""
-                if suffix == '0': #vado a dx
-                    if self.mapNESO[neso[(c - 1) % 4]]:
+            frontEdge = f'e0{j}_0{(e1 + 2) % 4}_{suffix}'
 
-                            rightEdge = f'e0{j}_0{(e1 + 3) % 4}_0'
+            """Determino se sono presenti curve a destra e ne calcolo l'id"""
+            if suffix == '0': #vado a dx
 
 
-                """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
-                if suffix == '1':
-                    if self.mapNESO[neso[(c + 1) % 4]]:
-                        leftEdge = f'e0{j}_0{(e1 + 1) % 4}_1'
+                rightEdge = f'e0{j}_0{(e1 + 3) % 4}_0'
 
-                """Salvo le traiettorie trovate."""
-                self.possibleRoutes[i] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
+
+            """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+            if suffix == '1':
+                leftEdge = f'e0{j}_0{(e1 + 1) % 4}_1'
+
+
+            """Salvo le traiettorie trovate."""
+            self.possibleRoutes[l] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
 
     @abstractmethod
     def laneNESOMapping(self):
@@ -551,7 +550,7 @@ class FourWayJunction(Junction):
 
     def laneNESOMapping(self):
         """Mapping effettuato sulla base della rete utilizzata, altamente specifico per essa."""
-        self.mapNESO = {'N': self.lanes[8:12], 'E': self.lanes[4:8], 'S': self.lanes[-4:], 'O': self.lanes[:4]}
+        #self.mapNESO = {'N': self.lanes[8:12], 'E': self.lanes[4:8], 'S': self.lanes[-4:], 'O': self.lanes[:4]}
 
     def findCommonRoute(self, edge, turn):
         """Funzione che trova le traiettorie con corsia di partenza differente e corsia obbiettivo uguale."""
@@ -619,6 +618,7 @@ class FourWayJunction(Junction):
     def findClashingEdges(self):
         """Funzione che avvia la ricerca delle traiettorie incidentali nell'incrocio."""
         # inizializzo le liste dei possibili clash
+        print(f'possible routes are: {self.possibleRoutes}')
         for i in self.possibleRoutes:
             self.clashingEdges[i] = {self.possibleRoutes[i][j]: [] for j in self.possibleRoutes[i]
                                      if self.possibleRoutes[i][j] != ''}
