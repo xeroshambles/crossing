@@ -162,6 +162,7 @@ class CompetitiveCrossingManager(CrossingManager):
             if i not in self.partecipants:
                 self.partecipants.append(i)
                 if not i.isStopped():
+                    print("HHHHHHHH/n")
                     i.stopVehicle()
                 # print('saving', i.getID(), 'sar', self.junction.getID(), 'w', i.distanceFromEndLane())
                 self.partecipantsRoutes[i] = self.junction.fromEdgesToLanes(i)

@@ -5,6 +5,9 @@ import os
 import sys
 import optparse
 import random
+from math import sqrt
+from random import randint
+
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -13,9 +16,11 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
-from sumolib import checkBinary  # noqa
-import traci  # noqa
+import traci
+from trafficElements.junction import FourWayJunction
 from trafficElements.vehicle import Vehicle
+
+'''GLOBALS DECLARATION AND INIT'''
 
 lanes = []
 ''' 
@@ -78,8 +83,10 @@ vehicles = {}  # dizionario contenente i veicoli della simulazione
 
 
 
-def getVehiclesAtJunction():
+def getVehiclesAtJunction(junction):
     """Funzione che restituisce tutti i veicoli che viaggiano verso un incrocio"""
+    crossingManager = junction.getCrossingManager()
+    crossingManager.updateCrossingStatus(vehicles)
     vehiclesAtJunction = []
     for lane in lanes:
         if int(lane[1:3]) != 5:  # si lavora sui veicoli che viaggiano verso l'incrocio
@@ -376,12 +383,12 @@ def createAuction(v_id, vehicles):
 
 
 def deb(s, v):
-    """debug helper function to avoid typing same input 10000 times """
+    """@nik - debug helper function to avoid typing same input 10000 times """
     print(s + f'= {v} ')
 
 
 def generateRandomRoutes(numberOfVehicles, pay_mode, vehicles = vehicles, junction_id = junction_id):
-    """Con il seguente ciclo inizializzo i veicoli e gli assegno una route generata casualmente"""
+    """@nik - this loop spawns vehicles and assign each one to random generated routes"""
     for i in range(1, numberOfVehicles + 1):
         v_id = f"v_id{i}"
         vehicles[v_id] = Vehicle(v_id, pay_mode)
@@ -393,7 +400,7 @@ def generateRandomRoutes(numberOfVehicles, pay_mode, vehicles = vehicles, juncti
         traci.vehicle.add(v_id, v_id)
 
 def assignColorsToVehicles(numberOfVehicles):
-    """Ciclo che si limita ad assegnare un colore ai veicoli, per renderli distinguibili nella simulazione"""
+    """@nik - this loop assigns colors to vehicles"""
     for i in range(1, numberOfVehicles + 1):
         if i % 8 == 1:
             traci.vehicle.setColor(f'v_id{i}', (0, 255, 255))  # azzurro
@@ -412,8 +419,9 @@ def assignColorsToVehicles(numberOfVehicles):
         if i % 8 == 8:
             traci.vehicle.setColor(f'v_id{i}', (255, 100, 0))  # arancione
 
-def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=1,
-        numberOfVehicles=1000, numberOfSteps=500):
+def run(allWaitingTimesAtJunction, allWaitingTimesInTraffic, allTotalTimes, allMGTimes, allSGTimes, batch_mode, numberOfVehicles=1000, numberOfSteps=200,
+        competitive=True, instantPay=True, routeMode=True, dimensionOfGroups=1):
+
     """Inserimento delle informazioni per il setup della simulazione"""
 
     """STATIC/DINAMIC ROUTE GENERATION"""
@@ -425,6 +433,28 @@ def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=
     routeMode = True if choice in ['s', 'S'] else False'''
 
     deb('routeMode', routeMode)
+
+    """INSTANT PAYMENT OR NOT"""
+    '''
+    choice = ''
+    while choice not in ['y', 'Y', 'n', 'N']:
+        choice = input('Tutti i veicoli devono pagare subito? se no pagheranno solo i vincitori delle aste [y/n]\n: ')
+        if choice not in ['y', 'Y', 'n', 'N']:
+            print('Inserire un carattere fra y e n')
+    instantPay = True if choice in ['y', 'Y'] else False
+    '''
+    deb('instantPay', instantPay)
+
+    '''COMPETITIVE AUCTION OR NOT'''
+
+    '''choice = ''
+    while choice not in ['y', 'Y', 'n', 'N']:
+        choice = input('Si deve usare un approccio competitivo? se no si userà il cooperativo [y/n]\n: ')
+        if choice not in ['y', 'Y', 'n', 'N']:
+            print('Inserire un carattere fra y e n')
+    competitive = True if choice in ['y', 'Y'] else False'''
+
+    deb('competitive', competitive)
 
     """VEHICLE DIMENSION"""
     '''choice = ''
@@ -466,7 +496,8 @@ def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=
     generateRandomRoutes(numberOfVehicles, instantPay)
 
     assignColorsToVehicles(numberOfVehicles)
-    
+    junction = FourWayJunction(5, vehicles, iP=instantPay, sM=competitive, bM=False,
+                                             groupDimension=dimensionOfGroups)
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
     step = 0
     while traci.simulation.getMinExpectedNumber() > 0 and step < numberOfSteps:
@@ -474,11 +505,12 @@ def run(simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=
         step += 1
         # """Ciclo principale dell'applicazione"""
         """Prime operazioni sull'incrocio"""
-        vehicles_at_junction = getVehiclesAtJunction()
+
+        vehicles_at_junction = junction.getVehiclesAtJunction()
         # trovo i veicoli in testa per ogni lane
         findHeadVehicles()
         # Prendo i tempi dei veicoli qualora fossero costretti a fermarsi
-        vehiclesInHead = crossingStatus.values()
+        vehiclesInHead = junction.crossingStatus.values()
         """Flusso principale"""
         for v_id in vehicles_at_junction:
             if v_id in vehicles:
