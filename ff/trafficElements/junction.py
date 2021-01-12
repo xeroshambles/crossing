@@ -169,19 +169,24 @@ class Junction(ABC):
             frontEdge = rightEdge = leftEdge = ''
             """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
             j = 5
-
-            frontEdge = f'e0{j}_0{(e1 + 2) % 4}_{suffix}'
+            #e03_05_0 -> e05_01_0
+            '''if (l == 'e02_05_0'):
+                print('resto incriminato: ' + str((e1 + 2) % 4))
+                print(f'lane generata: e0{j}_0{(e1 + 2) % 4}_{suffix}')'''
+            mod = ((e1 + 1) % 4) + 1
+            frontEdge = f'e0{j}_0{mod}_{suffix}'
 
             """Determino se sono presenti curve a destra e ne calcolo l'id"""
             if suffix == '0': #vado a dx
 
-
-                rightEdge = f'e0{j}_0{(e1 + 3) % 4}_0'
+                mod = ((e1 + 2) % 4) + 1
+                rightEdge = f'e0{j}_0{mod}_0'
 
 
             """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
             if suffix == '1':
-                leftEdge = f'e0{j}_0{(e1 + 1) % 4}_1'
+                mod = (e1 % 4) + 1
+                leftEdge = f'e0{j}_0{mod}_1'
 
 
             """Salvo le traiettorie trovate."""
@@ -577,6 +582,8 @@ class FourWayJunction(Junction):
         self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge2)
         opRightOpFrontEdge = f'e{self.possibleRoutes[f"{opRightEdge}_0"]["front"][4:6]}_' \
                              f'{self.possibleRoutes[f"{opRightEdge}_0"]["front"][1:3]}'
+        print(f'self.possibleRoutes[opRightEdge_0]: {self.possibleRoutes[f"{opRightEdge}_0"]}')
+        print(f'opRightOpFrontEdge: {opRightOpFrontEdge}')
         clashingEdge1 = (f'{opRightOpFrontEdge}_0', self.possibleRoutes[f'{opRightOpFrontEdge}_0']["front"])
         self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge1)
         clashingEdge2 = (f'{opRightOpFrontEdge}_1', self.possibleRoutes[f'{opRightOpFrontEdge}_1']["front"])
@@ -622,8 +629,9 @@ class FourWayJunction(Junction):
         for i in self.possibleRoutes:
             self.clashingEdges[i] = {self.possibleRoutes[i][j]: [] for j in self.possibleRoutes[i]
                                      if self.possibleRoutes[i][j] != ''}
+        print(f'found possible clashing edges: {self.clashingEdges}')
         for i in self.possibleRoutes:
-            if i[-1] == '0':
+            if i[-1] == '0': # front + right
                 self.findClashingRoutes(i)
                 self.findCommonRoute(i, 'right')
                 self.findCommonRoute(i, 'front')
