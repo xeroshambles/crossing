@@ -63,8 +63,8 @@ class CrossingManager(ABC):
         pass
 
     def updateCrossingStatus(self, vehicles):
-        """Funzione che trova i veicoli attualmente in testa ad ogni corsia. Questi saranno i veicoli papabili per un
-        attraversamento"""
+        """Funzione che trova i veicoli attualmente in testa ad ogni corsia, distribuisce il traffico tra le lanes,
+        rimuove i veicoli gia passati dai partecipanti"""
         # con il seguente ciclo determino i veicoli attualmente in testa alle corsie che vanno verso l'incrocio
         vehiclesInHead = []
         otherVehicles = []
@@ -89,6 +89,14 @@ class CrossingManager(ABC):
                 otherVehicles += laneQueue[:-1]
             else:
                 self.crossingStatus[lane] = None
+
+            l = self.crossingStatus[lane]
+            #if len(l) > 1:
+            #    print(f'for lane {lane}, crossingStatus is {map(lambda x: x.getID(), l)}')
+            #else:
+            if l is not None:
+                print(f'for lane {lane}, crossingStatus is {l.getID()}')
+
         vehiclesPassed = []
         for i in self.getCurrentPartecipants():
             # visto che questo ciclo passa in rassegna tutti i veicoli ad un incrocio ho aggiunto queste 2 righe che
@@ -125,6 +133,7 @@ class CrossingManager(ABC):
         for i in self.getCurrentPartecipants():
             if traci.vehicle.getLaneID(i.getID())[0] == 'e':
                 # if traci.vehicle.getLaneID(i.getID())[0] == 'e':
+                # print(f'from e to l: {self.junction.fromEdgesToLanes(i)}')
                 self.partecipantsRoutes[i] = self.junction.fromEdgesToLanes(i)
 
     def getVehiclesNowCrossing(self):

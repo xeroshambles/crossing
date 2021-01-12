@@ -270,8 +270,8 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
         vehiclesInHead = crossingManager.getCrossingStatus().values()
         vehiclesCrossing = crossingManager.getVehiclesNowCrossing()
 
-        # print('p v', [(i.getID(), crossingManager.partecipantsRoutes[i]) for i in crossingManager.partecipants])
-        # print('n s v', [i.getID() for i in crossingManager.nonStoppedVehicles])
+        print(f'PARTICIPANTS: {[(i.getID(), crossingManager.partecipantsRoutes[i]) for i in crossingManager.partecipants]}')
+        print(f'NON-STOPPED vehicles: {[i.getID() for i in crossingManager.nonStoppedVehicles]}')
         # if not simulationMode:
         #     print('o v', [i.getID() for j in crossingManager.orderedCooperativeList for x in j for i in x])
             # print('w v', [(i.getID(), crossingManager.partecipantsRoutes[i]) for i in crossingManager.currentWinners])
@@ -357,7 +357,7 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
                             crossingManager.updateVehicleStatus(objVeh)
 
                         if objVeh.distanceFromEndLane() < 15:
-                            """Ramo d'interesse"""
+                            """Se non è gia in una auction, non e stoppato"""
                             if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
                                     crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
                                     and objVeh not in crossingManager.nonStoppedVehicles:
