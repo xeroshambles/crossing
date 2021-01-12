@@ -61,8 +61,8 @@ class Junction(ABC):
     def incomingLanesCalc(self):
         """Funzione utilizzata per calcolare l'insieme delle corsie entranti nell'incrocio e per inizializzare
         informazioni relative alle winnersLane del CrossingManager competitivo."""
-        for i in self.lanes:
-            print(f"CHECK: {i}////{i[1:3]}" )
+        '''for i in self.lanes:
+            print(f"CHECK: {i}////{i[1:3]}" )'''
         self.incomingLanes = [i for i in self.lanes if int(i[1:3]) != self.nID]
         self.crossingManager.winnersLanes = {i: [] for i in self.incomingLanes}
 
@@ -139,9 +139,9 @@ class Junction(ABC):
 
     def isFrontalTrajectory(self, vehicle):
         """Funzione che restituisce True se il veicolo passato in argomento deve andare dritto, False altrimenti"""
-        route = vehicle.getCurrentRoute()
-        # print('route', route, vehicle.getID())
-        # print(traci.vehicle.getRoute(vehicle.getID()))
+        route = traci.vehicle.getRoute(vehicle.getID()) #vehicle.getCurrentRoute()
+        print(f'for vehicle {vehicle.getID()}, current route is: {route}')
+        print(traci.vehicle.getRoute(vehicle.getID()))
         # currentLane = traci.vehicle.getLaneID(vehicle.getID())[-1]
         currentEdge = (int(route[0][1:3]), int(route[0][4:6]))
         nextEdge = (int(route[1][1:3]), int(route[1][4:6]))
@@ -156,7 +156,7 @@ class Junction(ABC):
         # TODO: controlla la def bs => è refactoring
 
         for l in self.getLanes():
-            print(f'lane currently considered: {l}')
+            #print(f'lane currently considered: {l}')
             e1 = int(l[1:3])
             e2 = int(l[4:6])
             suffix = l[-1]
@@ -521,8 +521,8 @@ class Junction(ABC):
         vehiclesAtJunction = []
 
         for l in self.getLanes():
-            print("current junction lanes: " + f'{self.getLanes()}')
-            print("l is: " + f'{l}')
+            #print("current junction lanes: " + f'{self.getLanes()}')
+            #print("l is: " + f'{l}')
             if int(l[1:3]) != self.getNumericID():  # si lavora sui veicoli che viaggiano verso l'incrocio
                 # for v in traci.lane.getLastStepVehicleIDs(l):
                 # vehiclesAtJunction.append(v)
@@ -582,8 +582,8 @@ class FourWayJunction(Junction):
         self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge2)
         opRightOpFrontEdge = f'e{self.possibleRoutes[f"{opRightEdge}_0"]["front"][4:6]}_' \
                              f'{self.possibleRoutes[f"{opRightEdge}_0"]["front"][1:3]}'
-        print(f'self.possibleRoutes[opRightEdge_0]: {self.possibleRoutes[f"{opRightEdge}_0"]}')
-        print(f'opRightOpFrontEdge: {opRightOpFrontEdge}')
+        #print(f'self.possibleRoutes[opRightEdge_0]: {self.possibleRoutes[f"{opRightEdge}_0"]}')
+        #print(f'opRightOpFrontEdge: {opRightOpFrontEdge}')
         clashingEdge1 = (f'{opRightOpFrontEdge}_0', self.possibleRoutes[f'{opRightOpFrontEdge}_0']["front"])
         self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge1)
         clashingEdge2 = (f'{opRightOpFrontEdge}_1', self.possibleRoutes[f'{opRightOpFrontEdge}_1']["front"])
@@ -625,11 +625,11 @@ class FourWayJunction(Junction):
     def findClashingEdges(self):
         """Funzione che avvia la ricerca delle traiettorie incidentali nell'incrocio."""
         # inizializzo le liste dei possibili clash
-        print(f'possible routes are: {self.possibleRoutes}')
+        #print(f'possible routes are: {self.possibleRoutes}')
         for i in self.possibleRoutes:
             self.clashingEdges[i] = {self.possibleRoutes[i][j]: [] for j in self.possibleRoutes[i]
                                      if self.possibleRoutes[i][j] != ''}
-        print(f'found possible clashing edges: {self.clashingEdges}')
+        #print(f'found possible clashing edges: {self.clashingEdges}')
         for i in self.possibleRoutes:
             if i[-1] == '0': # front + right
                 self.findClashingRoutes(i)

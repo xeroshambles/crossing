@@ -254,9 +254,9 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
                    nNotFreePassage
         # ############################################################################################################ #
         '''
-        """controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route"""
-        for i in range(1, vehicleNumber + 1):
-            vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)
+        """controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, li rimuovo"""
+        '''for i in range(1, vehicleNumber + 1):
+            vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)'''
 
         """Ciclo principale dell'applicazione"""
 
