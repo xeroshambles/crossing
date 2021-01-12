@@ -37,7 +37,7 @@ def deb(s, v):
     """@nik - debug helper function to avoid typing same input 10000 times """
     print(s + f'= {v} ')
 
-def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalTimes = [], allMGTimes = [], allSGTimes = [], numberOfVehicles=500, numberOfSteps=200,
+def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalTimes = [], allMGTimes = [], allSGTimes = [], numberOfVehicles=50, numberOfSteps=200,
         simulationMode=True, instantPay=True, routeMode=True, dimensionOfGroups=1):
 
     # ################################################################################################################ #
@@ -167,10 +167,10 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
     il comportamento specifico (o incroci a 3 strade o a 4 strade). Solo gli incroci a 4 strade sono stati usati nelle 
     simulazioni finali."""
     #junctions = []  # dovrà contenere tutti gli incroci
-
+    #abbiamo una sola junction centrale
     junction = FourWayJunction(junction_id, vehicles, iP=instantPay, sM=simulationMode, bM=False,
                                              groupDimension=dimensionOfGroups)
-    print(f'{junction}')
+    #print(f'{junction}')
     """di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa."""
     step = 0
     #print(smDict[simulationMode], ipDict[instantPay], routeMode, dimensionOfGroups)
@@ -280,6 +280,7 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
 
         for v in vehAtJunction:
             veh = vehicles[v]
+            ''' 
             # #################################################################################################### #
             """Blocco che effettua i controlli che avviano la registrazione dei tempi di attesa"""
             for i in crossingManager.nonStoppedVehicles:
@@ -335,7 +336,7 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
                             # print(
                                 # f'starting the time counter for {veh.getID()} (sponsor) ({veh.getSponsorGroupWaitingTime()})')
             # #################################################################################################### #
-
+            '''
             """Controllo che non ci siano errori di posizionamento su corsia, nel caso modifico provvisoriamente la 
             traiettoria seguita dal veicolo."""
             for veh in vehiclesInHead:

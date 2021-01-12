@@ -26,7 +26,7 @@ class CompetitiveCrossingManager(CrossingManager):
     """Le prossime funzioni sono relative al caso bufferato e sono incomplete."""
     def addAuctionResult_(self, auction: CompetitiveAuction):
         """Funzione che aggiorna lo stato dei permessi di passaggio in seguito allo svolgimento di un'asta"""
-        # print('adding an auction')
+        print('adding an auction')
         for i in auction.getPartecipants():
             if i not in self.partecipants:
                 # non aggiungo i veicoli ai partecipanti per poter eseguire l'ereditarietà delle precedenze di sotto
@@ -116,7 +116,7 @@ class CompetitiveCrossingManager(CrossingManager):
 
     def addAuctionResult(self, auction: CompetitiveAuction):
         """Funzione che aggiorna lo stato dei permessi di passaggio in seguito allo svolgimento di un'asta"""
-        # print('adding an auction')
+        print('adding an auction')
         for i in auction.getPartecipants():
             if i not in self.partecipants:
                 # non aggiungo i veicoli ai partecipanti per poter eseguire l'ereditarietà delle precedenze di sotto
@@ -163,7 +163,7 @@ class CompetitiveCrossingManager(CrossingManager):
                 self.partecipants.append(i)
                 if not i.isStopped():
                     i.stopVehicle()
-                # print('saving', i.getID(), 'sar', self.junction.getID(), 'w', i.distanceFromEndLane())
+                print('saving', i.getID(), 'sar', self.junction.getID(), 'w', i.distanceFromEndLane())
                 self.partecipantsRoutes[i] = self.junction.fromEdgesToLanes(i)
             if i in self.currentLosers:
                 self.removeLoser(i)
@@ -180,9 +180,9 @@ class CompetitiveCrossingManager(CrossingManager):
                 if not i.isStopped():
                     i.stopVehicle()
                 self.precedences[i] = []
-                # print('saving', i.getID(), 'sar', self.junction.getID(), 'l', i.distanceFromEndLane())
+                print('saving', i.getID(), 'sar', self.junction.getID(), 'l', i.distanceFromEndLane())
 
-        # print('saving auction result of', self.junction.getID())
+        #print('saving auction result of', self.junction.getID())
 
     def removeVehicleFromPartecipants(self, vehicle, blockAllowChange=False):
         """Funzione che si attiva quando un vincitore attraversa l'incrocio, rimuovendone ogni riferimento"""
