@@ -203,6 +203,7 @@ class CrossingManager(ABC):
             return False
         return True
 
+# PARE NON VENGA USATA PER NULLA
     def createSingularAuction(self, restartableVehicles):
         """Funzione che organizza aste a passaggio singolo per decidere chi far passare fra una serie di veicoli in
         clash."""
@@ -250,6 +251,7 @@ class CrossingManager(ABC):
                         clashingHeads.append(otherVeh)
                         otherVehInCH = False
                     if vehInCH and not otherVehInCH:
+                        print(f'clashingLists: {clashingLists}')
                         for cl in clashingLists:
                             for couple in cl:
                                 # print('1 check', otherVeh.getID(), couple[0][0].getID())
@@ -257,6 +259,7 @@ class CrossingManager(ABC):
                                     cl.append([[otherVeh], self.findSponsors(otherVeh)])
                                     break
                     elif not vehInCH and otherVehInCH:
+                        print(f'clashingLists: {clashingLists}')
                         for cl in clashingLists:
                             for couple in cl:
                                 # print('2 check', veh.getID(), couple[0][0].getID())
@@ -264,8 +267,10 @@ class CrossingManager(ABC):
                                     cl.append([[veh], self.findSponsors(veh)])
                                     break
                     elif vehInCH and otherVehInCH:
+
                         cls = []
                         for v in [veh, otherVeh]:
+                            print(f'clashingLists: {clashingLists}')
                             for cl in clashingLists:
                                 for couple in cl:
                                     # print('3 check', v.getID(), couple[0][0].getID())
@@ -291,6 +296,7 @@ class CrossingManager(ABC):
         # ############################################################################################################ #
         """Organizzo tante aste a passaggio singolo quante sono le clashing list"""
         for cl in clashingLists:
+            print(f'clashingLists: {clashingLists}')
             auction = CompetitiveAuction(cl, self.junction, oV=True, instantPay=self.junction.payMode,
                                          bufferMode=self.junction.bufferMode)
             vehiclesToBeRestarted.append(auction.getWinners()[0])

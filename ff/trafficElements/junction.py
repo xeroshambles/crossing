@@ -100,6 +100,7 @@ class Junction(ABC):
             return True
         return False
 
+#fissa se non si da un parametro = -1
     def maxDimensionCalc(self, lane):
         """Funzione che calcola la dimensione massima del gruppo principale se questa deve essere variabile."""
         if self.maxDimensionOfGroups != -1:
@@ -309,38 +310,46 @@ class Junction(ABC):
         lp = []
         ls = []
         """Se è variabile otterrò una dimensione dipendente dal numero di veicoli in corsia."""
-        maxLength = self.maxDimensionCalc(idVeh.getCurrentLane())
-        print('trying auction', idVeh.getID())
+        maxLength = self.maxDimensionCalc(idVeh.getCurrentLane()) #non importante, ritorna maxNumberOfVehicles
+        print('trying auction given vehicle', idVeh.getID()[3:])
         """Ciclo sulla reversed del getLastStepVehicleIDs() per selezionare prima i veicoli più vicini 
         all'incrocio."""
         for veh in reversed(traci.lane.getLastStepVehicleIDs(idVeh.getCurrentLane())):
             veh = vehicles[veh]
-            # print(f'conditions on {veh.getID()} ({veh.getCurrentLane()}): posizione {veh.checkPosition(self)}, '
-            #       f'auction {veh not in self.crossingManager.vehiclesInAuction}, veicoli riattivati {veh not in self.crossingManager.nonStoppedVehicles}, '
-            #       f'distanza {veh.distanceFromEndLane() < 40}, maxLength {len(lp) < maxLength}')
+            print(f'conditions on {veh.getID()} ({veh.getCurrentLane()}): posizione {veh.checkPosition(self)}, '
+                   f'auction {veh not in self.crossingManager.vehiclesInAuction}, veicoli riattivati {veh not in self.crossingManager.nonStoppedVehicles}, '
+                   f'distanza {veh.distanceFromEndLane() < 40}, maxLength {len(lp) < maxLength}')
+            #se veicolo non e tra quelli in auction ed è stoppato
             if veh.checkPosition(self) and veh not in self.crossingManager.vehiclesInAuction \
                     and veh not in self.crossingManager.nonStoppedVehicles:
                 if veh.distanceFromEndLane() < 40 and len(lp) < maxLength:
                     lp.append(veh)
-                    # print(f'adding {veh.getID()} to lp')
+                    print(f'adding {veh.getID()} to lp')
                 else:
                     ls.append(veh)
-                    # print(f'adding {veh.getID()} to ls')
+                    print(f'adding {veh.getID()} to ls')
 
         clashingLists = [[lp, ls]]
+        vv = [[[[x.getID()] for x in l] for l in group] for group in clashingLists]
+
+        print(f'clashingLists: {vv}')
         clashingVehicles = [idVeh]
+        vv = [v.getID() for v in clashingVehicles]
+        print(f'clashingVehicles: {vv}')
         vehiclesInHead = [i for i in self.crossingManager.getCrossingStatus().values() if i is not None
                           and i not in self.crossingManager.getVehiclesInAuction()
                           and i not in self.crossingManager.nonStoppedVehicles
                           and i.distanceFromEndLane() < 15 and i.checkPosition(self)]
+        vv = [v.getID() for v in vehiclesInHead]
+        print(f'vehiclesInHead: {vv}')
 
         """Cerco i veicoli in traiettoria incidentale con quelli pronti a partecipare all'asta."""
         for veh in clashingVehicles:
-            # print('veh subject', veh.getID(), veh.getCurrentRoute())
-            # print(f'subject {veh.getID()} ({veh.getCurrentLane()})')
+            print('veh subject', veh.getID(), veh.getCurrentRoute())
+            print(f'subject {veh.getID()} ({veh.getCurrentLane()})')
             for otherVeh in vehiclesInHead:
-                # print(f'object {otherVeh.getID()} ({otherVeh.getCurrentLane()}), condizioni: diversità {otherVeh != veh}, non presenza '
-                #       f'{otherVeh not in clashingVehicles}, clashing {self.isClashing(self.fromEdgesToLanes(veh), self.fromEdgesToLanes(otherVeh))}')
+                print(f'object {otherVeh.getID()} ({otherVeh.getCurrentLane()}), condizioni: diversità {otherVeh != veh}, non presenza '
+                      f'{otherVeh not in clashingVehicles}, clashing {self.isClashing(self.fromEdgesToLanes(veh), self.fromEdgesToLanes(otherVeh))}')
                 if otherVeh != veh and otherVeh not in clashingVehicles:
                     if self.isClashing(self.fromEdgesToLanes(veh),
                                        self.fromEdgesToLanes(otherVeh)):
