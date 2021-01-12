@@ -277,10 +277,9 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
             # print('w v', [(i.getID(), crossingManager.partecipantsRoutes[i]) for i in crossingManager.currentWinners])
             # print('l v', [i.getID() for i in crossingManager.currentLosers])
         # print('c v', [i.getID() for i in crossingManager.getVehiclesNowCrossing() if i is not None])
-
+        '''
         for v in vehAtJunction:
-            veh = vehicles[v]
-            ''' 
+            veh = vehicles[v] 
             # #################################################################################################### #
             """Blocco che effettua i controlli che avviano la registrazione dei tempi di attesa"""
             for i in crossingManager.nonStoppedVehicles:
@@ -337,43 +336,42 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
                                 # f'starting the time counter for {veh.getID()} (sponsor) ({veh.getSponsorGroupWaitingTime()})')
             # #################################################################################################### #
             '''
-            """Controllo che non ci siano errori di posizionamento su corsia, nel caso modifico provvisoriamente la 
+        """Controllo che non ci siano errori di posizionamento su corsia, nel caso modifico provvisoriamente la 
             traiettoria seguita dal veicolo."""
-            for veh in vehiclesInHead:
-                # if veh is not None:
-                #     print('checking wrong lane', veh.getID(), veh.distanceFromEndLane())
-                if veh is not None and veh.distanceFromEndLane() < 15:
-                    if not veh.checkPosition(junction):
-                        veh.changeTarget(momentaryChange=True, junction=junction)
+        for veh in vehiclesInHead:
+            # if veh is not None:
+            #     print('checking wrong lane', veh.getID(), veh.distanceFromEndLane())
+            if veh is not None and veh.distanceFromEndLane() < 15:
+                if not veh.checkPosition(junction):
+                    veh.changeTarget(momentaryChange=True, junction=junction)
 
-            """Flusso principale"""
-            for idVeh in vehAtJunction:
-                if idVeh in vehicles:
-                    objVeh = vehicles[idVeh]
+        """Flusso principale"""
+        for idVeh in vehAtJunction:
+            if idVeh in vehicles:
+                objVeh = vehicles[idVeh]
 
+                if objVeh.distanceFromEndLane() < 50:
+                    if objVeh not in crossingManager.getCurrentPartecipants():
+                        crossingManager.updateVehicleStatus(objVeh)
 
-                    if objVeh.distanceFromEndLane() < 50:
-                        if objVeh not in crossingManager.getCurrentPartecipants():
-                            crossingManager.updateVehicleStatus(objVeh)
+                    if objVeh.distanceFromEndLane() < 15:
+                        """Se non è gia in una auction, non e stoppato"""
+                        if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
+                                crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
+                                and objVeh not in crossingManager.nonStoppedVehicles:
+                            # print('c a b v', objVeh.getID(), objVeh not in crossingManager.
+                            #       getVehiclesInAuction())
+                            # print('c a i a v', [z.getID() for z in crossingManager.getVehiclesInAuction() if
+                            #                     z is not None])
+                            # print('c a w v', [z.getID() for z in crossingManager.getCurrentWinners() if
+                            #                     z is not None])
+                            # print('c a l v', [z.getID() for z in crossingManager.getCurrentLosers() if
+                            #                   z is not None])
+                            junction.createAuction(objVeh, vehicles)
 
-                        if objVeh.distanceFromEndLane() < 15:
-                            """Se non è gia in una auction, non e stoppato"""
-                            if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
-                                    crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
-                                    and objVeh not in crossingManager.nonStoppedVehicles:
-                                # print('c a b v', objVeh.getID(), objVeh not in crossingManager.
-                                #       getVehiclesInAuction())
-                                # print('c a i a v', [z.getID() for z in crossingManager.getVehiclesInAuction() if
-                                #                     z is not None])
-                                # print('c a w v', [z.getID() for z in crossingManager.getCurrentWinners() if
-                                #                     z is not None])
-                                # print('c a l v', [z.getID() for z in crossingManager.getCurrentLosers() if
-                                #                   z is not None])
-                                junction.createAuction(objVeh, vehicles)
-
-            if len(vehAtJunction) > 0:
-                # print('precross', [i for i in vehAtJunction])
-                crossingManager.allowCrossing()
+        if len(vehAtJunction) > 0:
+            # print('precross', [i for i in vehAtJunction])
+            crossingManager.allowCrossing()
 
 
 if __name__ == "__main__":
