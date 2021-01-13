@@ -141,6 +141,7 @@ def run(allWaitingTimesAtJunction = [], allWaitingTimesInTraffic = [], allTotalT
         start = random.choice(node_ids)
         node_ids.remove(start)
         end = random.choice(node_ids)
+        vehicles[idV].setEdgeObjective(f'e0{junction_id}_0{end}')
         traci.route.add(idV, [f'e0{start}_0{junction_id}', f'e0{junction_id}_0{end}'])
         traci.vehicle.add(idV, idV)
 
