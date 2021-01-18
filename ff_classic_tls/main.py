@@ -7,6 +7,7 @@ junction_id = 7
 lanes_per_road = 2
 lanes = []
 node_ids = [2, 6, 8, 12]
+tails = {}
 tailLengths = {}  # dizionario con chiavi gli id delle lane e con valori le liste delle code
 
 for i in node_ids:
@@ -18,6 +19,7 @@ for i in node_ids:
         exit = f'e0{junction_id}_{zero_lane}{i}_{lane}'
         lanes.append(enter)
         lanes.append(exit)
+        tails[enter] = 0
         tailLengths[enter] = []
 
 
@@ -33,6 +35,7 @@ import traci  # noqa
 
 def run(numberOfVehicles=50):
     """Funzione che avvia la simulazione dato un certo numero di veicoli e di time step"""
+    global vehicle
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
     vehiclesSpeeds = {}  # dizionario con chiavi gli id dei veicoli e con valori le velocità assunte in ogni step
@@ -46,7 +49,8 @@ def run(numberOfVehicles=50):
         # followerStopTime: considera il tempo passato in coda
         # speeds: lista con i valori delle velocità assunte in ogni step
         # stopped: variabile che indica che il veicolo si è fermato almeno una volta
-        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'stopped': 0}
+        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'stopped': 0, 'isCrossing': 0,
+                   'hasCrossed': 0, 'startingLane': ''}
         vehicles[idV] = vehicle
         vehiclesSpeeds[idV] = []
         node_ids = [2, 6, 8, 12]
@@ -82,37 +86,49 @@ def run(numberOfVehicles=50):
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         totalTime += 1
-        for lane in lanes:
-            # considero solo le lane entranti
-            if lane[4:6] == '07':
-                tail_dim = 0
-                vehs_in_lane = traci.lane.getLastStepVehicleIDs(lane)
-                for veh in vehs_in_lane:
-                    vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
-                    distance = traci.vehicle.getNextTLS(veh)[0][2]
-                    veh_length = traci.vehicle.getLength(veh)
-                    check = veh_length / 2 + 0.2
-                    leader = traci.vehicle.getLeader(veh)
-                    spawn_distance = traci.vehicle.getDistance(veh)
-                    if traci.vehicle.getSpeed(veh) <= 1:
-                        tail_dim += 1
-                        # verifico se il veicolo si è fermato
-                        if spawn_distance > 0:
-                            vehicles[veh]['stopped'] = 1
-                        # verifico se il veicolo è in testa
-                        if check >= distance and ((leader and leader[1] > 1) or not leader):
-                            # print(f"{veh} è in testa alla lane {lane}")
-                            vehicles[veh]['headStopTime'] += 1
-                            continue
-                        # verifico se il veicolo è in coda
-                        if leader and leader[1] <= 1:
-                            if leader[0] not in vehs_in_lane:
-                                # print(f"{leader[0]} è in testa alla lane {lane}")
-                                vehicles[leader[0]]['headStopTime'] += 1
-                            # print(f"{veh} è in coda alla lane {lane}")
-                            vehicles[veh]['followerStopTime'] += 1
-                            continue
-                tailLengths[lane].append(tail_dim)
+        vehs_loaded = traci.vehicle.getIDList()
+        for tail in tails:
+            tails[tail] = 0
+        # loop per tutti i veicoli
+        for veh in vehs_loaded:
+            veh_current_lane = traci.vehicle.getLaneID(veh)
+            # se il veicolo è nella junction
+            if veh_current_lane[1:3] == 'n7':
+                vehicles[veh]['isCrossing'] = 1
+                if traci.vehicle.getSpeed(veh) <= 1:
+                    print(f"{veh} è in testa alla lane {veh_current_lane}")
+                    vehicles[veh]['headStopTime'] += 1
+                    tails[vehicles[veh]['startingLane']] += 1
+            # se il veicolo è nella lane uscente
+            if veh_current_lane[1:3] == '07':
+                vehicles[veh]['isCrossing'] = 0
+                vehicles[veh]['hasCrossed'] = 1
+            # se il veicolo è in una lane entrante
+            if veh_current_lane[4:6] == '07':
+                vehicles[veh]['startingLane'] = veh_current_lane
+                vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
+                distance = traci.vehicle.getNextTLS(veh)[0][2]
+                veh_length = traci.vehicle.getLength(veh)
+                check = veh_length / 2 + 0.2
+                leader = traci.vehicle.getLeader(veh)
+                spawn_distance = traci.vehicle.getDistance(veh)
+                if traci.vehicle.getSpeed(veh) <= 1:
+                    # verifico se il veicolo si è fermato
+                    if spawn_distance > 0:
+                        vehicles[veh]['stopped'] = 1
+                        tails[veh_current_lane] += 1
+                    # verifico se il veicolo è in testa
+                    if check >= distance and ((leader and leader[1] > 0.5) or not leader):
+                        print(f"{veh} è in testa alla lane {veh_current_lane}")
+                        vehicles[veh]['headStopTime'] += 1
+                        continue
+                    # verifico se il veicolo è in coda
+                    if leader and leader[1] <= 0.5:
+                        print(f"{veh} è in coda alla lane {veh_current_lane}")
+                        vehicles[veh]['followerStopTime'] += 1
+                        continue
+            for tail in tails:
+                tailLengths[tail].append(tails[tail])
     """Salvo tutti i risultati e li ritorno."""
     headTimes = []
     tailTimes = []
@@ -161,7 +177,7 @@ if __name__ == "__main__":
         numberOfSimulations = int(input('\nInserire il numero di simulazioni: '))
         if numberOfSimulations <= 0:
             print('\nInserire un numero di simulazioni positivo!')
-    with open("output.txt", "w") as f:
+    with open("output1.txt", "w") as f:
         for i in range(1, numberOfSimulations + 1):
             numberOfVehicles = 0
             while numberOfVehicles <= 0:
