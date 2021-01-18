@@ -35,7 +35,6 @@ import traci  # noqa
 
 def run(numberOfVehicles=50):
     """Funzione che avvia la simulazione dato un certo numero di veicoli e di time step"""
-    global vehicle
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
     vehiclesSpeeds = {}  # dizionario con chiavi gli id dei veicoli e con valori le velocità assunte in ogni step
@@ -49,8 +48,7 @@ def run(numberOfVehicles=50):
         # followerStopTime: considera il tempo passato in coda
         # speeds: lista con i valori delle velocità assunte in ogni step
         # stopped: variabile che indica che il veicolo si è fermato almeno una volta
-        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'stopped': 0, 'isCrossing': 0,
-                   'hasCrossed': 0, 'startingLane': ''}
+        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'stopped': 0}
         vehicles[idV] = vehicle
         vehiclesSpeeds[idV] = []
         node_ids = [2, 6, 8, 12]
@@ -92,6 +90,10 @@ def run(numberOfVehicles=50):
         # loop per tutti i veicoli
         for veh in vehs_loaded:
             veh_current_lane = traci.vehicle.getLaneID(veh)
+            # se il veicolo è nella lane uscente
+            if veh_current_lane[1:3] == '07':
+                vehicles[veh]['isCrossing'] = 0
+                vehicles[veh]['hasCrossed'] = 1
             # se il veicolo è nella junction
             if veh_current_lane[1:3] == 'n7':
                 vehicles[veh]['isCrossing'] = 1
@@ -99,17 +101,10 @@ def run(numberOfVehicles=50):
                     print(f"{veh} è in testa alla lane {veh_current_lane}")
                     vehicles[veh]['headStopTime'] += 1
                     tails[vehicles[veh]['startingLane']] += 1
-            # se il veicolo è nella lane uscente
-            if veh_current_lane[1:3] == '07':
-                vehicles[veh]['isCrossing'] = 0
-                vehicles[veh]['hasCrossed'] = 1
             # se il veicolo è in una lane entrante
             if veh_current_lane[4:6] == '07':
                 vehicles[veh]['startingLane'] = veh_current_lane
                 vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
-                distance = traci.vehicle.getNextTLS(veh)[0][2]
-                veh_length = traci.vehicle.getLength(veh)
-                check = veh_length / 2 + 0.2
                 leader = traci.vehicle.getLeader(veh)
                 spawn_distance = traci.vehicle.getDistance(veh)
                 if traci.vehicle.getSpeed(veh) <= 1:
@@ -118,12 +113,12 @@ def run(numberOfVehicles=50):
                         vehicles[veh]['stopped'] = 1
                         tails[veh_current_lane] += 1
                     # verifico se il veicolo è in testa
-                    if check >= distance and ((leader and leader[1] > 0.5) or not leader):
+                    if (leader and leader[0] not in veh_current_lane) or not leader:
                         print(f"{veh} è in testa alla lane {veh_current_lane}")
                         vehicles[veh]['headStopTime'] += 1
                         continue
                     # verifico se il veicolo è in coda
-                    if leader and leader[1] <= 0.5:
+                    if leader and leader[1] <= 0.5 and leader[0] in veh_current_lane:
                         print(f"{veh} è in coda alla lane {veh_current_lane}")
                         vehicles[veh]['followerStopTime'] += 1
                         continue
