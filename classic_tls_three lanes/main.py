@@ -36,23 +36,23 @@ def run(numberOfVehicles, schema='n'):
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
-    throughput = []  # lista dei throughput misurati per ogni step
+    tp_per_lane = {}  # dizionario dei throughput misurati per ogni lane per ogni step
+    meanTPPerLane = []  # medie delle lunghezze delle code rilevate sulle lane entranti ad ogni step
     headTimes = []  # lista dei tempi passati in testa per ogni veicolo
     var_meanHeadTime = 0  # varianza rispetto al tempo passato in testa
     tailTimes = []  # lista dei tempi in coda per ogni veicolo
     var_meanTailTime = 0  # varianza rispetto al tempo passato in coda
     meanSpeeds = []  # medie delle velocità assunte dai veicoli ad ogni step
-    var_meanSpeed = 0  # varianza rispetto alla velocità media
     maxSpeed = -1  # velocità massima rilevata su tutti i veicoli
     nStoppedVehicles = []  # lista che dice se i veicoli si sono fermati all'incrocio o no
     meanTailLength = []  # medie delle lunghezze delle code rilevate sulle lane entranti ad ogni step
-    var_meanTailLength = 0  # varianza rispetto alla lunghezza media delle code
     tails = {}  # dizionario contenente le code per ogni lane
     tailLengths = {}  # dizionario con chiavi gli id delle lane e con valori le liste delle code
     for lane in lanes:
         if lane[4:6] == '07':
             tails[lane] = 0
             tailLengths[lane] = []
+            tp_per_lane[lane] = []
     maxTail = -1  # coda massima rilevata su tutte le lane entranti
 
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route generata casualmente e dandogli un colore
@@ -102,8 +102,8 @@ def run(numberOfVehicles, schema='n'):
         traci.simulationStep()
         totalTime += 1
         vehs_loaded = traci.vehicle.getIDList()
-        n_vehicles_entering = 0
-        n_vehicles_exiting = 0
+        for tp in tp_per_lane:
+            tp_per_lane[tp].append(0)
         for tail in tails:
             tails[tail] = 0
         # loop per tutti i veicoli
@@ -136,6 +136,9 @@ def run(numberOfVehicles, schema='n'):
             # controllo se il veicolo è nella lane uscente
             if veh_current_lane[1:3] == '07':
                 vehicles[veh]['isCrossing'] = 0
+                if vehicles[veh]['hasCrossed'] == 0:
+                    print(f'Starting lane: {vehicles[veh]["startingLane"]}, vehicle: {veh}')
+                    tp_per_lane[vehicles[veh]['startingLane']][totalTime - 1] = 1
                 vehicles[veh]['hasCrossed'] = 1
                 if schema in ['s', 'S']:
                     traci.vehicle.setColor(veh, (0, 255, 0))  # verde
@@ -165,8 +168,13 @@ def run(numberOfVehicles, schema='n'):
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
                         continue
+                else:
+                    pass
             for tail in tails:
                 tailLengths[tail].append(tails[tail])
+        for tp in tp_per_lane:
+            pass # print(f'Actual tp for lane {tp}: {tp_per_lane[tp]}')
+
 
     """Salvo tutti i risultati e li ritorno."""
     for veh in vehicles:
@@ -194,9 +202,13 @@ def run(numberOfVehicles, schema='n'):
         if lane_max > maxTail:
             maxTail = lane_max
 
+    for lane in tp_per_lane:
+        print(f'Mean tp for lane {lane}: {sum(tp_per_lane[lane]) / len(tp_per_lane[lane])}')
+        meanTPPerLane.append(sum(tp_per_lane[lane]) / len(tp_per_lane[lane]))
+
     return totalTime, meanHeadTime, var_meanHeadTime, max(headTimes), meanTailTime, var_meanTailTime, \
            max(tailTimes), sum(meanSpeeds) / len(meanSpeeds), maxSpeed, sum(meanTailLength) / len(meanTailLength), \
-           maxTail, sum(nStoppedVehicles)
+           maxTail, sum(nStoppedVehicles), sum(meanTPPerLane) / len(meanTPPerLane)
 
 
 def printFile(s, f):
@@ -236,7 +248,7 @@ if __name__ == "__main__":
                     print('\nInserire un numero di veicoli positivo!')
             traci.start(sumoCmd)
             time, avgHeadTime, varHeadTime, maxHeadTime, avgTailTime, varTailTime, maxTailTime, avgSpeed, maxSpeed, avgTailLength, \
-            maxTailLength, nStoppedVehicles = run(numberOfVehicles, schema)
+            maxTailLength, nStoppedVehicles, meanThroughput = run(numberOfVehicles, schema)
             printFile('----------------------------------------------------\n', f)
             printFile(f'SIMULAZIONE NUMERO {i}\n', f)
             printFile('----------------------------------------------------\n', f)
@@ -255,4 +267,5 @@ if __name__ == "__main__":
             printFile(f'LUNGHEZZA MEDIA DELLE CODE: {round(avgTailLength, 2)} auto\n', f)
             printFile(f'LUNGHEZZA MASSIMA DELLE CODE: {round(maxTailLength, 2)} auto\n', f)
             printFile(f'NUMERO DI VEICOLI FERMI: {nStoppedVehicles} ({round(nStoppedVehicles / numberOfVehicles * 100, 2)}%)\n', f)
+            printFile(f'THROUGHPUT MEDIO: {round(meanThroughput, 2)}\n', f)
             traci.close()
