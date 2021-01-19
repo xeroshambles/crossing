@@ -23,18 +23,19 @@ for i in node_ids:
         tailLengths[enter] = []
 
 
+# we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
     sys.path.append(tools)
 else:
-    sys.exit("Dichiara la variabile d'ambiente 'SUMO_HOME'")
+    sys.exit("please declare environment variable 'SUMO_HOME'")
 
 from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 
 def run(numberOfVehicles=50):
-    """Funzione che avvia la simulazione dato un certo numero di veicoli e di time step"""
+    """Funzione che avvia la simulazione dato un certo numero di veicoli"""
     global vehicle
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
@@ -49,7 +50,7 @@ def run(numberOfVehicles=50):
         # followerStopTime: considera il tempo passato in coda
         # speeds: lista con i valori delle velocità assunte in ogni step
         # stopped: variabile che indica che il veicolo si è fermato almeno una volta
-        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'stopped': 0, 'isCrossing': 0,
+        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'hasStopped': 0, 'isCrossing': 0,
                    'hasCrossed': 0, 'startingLane': ''}
         vehicles[idV] = vehicle
         vehiclesSpeeds[idV] = []
@@ -115,7 +116,7 @@ def run(numberOfVehicles=50):
                 if traci.vehicle.getSpeed(veh) <= 1:
                     # verifico se il veicolo si è fermato
                     if spawn_distance > 0:
-                        vehicles[veh]['stopped'] = 1
+                        vehicles[veh]['hasStopped'] = 1
                         tails[veh_current_lane] += 1
                     # verifico se il veicolo è in testa
                     if check >= distance and ((leader and leader[1] > 0.5) or not leader):
@@ -163,7 +164,7 @@ def printFile(s, f):
 if __name__ == "__main__":
     choice = ''
     while choice not in ['d', 'D', 'g', 'G']:
-        choice = input('\nVuoi raccogliere dati o avere una visualizzazione grafica? (d=dati, g=grafica): ')
+        choice = input('\nVuoi raccogliere dati o avere una visualizzazione grafica? (d = dati, g = grafica): ')
         if choice not in ['d', 'D', 'g', 'G']:
             print('\nInserire un carattere tra d e g!')
     if choice in ['d', 'D']:
