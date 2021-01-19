@@ -1,14 +1,13 @@
 import sys
 import os
 import random
+from math import sqrt
 
 config_file = "intersection.sumocfg"
 junction_id = 7
 lanes_per_road = 3
 lanes = []
 node_ids = [2, 6, 8, 12]
-tails = {}
-tailLengths = {}  # dizionario con chiavi gli id delle lane e con valori le liste delle code
 
 for i in node_ids:
     zero_lane = ''
@@ -19,8 +18,6 @@ for i in node_ids:
         exit = f'e0{junction_id}_{zero_lane}{i}_{lane}'
         lanes.append(enter)
         lanes.append(exit)
-        tails[enter] = 0
-        tailLengths[enter] = []
 
 
 # we need to import python modules from the $SUMO_HOME/tools directory
@@ -34,11 +31,29 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 
-def run(numberOfVehicles=50, schema='n'):
+def run(numberOfVehicles, schema='n'):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
+
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
-    vehiclesSpeeds = {}  # dizionario con chiavi gli id dei veicoli e con valori le velocità assunte in ogni step
+    throughput = []  # lista dei throughput misurati per ogni step
+    headTimes = []  # lista dei tempi passati in testa per ogni veicolo
+    var_meanHeadTime = 0  # varianza rispetto al tempo passato in testa
+    tailTimes = []  # lista dei tempi in coda per ogni veicolo
+    var_meanTailTime = 0  # varianza rispetto al tempo passato in coda
+    meanSpeeds = []  # medie delle velocità assunte dai veicoli ad ogni step
+    var_meanSpeed = 0  # varianza rispetto alla velocità media
+    maxSpeed = -1  # velocità massima rilevata su tutti i veicoli
+    nStoppedVehicles = []  # lista che dice se i veicoli si sono fermati all'incrocio o no
+    meanTailLength = []  # medie delle lunghezze delle code rilevate sulle lane entranti ad ogni step
+    var_meanTailLength = 0  # varianza rispetto alla lunghezza media delle code
+    tails = {}  # dizionario contenente le code per ogni lane
+    tailLengths = {}  # dizionario con chiavi gli id delle lane e con valori le liste delle code
+    for lane in lanes:
+        if lane[4:6] == '07':
+            tails[lane] = 0
+            tailLengths[lane] = []
+    maxTail = -1  # coda massima rilevata su tutte le lane entranti
 
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route generata casualmente e dandogli un colore
     diverso per distinguerli meglio all'interno della simulazione"""
@@ -48,11 +63,10 @@ def run(numberOfVehicles=50, schema='n'):
         # headStopTime: considera il tempo passato in testa (con un piccolo delay dovuto alla ripartenza del veicolo)
         # followerStopTime: considera il tempo passato in coda
         # speeds: lista con i valori delle velocità assunte in ogni step
-        # stopped: variabile che indica che il veicolo si è fermato almeno una volta
+        # stopped: variabile che indica che il veicolo si è fermato all'incrocio
         vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'hasStopped': 0, 'isCrossing': 0,
                    'hasCrossed': 0, 'startingLane': ''}
         vehicles[idV] = vehicle
-        vehiclesSpeeds[idV] = []
         node_ids = [2, 6, 8, 12]
         start = random.choice(node_ids)
         node_ids.remove(start)
@@ -88,12 +102,14 @@ def run(numberOfVehicles=50, schema='n'):
         traci.simulationStep()
         totalTime += 1
         vehs_loaded = traci.vehicle.getIDList()
+        n_vehicles_entering = 0
+        n_vehicles_exiting = 0
         for tail in tails:
             tails[tail] = 0
         # loop per tutti i veicoli
         for veh in vehs_loaded:
             veh_current_lane = traci.vehicle.getLaneID(veh)
-            # se il veicolo è nella junction
+            # controllo se il veicolo è nella junction
             if veh_current_lane[1:3] == 'n7':
                 vehicles[veh]['isCrossing'] = 1
                 leader = traci.vehicle.getLeader(veh)
@@ -117,13 +133,13 @@ def run(numberOfVehicles=50, schema='n'):
                 else:
                     if schema in ['s', 'S']:
                         traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
-            # se il veicolo è nella lane uscente
+            # controllo se il veicolo è nella lane uscente
             if veh_current_lane[1:3] == '07':
                 vehicles[veh]['isCrossing'] = 0
                 vehicles[veh]['hasCrossed'] = 1
                 if schema in ['s', 'S']:
                     traci.vehicle.setColor(veh, (0, 255, 0))  # verde
-            # se il veicolo è in una lane entrante
+            # controllo se il veicolo è in una lane entrante
             if veh_current_lane[4:6] == '07':
                 vehicles[veh]['startingLane'] = veh_current_lane
                 vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
@@ -133,7 +149,7 @@ def run(numberOfVehicles=50, schema='n'):
                 leader = traci.vehicle.getLeader(veh)
                 spawn_distance = traci.vehicle.getDistance(veh)
                 if traci.vehicle.getSpeed(veh) <= 1:
-                    # verifico se il veicolo si è fermato
+                    # verifico se il veicolo si è fermato al di fuori del punto di spawn
                     if spawn_distance > 0:
                         vehicles[veh]['hasStopped'] = 1
                         tails[veh_current_lane] += 1
@@ -151,14 +167,8 @@ def run(numberOfVehicles=50, schema='n'):
                         continue
             for tail in tails:
                 tailLengths[tail].append(tails[tail])
+
     """Salvo tutti i risultati e li ritorno."""
-    headTimes = []
-    tailTimes = []
-    meanSpeeds = []
-    maxSpeed = -1
-    nStoppedVehicles = []
-    meanTailLength = []
-    maxTail = -1
     for veh in vehicles:
         headTimes.append(vehicles[veh]['headStopTime'])
         tailTimes.append(vehicles[veh]['followerStopTime'])
@@ -167,12 +177,24 @@ def run(numberOfVehicles=50, schema='n'):
         if speed_max > maxSpeed:
             maxSpeed = speed_max
         nStoppedVehicles.append(vehicles[veh]['hasStopped'])
+
+    meanHeadTime = sum(headTimes) / len(headTimes)
+    for headTime in headTimes:
+        var_meanHeadTime += (headTime - meanHeadTime) ** 2
+    var_meanHeadTime /= len(headTimes)
+
+    meanTailTime = sum(tailTimes) / len(tailTimes)
+    for tailTime in tailTimes:
+        var_meanTailTime += (tailTime - meanTailTime) ** 2
+    var_meanTailTime /= len(tailTimes)
+
     for lane in tailLengths:
         meanTailLength.append(sum(tailLengths[lane]) / len(tailLengths[lane]))
         lane_max = max(tailLengths[lane])
         if lane_max > maxTail:
             maxTail = lane_max
-    return totalTime, sum(headTimes) / len(headTimes), max(headTimes), sum(tailTimes) / len(tailTimes), \
+
+    return totalTime, meanHeadTime, var_meanHeadTime, max(headTimes), meanTailTime, var_meanTailTime, \
            max(tailTimes), sum(meanSpeeds) / len(meanSpeeds), maxSpeed, sum(meanTailLength) / len(meanTailLength), \
            maxTail, sum(nStoppedVehicles)
 
@@ -213,7 +235,7 @@ if __name__ == "__main__":
                 if numberOfVehicles <= 0:
                     print('\nInserire un numero di veicoli positivo!')
             traci.start(sumoCmd)
-            time, avgHeadTime, maxHeadTime, avgTailTime, maxTailTime, avgSpeed, maxSpeed, avgTailLength, \
+            time, avgHeadTime, varHeadTime, maxHeadTime, avgTailTime, varTailTime, maxTailTime, avgSpeed, maxSpeed, avgTailLength, \
             maxTailLength, nStoppedVehicles = run(numberOfVehicles, schema)
             printFile('----------------------------------------------------\n', f)
             printFile(f'SIMULAZIONE NUMERO {i}\n', f)
@@ -221,8 +243,12 @@ if __name__ == "__main__":
             printFile(f'NUMERO DI VEICOLI: {numberOfVehicles}\n', f)
             printFile(f'TEMPO TOTALE DI SIMULAZIONE: {time} step\n', f)
             printFile(f'TEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(avgHeadTime, 2)} step\n', f)
+            printFile(f'VARIANZA DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(varHeadTime, 2)} step\n', f)
+            printFile(f'DEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sqrt(varHeadTime), 2)} step\n', f)
             printFile(f'TEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {maxHeadTime} step\n', f)
             printFile(f'TEMPO MEDIO PASSATO IN CODA: {round(avgTailTime, 2)} step\n', f)
+            printFile(f'VARIANZA DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(varTailTime, 2)} step\n', f)
+            printFile(f'DEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sqrt(varTailTime), 2)} step\n', f)
             printFile(f'TEMPO MASSIMO PASSATO IN CODA: {maxTailTime} step\n', f)
             printFile(f'VELOCITA MEDIA DEI VEICOLI: {round(avgSpeed, 2)} m/s\n', f)
             printFile(f'VELOCITA MASSIMA DEI VEICOLI: {round(maxSpeed, 2)} m/s\n', f)
