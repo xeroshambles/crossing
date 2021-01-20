@@ -3,7 +3,7 @@ import os
 import main
 from math import sqrt
 from multiprocessing import Pool
-import matplotlib
+#import matplotlib
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -30,13 +30,40 @@ def printFile(s, f):
     print(s, file=f)
 
 
+def checkInput(d, def_string, ask_string, error_string):
+    i = 0
+    while i <= 0:
+        t = input(def_string)
+        if t == '':
+            i = d  # default
+            print(ask_string)
+        else:
+            try:
+                i = int(t)
+            except:
+                print(error_string)
+                i = 0
+                continue
+    return i
+
+mode = 'auto'
+diffSim = 4
+repeatSim = 10
+numberOfVehicles = [50, 100, 200, 500]
+
 if __name__ == "__main__":
     choice = ''
     schema = 'n'
+    default = ['d', 'dati']
     while choice not in ['d', 'D', 'g', 'G']:
-        choice = input('\nVuoi raccogliere dati o avere una visualizzazione grafica? (d = dati, g = grafica): ')
+        if mode == 'auto':
+            choice = default[0]
+        else:
+            choice = input('\nVuoi raccogliere dati o avere una visualizzazione grafica? (d = dati, g = grafica): ')
         if choice not in ['d', 'D', 'g', 'G']:
-            print('\nInserire un carattere tra d e g!')
+            choice = default[0]
+            print(f'\nUtilizzo la configurazione di default ({default[1]})')
+            #print('\nInserire un carattere tra d e g!')
     if choice in ['d', 'D']:
         sumoBinary = checkBinary('sumo')
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
@@ -49,28 +76,33 @@ if __name__ == "__main__":
             if choice not in ['s', 'S', 'n', 'N']:
                 print('\nInserire un carattere tra s e n!')
         schema = choice
-    diffSim = 0
-    while diffSim <= 0:
-        diffSim = int(input('\nInserire il numero di simulazioni diverse: '))
-        if diffSim <= 0:
-            print('\nInserire un numero di simulazioni positivo!')
+    if mode != 'auto':
+        diffSim = checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
+                           f'\nUtilizzo default ({4}) numero di run diverse...',
+                           '\nInserire un numero di simulazioni positivo!')
+    else:
+        print(f'\nEseguo {diffSim} simulazioni differenti...')
     port = 60000
     for i in range(1, diffSim + 1):
         with open(f"output_batch_{i}.txt", "w") as f:
-            repeatSim = 0
-            while repeatSim <= 0:
-                repeatSim = int(input(f'\nInserire il numero di esecuzioni della simulazione {i}: '))
-                if repeatSim <= 0:
-                    print('\nInserire un numero di simulazioni positivo!')
-            numberOfVehicles = 0
-            while numberOfVehicles <= 0:
-                numberOfVehicles = int(input(f'\nInserire il numero di veicoli nella simulazione {i}: '))
-                if numberOfVehicles <= 0:
-                    print('\nInserire un numero di veicoli positivo!')
+            if mode != 'auto':
+                repeatSim = checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
+                                       f'\nUtilizzo default ({10}) numero di stesse run...',
+                                       '\nInserire un numero di simulazioni positivo!')
+            else:
+                print(f'\nEseguo {repeatSim} simulazioni identiche in parallelo...')
+            if mode != 'auto':
+                numberOfVehicles[i - 1] = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
+                                              f'\nUtilizzo default ({50}) veicoli...',
+                                              '\nInserire un numero di veicoli positivo!')
+            else:
+                print(f'\nUtilizzo {numberOfVehicles[i - 1]} veicoli...')
+
+
             pool = Pool(processes=repeatSim)
             pool_arr = []
             for j in range(0, repeatSim):
-                pool_arr.append(pool.apply_async(main.run, (numberOfVehicles, schema, port, sumoCmd)))
+                pool_arr.append(pool.apply_async(main.run, (numberOfVehicles[i-1], schema, port, sumoCmd)))
                 port += 1
             pool.close()
             totalTimeArr = []
@@ -91,9 +123,9 @@ if __name__ == "__main__":
             for j in range(0, repeatSim):
                 ret = pool_arr[j].get()
                 printFile('----------------------------------------------------\n', f)
-                printFile(f'SIMULAZIONE NUMERO {i}:{j}\n', f)
+                printFile(f'SIMULAZIONE NUMERO {i}:{j + 1}\n', f)
                 printFile('----------------------------------------------------\n', f)
-                printFile(f'NUMERO DI VEICOLI: {numberOfVehicles}\n', f)
+                printFile(f'NUMERO DI VEICOLI: {numberOfVehicles[i-1]}\n', f)
                 printFile(f'TEMPO TOTALE DI SIMULAZIONE: {ret[0]} step\n', f)
                 totalTimeArr.append(ret[0])
                 printFile(f'TEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(ret[1], 2)} step\n', f)
@@ -122,7 +154,7 @@ if __name__ == "__main__":
                 meanTailLengthArr.append(ret[9])
                 printFile(f'LUNGHEZZA MASSIMA DELLE CODE: {round(ret[10], 2)} auto\n', f)
                 maxTailLengthArr.append(ret[10])
-                printFile(f'NUMERO DI VEICOLI FERMI: {ret[11]} ({round(ret[11] / numberOfVehicles * 100, 2)}%)\n', f)
+                printFile(f'NUMERO DI VEICOLI FERMI: {ret[11]} ({round(ret[11] / numberOfVehicles[i-1] * 100, 2)}%)\n', f)
                 nStoppedVehiclesArr.append(ret[11])
                 printFile(f'THROUGHPUT MEDIO: {round(ret[12], 2)}\n', f)
                 meanThroughputArr.append(ret[12])
@@ -144,5 +176,5 @@ if __name__ == "__main__":
             printFile(f'VELOCITA MASSIMA DEI VEICOLI: {round(sum(maxSpeedArr) / len(maxSpeedArr), 2)} m/s\n', f)
             printFile(f'LUNGHEZZA MEDIA DELLE CODE: {round(sum(meanTailLengthArr) / len(meanTailLengthArr), 2)} auto\n', f)
             printFile(f'LUNGHEZZA MASSIMA DELLE CODE: {round(sum(maxTailLengthArr) / len(maxTailLengthArr), 2)} auto\n', f)
-            printFile(f'NUMERO DI VEICOLI FERMI: {sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)} ({round((sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)) / numberOfVehicles * 100, 2)}%)\n', f)
+            printFile(f'NUMERO DI VEICOLI FERMI: {sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)} ({round((sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)) / numberOfVehicles[i-1] * 100, 2)}%)\n', f)
             printFile(f'THROUGHPUT MEDIO: {round(sum(meanThroughputArr) / len(meanThroughputArr), 2)}\n', f)
