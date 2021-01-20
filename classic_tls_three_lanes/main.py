@@ -24,9 +24,10 @@ for i in node_ids:
         lanes.append(f'e0{junction_id}_{"0" if i < 12 else ""}{i}_{lane}')
 
 
-def run(numberOfVehicles, schema):
+def run(numberOfVehicles, schema, port, sumoCmd):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
+    traci.start(sumoCmd, port=port)
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
     throughputs_per_lane = {}  # dizionario dei throughput misurati per ogni lane per ogni step
@@ -185,6 +186,8 @@ def run(numberOfVehicles, schema):
         # print(f'Mean tp for lane {lane}: {sum(throughputs_per_lane[lane]) / len(throughputs_per_lane[lane])}')
         meanTPPerLane.append(sum(throughputs_per_lane[lane]) / len(throughputs_per_lane[lane]))
 
+    traci.close()
+
     return totalTime, meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime, \
            max(tailTimes), sum(meanSpeeds) / len(meanSpeeds), maxSpeed, sum(meanTailLength) / len(meanTailLength), \
            maxTail, sum(nStoppedVehicles), sum(meanTPPerLane) / len(meanTPPerLane)
@@ -218,6 +221,7 @@ if __name__ == "__main__":
         numberOfSimulations = int(input('\nInserire il numero di simulazioni: '))
         if numberOfSimulations <= 0:
             print('\nInserire un numero di simulazioni positivo!')
+    port = 60000
     with open("output.txt", "w") as f:
         for i in range(1, numberOfSimulations + 1):
             numberOfVehicles = 0
@@ -225,9 +229,9 @@ if __name__ == "__main__":
                 numberOfVehicles = int(input(f'\nInserire il numero di veicoli nella simulazione {i}: '))
                 if numberOfVehicles <= 0:
                     print('\nInserire un numero di veicoli positivo!')
-            traci.start(sumoCmd)
             time, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, maxSpeed, \
-            meanTailLength, maxTailLength, nStoppedVehicles, meanThroughput = run(numberOfVehicles, schema)
+            meanTailLength, maxTailLength, nStoppedVehicles, meanThroughput = run(numberOfVehicles, schema, port,
+                                                                                  sumoCmd)
             printFile('----------------------------------------------------\n', f)
             printFile(f'SIMULAZIONE NUMERO {i}\n', f)
             printFile('----------------------------------------------------\n', f)
@@ -251,4 +255,3 @@ if __name__ == "__main__":
                 f'NUMERO DI VEICOLI FERMI: {nStoppedVehicles} ({round(nStoppedVehicles / numberOfVehicles * 100, 2)}%)\n',
                 f)
             printFile(f'THROUGHPUT MEDIO: {round(meanThroughput, 2)}\n', f)
-            traci.close()
