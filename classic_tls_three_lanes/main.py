@@ -24,10 +24,10 @@ for i in node_ids:
         lanes.append(f'e0{junction_id}_{"0" if i < 12 else ""}{i}_{lane}')
 
 
-def run(numberOfVehicles, schema, port, sumoCmd):
+def run(numberOfVehicles, schema, sumoCmd):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
-    traci.start(sumoCmd, port=port)
+    traci.start(sumoCmd, numRetries=50)
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
     throughputs_per_lane = {}  # dizionario dei throughput misurati per ogni lane per ogni step
@@ -193,8 +193,21 @@ def run(numberOfVehicles, schema, port, sumoCmd):
            maxTail, sum(nStoppedVehicles), sum(meanTPPerLane) / len(meanTPPerLane)
 
 
-def printFile(s, f):
-    print(s, file=f)
+def checkInput(d, def_string, ask_string, error_string):
+    i = 0
+    while i <= 0:
+        t = input(def_string)
+        if t == '':
+            i = d  # default
+            print(ask_string)
+        else:
+            try:
+                i = int(t)
+            except:
+                print(error_string)
+                i = 0
+                continue
+    return i
 
 
 if __name__ == "__main__":
@@ -216,42 +229,36 @@ if __name__ == "__main__":
             if choice not in ['s', 'S', 'n', 'N']:
                 print('\nInserire un carattere tra s e n!')
         schema = choice
-    numberOfSimulations = 0
-    while numberOfSimulations <= 0:
-        numberOfSimulations = int(input('\nInserire il numero di simulazioni: '))
-        if numberOfSimulations <= 0:
-            print('\nInserire un numero di simulazioni positivo!')
+    numberOfSimulations = checkInput(1, '\nInserire il numero di simulazioni: ',
+                                     f'\nUtilizzo una simulazione come default...',
+                                     '\nInserire un numero di simulazioni positivo!')
     port = 60000
-    with open("output.txt", "w") as f:
-        for i in range(1, numberOfSimulations + 1):
-            numberOfVehicles = 0
-            while numberOfVehicles <= 0:
-                numberOfVehicles = int(input(f'\nInserire il numero di veicoli nella simulazione {i}: '))
-                if numberOfVehicles <= 0:
-                    print('\nInserire un numero di veicoli positivo!')
-            time, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, maxSpeed, \
-            meanTailLength, maxTailLength, nStoppedVehicles, meanThroughput = run(numberOfVehicles, schema, port,
-                                                                                  sumoCmd)
-            printFile('----------------------------------------------------\n', f)
-            printFile(f'SIMULAZIONE NUMERO {i}\n', f)
-            printFile('----------------------------------------------------\n', f)
-            printFile(f'NUMERO DI VEICOLI: {numberOfVehicles}\n', f)
-            printFile(f'TEMPO TOTALE DI SIMULAZIONE: {time} step\n', f)
-            printFile(f'TEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(meanHeadTime, 2)} step\n', f)
-            printFile(f'VARIANZA DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(varHeadTime, 2)} step\n', f)
-            printFile(
-                f'DEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sqrt(varHeadTime), 2)} step\n', f)
-            printFile(f'TEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {maxHeadTime} step\n', f)
-            printFile(f'TEMPO MEDIO PASSATO IN CODA: {round(meanTailTime, 2)} step\n', f)
-            printFile(f'VARIANZA DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(varTailTime, 2)} step\n', f)
-            printFile(
-                f'DEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sqrt(varTailTime), 2)} step\n', f)
-            printFile(f'TEMPO MASSIMO PASSATO IN CODA: {maxTailTime} step\n', f)
-            printFile(f'VELOCITA MEDIA DEI VEICOLI: {round(meanSpeed, 2)} m/s\n', f)
-            printFile(f'VELOCITA MASSIMA DEI VEICOLI: {round(maxSpeed, 2)} m/s\n', f)
-            printFile(f'LUNGHEZZA MEDIA DELLE CODE: {round(meanTailLength, 2)} auto\n', f)
-            printFile(f'LUNGHEZZA MASSIMA DELLE CODE: {round(maxTailLength, 2)} auto\n', f)
-            printFile(
-                f'NUMERO DI VEICOLI FERMI: {nStoppedVehicles} ({round(nStoppedVehicles / numberOfVehicles * 100, 2)}%)\n',
-                f)
-            printFile(f'THROUGHPUT MEDIO: {round(meanThroughput, 2)}\n', f)
+    f = open("output.txt", "w")
+    for i in range(1, numberOfSimulations + 1):
+        numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
+                                      f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
+                                      '\nInserire un numero di veicoli positivo!')
+        time, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, maxSpeed, \
+        meanTailLength, maxTailLength, nStoppedVehicles, meanThroughput = run(numberOfVehicles, schema, sumoCmd)
+        f.write('----------------------------------------------------\n')
+        f.write(f'\nSIMULAZIONE NUMERO {i}\n')
+        f.write('\n----------------------------------------------------\n')
+        f.write(f'\nNUMERO DI VEICOLI: {numberOfVehicles}\n')
+        f.write(f'\nTEMPO TOTALE DI SIMULAZIONE: {time} step\n')
+        f.write(f'\nTEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(meanHeadTime, 2)} step\n')
+        f.write(f'\nVARIANZA DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(varHeadTime, 2)} step\n')
+        f.write(
+            f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sqrt(varHeadTime), 2)} step\n')
+        f.write(f'\nTEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {maxHeadTime} step\n')
+        f.write(f'\nTEMPO MEDIO PASSATO IN CODA: {round(meanTailTime, 2)} step\n')
+        f.write(f'\nVARIANZA DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(varTailTime, 2)} step\n')
+        f.write(
+            f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sqrt(varTailTime), 2)} step\n')
+        f.write(f'\nTEMPO MASSIMO PASSATO IN CODA: {maxTailTime} step\n')
+        f.write(f'\nVELOCITA MEDIA DEI VEICOLI: {round(meanSpeed, 2)} m/s\n')
+        f.write(f'\nVELOCITA MASSIMA DEI VEICOLI: {round(maxSpeed, 2)} m/s\n')
+        f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(meanTailLength, 2)} auto\n')
+        f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(maxTailLength, 2)} auto\n')
+        f.write(
+            f'\nNUMERO DI VEICOLI FERMI: {nStoppedVehicles} ({round(nStoppedVehicles / numberOfVehicles * 100, 2)}%)\n')
+        f.write(f'\nTHROUGHPUT MEDIO: {round(meanThroughput, 2)}\n\n')
