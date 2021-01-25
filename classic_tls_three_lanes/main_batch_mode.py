@@ -15,15 +15,18 @@ else:
 from sumolib import checkBinary  # noqa
 import traci  # noqa
 
-config_file = "intersection.sumocfg"
-mode = 'auto'
-repeatSim = 10
-numberOfVehicles = [50, 100, 200, 500]
-diffSim = len(numberOfVehicles)
-num_measures = 15
+config_file = "intersection.sumocfg"  # file di configurazione della simulazione
+mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
+repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
+numberOfVehicles = [50, 100, 200, 500]  # lista contenente il numero di veicoli per ogni simulazione diversa
+diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
+period = 10  # tempo di valutazione del throughput del sistema incrocio
+num_measures = 15  # numero di misure effettuate nella simulazione
 
 
 def checkInput(d, def_string, ask_string, error_string):
+    """Funzione che verifica se l'input dell'utente è corretto"""
+
     i = 0
     while i <= 0:
         t = input(def_string)
@@ -37,20 +40,14 @@ def checkInput(d, def_string, ask_string, error_string):
                 print(error_string)
                 i = 0
                 continue
+            if i <= 0:
+                print(error_string)
     return i
 
 
-def autolabel(rects):
-    for rect in rects:
-        height = rect.get_height()
-        ax.annotate('{}'.format(height),
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, 3),  # 3 points vertical offset
-                    textcoords="offset points",
-                    ha='center', va='bottom')
-
-
 if __name__ == "__main__":
+    """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
+
     choice = ''
     schema = 'n'
     default = ['d', 'dati']
@@ -157,6 +154,7 @@ if __name__ == "__main__":
             nStoppedVehiclesArr.append(ret[11])
             f.write(f'\nTHROUGHPUT MEDIO: {round(ret[12], 2)}\n\n')
             meanThroughputArr.append(ret[12])
+        f.close()
         hists_per_sims[0].append(round(sum(totalTimeArr) / len(totalTimeArr), 2))
         hists_per_sims[1].append(round(sum(meanHeadTimeArr) / len(meanHeadTimeArr), 2))
         hists_per_sims[2].append(round(sum(varHeadTimeArr) / len(varHeadTimeArr), 2))
@@ -197,9 +195,9 @@ if __name__ == "__main__":
         # f.write(
         #     f'\nNUMERO DI VEICOLI FERMI: {sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)} ({round((sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)) / numberOfVehicles[i - 1] * 100, 2)}%)\n')
         # f.write(f'\nTHROUGHPUT MEDIO: {round(sum(meanThroughputArr) / len(meanThroughputArr), 2)}\n\n')
-        f.close()
+        # f.close()
 
-    """Mostro a schermo l'istogramma con le misure medie per ogni simulazione"""
+    """Mostro l'istogramma con le misure medie per ogni simulazione"""
     r = np.arange(len(hists_per_sims[0]))
     width = 0.01
     fig, ax = plt.subplots()
@@ -218,9 +216,18 @@ if __name__ == "__main__":
     rect12 = ax.bar(r + 4 * width, hists_per_sims[11], width, color='#486246', label='Lunghezza media delle code')
     rect13 = ax.bar(r + 5 * width, hists_per_sims[12], width, color='#1E6153', label='Lunghezza massima delle code')
     rect14 = ax.bar(r + 6 * width, hists_per_sims[13], width, color='#D0D1E6', label='Numero di veicoli fermi')
-    rect15 = ax.bar(r + 7 * width, hists_per_sims[14], width, color='#3F170D', label='Throughput medio (veicoli/s)')
     ax.set_title('Valori medi delle simulazioni effettuate')
     ax.set_xticks(r)
     ax.set_xticklabels(labels_per_sims)
     lgd = ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.savefig('results.png', bbox_inches='tight')
+    plt.savefig('results_batch.png', bbox_inches='tight')
+
+    """Mostro il grafico del throughput separato per via di valori molto piccoli"""
+    r = np.arange(len(hists_per_sims[14]))
+    width = 0.05
+    fig_tp, ax = plt.subplots()
+    rect15 = ax.bar(r, hists_per_sims[14], width, color='#FF5733', label=f'Throughput medio (veicoli / {period} step)')
+    ax.set_xticks(r)
+    ax.set_xticklabels(labels_per_sims)
+    lgd_tp = ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.savefig('throughput_batch.png', bbox_inches='tight')
