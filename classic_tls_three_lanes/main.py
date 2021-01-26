@@ -2,8 +2,7 @@ import sys
 import os
 import random
 from math import sqrt
-import matplotlib.pyplot as plt
-import numpy as np
+import output
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -29,7 +28,7 @@ for i in node_ids:
         lanes.append(f'e0{junction_id}_{"0" if i < 12 else ""}{i}_{lane}')
 
 
-def get_lane_from_edges(node_ids, start, end):
+def getLaneFromEdges(node_ids, start, end):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione"""
 
@@ -99,7 +98,7 @@ def run(numberOfVehicles, schema, sumoCmd):
         vehicles[idV] = vehicle
         start = random.choice(node_ids)
         end = random.choice([x for x in node_ids if x != start])
-        lane = get_lane_from_edges(node_ids, start, end)
+        lane = getLaneFromEdges(node_ids, start, end)
         traci.route.add(f'route_{n}', [f'e{"0" if start != 12 else ""}{start}_0{junction_id}',
                                        f'e0{junction_id}_{"0" if end != 12 else ""}{end}'])
         traci.vehicle.add(idV, f'route_{n}', departLane=lane)
@@ -204,8 +203,8 @@ def run(numberOfVehicles, schema, sumoCmd):
                         continue
     if totalTime % period != 0:
         for lane in tails_per_lane:
-                serving[lane].append(counter_serving[lane])
-                served[lane].append(counter_served[lane])
+            serving[lane].append(counter_serving[lane])
+            served[lane].append(counter_served[lane])
 
     """Salvo tutti i risultati della simulazione e li ritorno."""
     for veh in vehicles:
@@ -311,28 +310,10 @@ if __name__ == "__main__":
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
         totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, maxSpeed, \
         meanTailLength, maxTailLength, nStoppedVehicles, meanThroughput = run(numberOfVehicles, schema, sumoCmd)
-        f.write('----------------------------------------------------\n')
-        f.write(f'\nSIMULAZIONE NUMERO {i}\n')
-        f.write('\n----------------------------------------------------\n')
-        f.write(f'\nNUMERO DI VEICOLI: {numberOfVehicles}\n')
-        f.write(f'\nTEMPO TOTALE DI SIMULAZIONE: {totalTime} step\n')
-        f.write(f'\nTEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(meanHeadTime, 2)} step\n')
-        f.write(f'\nVARIANZA DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(varHeadTime, 2)} step\n')
-        f.write(
-            f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sqrt(varHeadTime), 2)} step\n')
-        f.write(f'\nTEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {maxHeadTime} step\n')
-        f.write(f'\nTEMPO MEDIO PASSATO IN CODA: {round(meanTailTime, 2)} step\n')
-        f.write(f'\nVARIANZA DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(varTailTime, 2)} step\n')
-        f.write(
-            f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sqrt(varTailTime), 2)} step\n')
-        f.write(f'\nTEMPO MASSIMO PASSATO IN CODA: {maxTailTime} step\n')
-        f.write(f'\nVELOCITA MEDIA DEI VEICOLI: {round(meanSpeed, 2)} m/s\n')
-        f.write(f'\nVELOCITA MASSIMA DEI VEICOLI: {round(maxSpeed, 2)} m/s\n')
-        f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(meanTailLength, 2)} auto\n')
-        f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(maxTailLength, 2)} auto\n')
-        f.write(
-            f'\nNUMERO DI VEICOLI FERMI: {nStoppedVehicles} ({round(nStoppedVehicles / numberOfVehicles * 100, 2)}%)\n')
-        f.write(f'\nTHROUGHPUT MEDIO: {round(meanThroughput, 2)}\n\n')
+        output.writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime,
+                                   meanTailTime, varTailTime, maxTailTime, meanSpeed, maxSpeed, meanTailLength,
+                                   maxTailLength, nStoppedVehicles,
+                                   meanThroughput)
         hists_per_sims[0].append(round(totalTime, 2))
         hists_per_sims[1].append(round(meanHeadTime, 2))
         hists_per_sims[2].append(round(varHeadTime, 2))
@@ -350,37 +331,4 @@ if __name__ == "__main__":
         hists_per_sims[14].append(round(meanThroughput, 2))
     f.close()
 
-    """Mostro a schermo l'istogramma con le misure medie per ogni simulazione"""
-    r = np.arange(len(hists_per_sims[0]))
-    width = 0.01
-    fig, ax = plt.subplots()
-    rect1 = ax.bar(r - 7 * width, hists_per_sims[0], width, color='#FF5733', label='Tempo totale (s)')
-    rect2 = ax.bar(r - 6 * width, hists_per_sims[1], width, color='#FFF933', label='Tempo medio in testa (s)')
-    rect3 = ax.bar(r - 5 * width, hists_per_sims[2], width, color='#9FFF33', label='Varianza tempo in testa (s)')
-    rect4 = ax.bar(r - 4 * width, hists_per_sims[3], width, color='#33FF3C', label='Deviazione standard tempo in '
-                                                                                   'testa (s)')
-    rect5 = ax.bar(r - 3 * width, hists_per_sims[4], width, color='#33FFC7', label='Tempo massimo in testa (s)')
-    rect6 = ax.bar(r - 2 * width, hists_per_sims[5], width, color='#33A5FF', label='Tempo medio in coda (s)')
-    rect7 = ax.bar(r - width, hists_per_sims[6], width, color='#3340FF', label='Varianza tempo in coda (s)')
-    rect8 = ax.bar(r, hists_per_sims[7], width, color='#9B33FF', label='Deviazione standard tempo in coda (s)')
-    rect9 = ax.bar(r + width, hists_per_sims[8], width, color='#E633FF', label='Tempo massimo in coda (s)')
-    rect10 = ax.bar(r + 2 * width, hists_per_sims[9], width, color='#FF33B3', label='Velocità media (m/s)')
-    rect11 = ax.bar(r + 3 * width, hists_per_sims[10], width, color='#FF334D', label='Velocità massima (m/s)')
-    rect12 = ax.bar(r + 4 * width, hists_per_sims[11], width, color='#486246', label='Lunghezza media delle code')
-    rect13 = ax.bar(r + 5 * width, hists_per_sims[12], width, color='#1E6153', label='Lunghezza massima delle code')
-    rect14 = ax.bar(r + 6 * width, hists_per_sims[13], width, color='#D0D1E6', label='Numero di veicoli fermi')
-    ax.set_title('Valori medi delle simulazioni effettuate')
-    ax.set_xticks(r)
-    ax.set_xticklabels(labels_per_sims)
-    lgd = ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.savefig('results_no_batch.png', bbox_inches='tight')
-
-    """Mostro il grafico del throughput separato per via di valori molto piccoli"""
-    r = np.arange(len(hists_per_sims[14]))
-    width = 0.05
-    fig_tp, ax = plt.subplots()
-    rect15 = ax.bar(r, hists_per_sims[14], width, color='#FF5733', label=f'Throughput medio (veicoli / {period} step)')
-    ax.set_xticks(r)
-    ax.set_xticklabels(labels_per_sims)
-    lgd_tp = ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.savefig('throughput_no_batch.png', bbox_inches='tight')
+    output.histPerMeasures(hists_per_sims, labels_per_sims, period)

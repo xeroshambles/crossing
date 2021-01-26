@@ -3,8 +3,7 @@ import os
 import main
 from math import sqrt
 from multiprocessing import Pool
-import matplotlib.pyplot as plt
-import numpy as np
+import output
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -18,7 +17,7 @@ import traci  # noqa
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
 repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-numberOfVehicles = [50, 100, 200, 500]  # lista contenente il numero di veicoli per ogni simulazione diversa
+numberOfVehicles = [10, 15, 20, 25]  # lista contenente il numero di veicoli per ogni simulazione diversa
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 num_measures = 15  # numero di misure effettuate nella simulazione
@@ -118,41 +117,22 @@ if __name__ == "__main__":
         meanThroughputArr = []
         for j in range(0, repeatSim):
             ret = pool_arr[j].get()
-            f.write('----------------------------------------------------\n')
-            f.write(f'\nSIMULAZIONE NUMERO {i}:{j + 1}\n')
-            f.write('\n----------------------------------------------------\n')
-            f.write(f'\nNUMERO DI VEICOLI: {numberOfVehicles[i - 1]}\n')
-            f.write(f'\nTEMPO TOTALE DI SIMULAZIONE: {ret[0]} step\n')
+            output.writeMeasuresToFile(f, f'{i}:{j + 1}', numberOfVehicles[i - 1], ret[0], ret[1], ret[2], ret[3],
+                                       ret[4], ret[5], ret[6], ret[7], ret[8], ret[9], ret[10], ret[11], ret[12])
             totalTimeArr.append(ret[0])
-            f.write(f'\nTEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(ret[1], 2)} step\n')
             meanHeadTimeArr.append(ret[1])
-            f.write(f'\nVARIANZA DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(ret[2], 2)} step\n')
             varHeadTimeArr.append(ret[2])
-            f.write(
-                f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sqrt(ret[2]), 2)} step\n')
             stDevHeadTimeArr.append(sqrt(ret[2]))
-            f.write(f'\nTEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {ret[3]} step\n')
             maxHeadTimeArr.append(ret[3])
-            f.write(f'\nTEMPO MEDIO PASSATO IN CODA: {round(ret[4], 2)} step\n')
             meanTailTimeArr.append(ret[4])
-            f.write(f'\nVARIANZA DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(ret[5], 2)} step\n')
             varTailTimeArr.append(ret[5])
-            f.write(
-                f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sqrt(ret[5]), 2)} step\n')
             stDevTailTimeArr.append(sqrt(ret[5]))
-            f.write(f'\nTEMPO MASSIMO PASSATO IN CODA: {ret[6]} step\n')
             maxTailTimeArr.append(ret[6])
-            f.write(f'\nVELOCITA MEDIA DEI VEICOLI: {round(ret[7], 2)} m/s\n')
             meanSpeedArr.append(ret[7])
-            f.write(f'\nVELOCITA MASSIMA DEI VEICOLI: {round(ret[8], 2)} m/s\n')
             maxSpeedArr.append(ret[8])
-            f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(ret[9], 2)} auto\n')
             meanTailLengthArr.append(ret[9])
-            f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(ret[10], 2)} auto\n')
             maxTailLengthArr.append(ret[10])
-            f.write(f'\nNUMERO DI VEICOLI FERMI: {ret[11]} ({round(ret[11] / numberOfVehicles[i - 1] * 100, 2)}%)\n')
             nStoppedVehiclesArr.append(ret[11])
-            f.write(f'\nTHROUGHPUT MEDIO: {round(ret[12], 2)}\n\n')
             meanThroughputArr.append(ret[12])
         f.close()
         hists_per_sims[0].append(round(sum(totalTimeArr) / len(totalTimeArr), 2))
@@ -197,37 +177,4 @@ if __name__ == "__main__":
         # f.write(f'\nTHROUGHPUT MEDIO: {round(sum(meanThroughputArr) / len(meanThroughputArr), 2)}\n\n')
         # f.close()
 
-    """Mostro l'istogramma con le misure medie per ogni simulazione"""
-    r = np.arange(len(hists_per_sims[0]))
-    width = 0.01
-    fig, ax = plt.subplots()
-    rect1 = ax.bar(r - 7 * width, hists_per_sims[0], width, color='#FF5733', label='Tempo totale (s)')
-    rect2 = ax.bar(r - 6 * width, hists_per_sims[1], width, color='#FFF933', label='Tempo medio in testa (s)')
-    rect3 = ax.bar(r - 5 * width, hists_per_sims[2], width, color='#9FFF33', label='Varianza tempo in testa (s)')
-    rect4 = ax.bar(r - 4 * width, hists_per_sims[3], width, color='#33FF3C', label='Deviazione standard tempo in '
-                                                                                   'testa (s)')
-    rect5 = ax.bar(r - 3 * width, hists_per_sims[4], width, color='#33FFC7', label='Tempo massimo in testa (s)')
-    rect6 = ax.bar(r - 2 * width, hists_per_sims[5], width, color='#33A5FF', label='Tempo medio in coda (s)')
-    rect7 = ax.bar(r - width, hists_per_sims[6], width, color='#3340FF', label='Varianza tempo in coda (s)')
-    rect8 = ax.bar(r, hists_per_sims[7], width, color='#9B33FF', label='Deviazione standard tempo in coda (s)')
-    rect9 = ax.bar(r + width, hists_per_sims[8], width, color='#E633FF', label='Tempo massimo in coda (s)')
-    rect10 = ax.bar(r + 2 * width, hists_per_sims[9], width, color='#FF33B3', label='Velocità media (m/s)')
-    rect11 = ax.bar(r + 3 * width, hists_per_sims[10], width, color='#FF334D', label='Velocità massima (m/s)')
-    rect12 = ax.bar(r + 4 * width, hists_per_sims[11], width, color='#486246', label='Lunghezza media delle code')
-    rect13 = ax.bar(r + 5 * width, hists_per_sims[12], width, color='#1E6153', label='Lunghezza massima delle code')
-    rect14 = ax.bar(r + 6 * width, hists_per_sims[13], width, color='#D0D1E6', label='Numero di veicoli fermi')
-    ax.set_title('Valori medi delle simulazioni effettuate')
-    ax.set_xticks(r)
-    ax.set_xticklabels(labels_per_sims)
-    lgd = ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.savefig('results_batch.png', bbox_inches='tight')
-
-    """Mostro il grafico del throughput separato per via di valori molto piccoli"""
-    r = np.arange(len(hists_per_sims[14]))
-    width = 0.05
-    fig_tp, ax = plt.subplots()
-    rect15 = ax.bar(r, hists_per_sims[14], width, color='#FF5733', label=f'Throughput medio (veicoli / {period} step)')
-    ax.set_xticks(r)
-    ax.set_xticklabels(labels_per_sims)
-    lgd_tp = ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.savefig('throughput_batch.png', bbox_inches='tight')
+    output.histPerMeasures(hists_per_sims, labels_per_sims, period)
