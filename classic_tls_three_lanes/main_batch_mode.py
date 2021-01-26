@@ -17,10 +17,9 @@ import traci  # noqa
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
 repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-numberOfVehicles = [10, 15, 20, 25]  # lista contenente il numero di veicoli per ogni simulazione diversa
+numberOfVehicles = [15, 20, 25, 30]  # lista contenente il numero di veicoli per ogni simulazione diversa
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 period = 10  # tempo di valutazione del throughput del sistema incrocio
-num_measures = 15  # numero di misure effettuate nella simulazione
 
 
 def checkInput(d, def_string, ask_string, error_string):
@@ -77,12 +76,62 @@ if __name__ == "__main__":
                              '\nInserire un numero di simulazioni positivo!')
     else:
         print(f'\nEseguo {diffSim} simulazioni differenti...')
-    hists_per_sims = []
-    for i in range(0, num_measures):
-        hists_per_sims.append([])
+
+    measures = {}
+    measures['total_time'] = []
+    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#FF5733', 'title': 'total_time',
+                                   'values': []})
+    measures['head_time'] = []
+    measures['head_time'].append(
+        {'label': 'Tempo medio in testa (s)', 'color': '#FFF933', 'title': 'mean_head_time', 'values': []})
+    measures['head_time'].append(
+        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#9FFF33', 'title': 'st_dev_head_time',
+         'values': []})
+    measures['head_time'].append(
+        {'label': 'Massimo tempo in testa (s)', 'color': '#33FF3C', 'title': 'max_head_time', 'values': []})
+    measures['tail_time'] = []
+    measures['tail_time'].append(
+        {'label': 'Tempo medio in coda (s)', 'color': '#FFF933', 'title': 'mean_tail_time', 'values': []})
+    measures['tail_time'].append(
+        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#9FFF33', 'title': 'st_dev_tail_time',
+         'values': []})
+    measures['tail_time'].append(
+        {'label': 'Massimo tempo in coda (s)', 'color': '#33FF3C', 'title': 'max_tail_time', 'values': []})
+    measures['speed'] = []
+    measures['speed'].append(
+        {'label': 'Velocità media (m/s)', 'color': '#FFF933', 'title': 'mean_speed', 'values': []})
+    measures['speed'].append(
+        {'label': 'Deviazione standard velocità (m/s)', 'color': '#9FFF33', 'title': 'st_dev_speed',
+         'values': []})
+    measures['speed'].append(
+        {'label': 'Massima velocità (m/s)', 'color': '#33FF3C', 'title': 'max_speed', 'values': []})
+    measures['tail_length'] = []
+    measures['tail_length'].append(
+        {'label': 'Lunghezza media delle code', 'color': '#FFF933', 'title': 'mean_tail_length', 'values': []})
+    measures['tail_length'].append(
+        {'label': 'Deviazione standard lunghezza delle code', 'color': '#9FFF33', 'title': 'st_dev_tail_length',
+         'values': []})
+    measures['tail_length'].append(
+        {'label': 'Massima lunghezza delle code', 'color': '#33FF3C', 'title': 'max_tail_length', 'values': []})
+    measures['stopped_vehicles'] = []
+    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#FF5733', 'title': 'stopped_vehicles',
+                                         'values': []})
+    measures['throughput'] = []
+    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#FF5733',
+                                   'title': 'mean_throughput', 'values': []})
+
+    root = os.path.abspath(os.path.split(__file__)[0])
+    path = os.path.join(root, "output_batch")
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed..." % path)
+
     for i in range(1, diffSim + 1):
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles[i - 1]} veicoli)')
-        f = open(f"output_batch_{i}.txt", "w")
+        output_file = os.path.join(path, f'batch_{i}.txt')
+        f = open(output_file, "w")
         if mode != 'auto':
             repeatSim = checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
                                    f'\nUtilizzo default ({10}) numero di stesse run...',
@@ -110,15 +159,20 @@ if __name__ == "__main__":
         stDevTailTimeArr = []
         maxTailTimeArr = []
         meanSpeedArr = []
+        varSpeedArr = []
+        stDevSpeedArr = []
         maxSpeedArr = []
         meanTailLengthArr = []
+        varTailLengthArr = []
+        stDevTailLengthArr = []
         maxTailLengthArr = []
         nStoppedVehiclesArr = []
         meanThroughputArr = []
         for j in range(0, repeatSim):
             ret = pool_arr[j].get()
             output.writeMeasuresToFile(f, f'{i}:{j + 1}', numberOfVehicles[i - 1], ret[0], ret[1], ret[2], ret[3],
-                                       ret[4], ret[5], ret[6], ret[7], ret[8], ret[9], ret[10], ret[11], ret[12])
+                                       ret[4], ret[5], ret[6], ret[7], ret[8], ret[9], ret[10], ret[11], ret[12],
+                                       ret[13], ret[14])
             totalTimeArr.append(ret[0])
             meanHeadTimeArr.append(ret[1])
             varHeadTimeArr.append(ret[2])
@@ -129,52 +183,45 @@ if __name__ == "__main__":
             stDevTailTimeArr.append(sqrt(ret[5]))
             maxTailTimeArr.append(ret[6])
             meanSpeedArr.append(ret[7])
-            maxSpeedArr.append(ret[8])
-            meanTailLengthArr.append(ret[9])
-            maxTailLengthArr.append(ret[10])
-            nStoppedVehiclesArr.append(ret[11])
-            meanThroughputArr.append(ret[12])
-        f.close()
-        hists_per_sims[0].append(round(sum(totalTimeArr) / len(totalTimeArr), 2))
-        hists_per_sims[1].append(round(sum(meanHeadTimeArr) / len(meanHeadTimeArr), 2))
-        hists_per_sims[2].append(round(sum(varHeadTimeArr) / len(varHeadTimeArr), 2))
-        hists_per_sims[3].append(round(sum(stDevHeadTimeArr) / len(stDevHeadTimeArr), 2))
-        hists_per_sims[4].append(round(sum(maxHeadTimeArr) / len(maxHeadTimeArr), 2))
-        hists_per_sims[5].append(round(sum(meanTailTimeArr) / len(meanTailTimeArr), 2))
-        hists_per_sims[6].append(round(sum(varTailTimeArr) / len(varTailTimeArr), 2))
-        hists_per_sims[7].append(round(sum(stDevTailTimeArr) / len(stDevTailTimeArr), 2))
-        hists_per_sims[8].append(round(sum(maxTailTimeArr) / len(maxTailTimeArr), 2))
-        hists_per_sims[9].append(round(sum(meanSpeedArr) / len(meanSpeedArr), 2))
-        hists_per_sims[10].append(round(sum(maxSpeedArr) / len(maxSpeedArr), 2))
-        hists_per_sims[11].append(round(sum(meanTailLengthArr) / len(meanTailLengthArr), 2))
-        hists_per_sims[12].append(round(sum(maxTailTimeArr) / len(maxTailTimeArr), 2))
-        hists_per_sims[13].append(round(sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr), 2))
-        hists_per_sims[14].append(round(sum(meanThroughputArr) / len(meanThroughputArr), 2))
-        # f.write('\n----------------------------------------------------\n')
-        # f.write(f'\nVALORI MEDI\n')
-        # f.write('\n----------------------------------------------------\n')
-        # f.write(f'\nTEMPO TOTALE DI SIMULAZIONE: {round(sum(totalTimeArr) / len(totalTimeArr))} step\n')
-        # f.write(
-        #     f'\nTEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(sum(meanHeadTimeArr) / len(meanHeadTimeArr), 2)} step\n')
-        # f.write(
-        #     f'\nVARIANZA DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sum(varHeadTimeArr) / len(varHeadTimeArr), 2)} step\n')
-        # f.write(
-        #     f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sum(stDevHeadTimeArr) / len(stDevHeadTimeArr), 2)} step\n')
-        # f.write(
-        #     f'\nTEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {round(sum(maxHeadTimeArr) / len(maxHeadTimeArr), 2)} step\n')
-        # f.write(f'\nTEMPO MEDIO PASSATO IN CODA: {round(sum(meanTailTimeArr) / len(meanTailTimeArr), 2)} step\n')
-        # f.write(
-        #     f'\nVARIANZA DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sum(varTailTimeArr) / len(varTailTimeArr), 2)} step\n')
-        # f.write(
-        #     f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sum(stDevTailTimeArr) / len(stDevTailTimeArr), 2)} step\n')
-        # f.write(f'\nTEMPO MASSIMO PASSATO IN CODA: {round(sum(maxTailTimeArr) / len(maxTailTimeArr), 2)} step\n')
-        # f.write(f'\nVELOCITA MEDIA DEI VEICOLI: {round(sum(meanSpeedArr) / len(meanSpeedArr), 2)} m/s\n')
-        # f.write(f'\nVELOCITA MASSIMA DEI VEICOLI: {round(sum(maxSpeedArr) / len(maxSpeedArr), 2)} m/s\n')
-        # f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(sum(meanTailLengthArr) / len(meanTailLengthArr), 2)} auto\n')
-        # f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(sum(maxTailLengthArr) / len(maxTailLengthArr), 2)} auto\n')
-        # f.write(
-        #     f'\nNUMERO DI VEICOLI FERMI: {sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)} ({round((sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr)) / numberOfVehicles[i - 1] * 100, 2)}%)\n')
-        # f.write(f'\nTHROUGHPUT MEDIO: {round(sum(meanThroughputArr) / len(meanThroughputArr), 2)}\n\n')
-        # f.close()
+            varSpeedArr.append(ret[8])
+            stDevSpeedArr.append(ret[8])
+            maxSpeedArr.append(ret[9])
+            meanTailLengthArr.append(ret[10])
+            varTailLengthArr.append(ret[11])
+            stDevTailLengthArr.append(ret[11])
+            maxTailLengthArr.append(ret[12])
+            nStoppedVehiclesArr.append(ret[13])
+            meanThroughputArr.append(ret[14])
 
-    output.histPerMeasures(hists_per_sims, labels_per_sims, period)
+        measures['total_time'][0]['values'].append(round(sum(totalTimeArr) / len(totalTimeArr), 2))
+        measures['head_time'][0]['values'].append(round(sum(meanHeadTimeArr) / len(meanHeadTimeArr), 2))
+        measures['head_time'][1]['values'].append(round(sum(stDevHeadTimeArr) / len(stDevHeadTimeArr), 2))
+        measures['head_time'][2]['values'].append(round(sum(maxHeadTimeArr) / len(maxHeadTimeArr), 2))
+        measures['tail_time'][0]['values'].append(round(sum(meanTailTimeArr) / len(meanTailTimeArr), 2))
+        measures['tail_time'][1]['values'].append(round(sum(stDevTailTimeArr) / len(stDevTailTimeArr), 2))
+        measures['tail_time'][2]['values'].append(round(sum(maxTailTimeArr) / len(maxTailTimeArr), 2))
+        measures['speed'][0]['values'].append(round(sum(meanSpeedArr) / len(meanSpeedArr), 2))
+        measures['speed'][1]['values'].append(round(sum(stDevSpeedArr) / len(stDevSpeedArr), 2))
+        measures['speed'][2]['values'].append(round(sum(maxSpeedArr) / len(maxSpeedArr), 2))
+        measures['tail_length'][0]['values'].append(round(sum(meanTailLengthArr) / len(meanTailLengthArr), 2))
+        measures['tail_length'][1]['values'].append(round(sum(stDevTailLengthArr) / len(stDevTailLengthArr), 2))
+        measures['tail_length'][2]['values'].append(round(sum(maxTailTimeArr) / len(maxTailTimeArr), 2))
+        measures['stopped_vehicles'][0]['values'].append(round(sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr), 2))
+        measures['throughput'][0]['values'].append(round(sum(meanThroughputArr) / len(meanThroughputArr), 2))
+
+        f.close()
+
+    values = []
+    labels = []
+    titles = []
+    colors = []
+    arr = []
+    for k in measures:
+        arr.append(len(measures[k]))
+        titles.append(k)
+        for i in range(0, len(measures[k])):
+            values.append(measures[k][i]['values'])
+            labels.append(measures[k][i]['label'])
+            colors.append(measures[k][i]['color'])
+
+    output.histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path)

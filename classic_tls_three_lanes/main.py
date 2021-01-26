@@ -19,7 +19,6 @@ lanes = []  # lista dei nomi delle lane
 lanes_ids = [0, 2, 4]  # lista degli id delle lanes nell'incrocio
 node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell'incrocio
 period = 10  # tempo di valutazione del throughput del sistema incrocio
-num_measures = 15  # numero di misure effettuate nella simulazione
 
 """Con questo ciclo inizializzo i nomi delle lane così come sspecificate nel file intersection.net.xml"""
 for i in node_ids:
@@ -63,17 +62,19 @@ def run(numberOfVehicles, schema, sumoCmd):
     counter_served = {}  # dizionario contenente valori incrementali
     serving = {}  # dizionario dei throughput misurati per ogni lane entrante per ogni step
     served = {}  # dizionario dei throughput misurati per ogni lane uscente per ogni step
-    meanTPPerLane = []  # medie delle lunghezze delle code rilevate sulle lane entranti ad ogni step
     headTimes = []  # lista dei tempi passati in testa per ogni veicolo
     varHeadTime = 0  # varianza rispetto al tempo passato in testa
     tailTimes = []  # lista dei tempi in coda per ogni veicolo
     varTailTime = 0  # varianza rispetto al tempo passato in coda
     meanSpeeds = []  # medie delle velocità assunte dai veicoli ad ogni step
+    varSpeed = 0  # varianza rispetto alla velocità dei veicoli
     maxSpeed = -1  # velocità massima rilevata su tutti i veicoli
     nStoppedVehicles = []  # lista che dice se i veicoli si sono fermati all'incrocio o no
     meanTailLength = []  # medie delle lunghezze delle code rilevate sulle lane entranti ad ogni step
-    tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
+    varTail = 0  # varianza rispetto alla coda
     maxTail = -1  # coda massima rilevata su tutte le lane entranti
+    tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
+
     for lane in lanes:
         # calcolo la lunghezza delle code e il throughput solo per le lane entranti
         if lane[4:6] == '07':
@@ -131,9 +132,6 @@ def run(numberOfVehicles, schema, sumoCmd):
                 serving[lane].append(counter_serving[lane])
                 served[lane].append(counter_served[lane])
                 counter_serving[lane] -= counter_served[lane]
-                if counter_serving[lane] < 0:
-                    print(f"Ecco!!!, problema: {counter_serving[lane] - counter_served[lane]}")
-                counter_served[lane] = 0
         # loop per tutti i veicoli
         for veh in vehs_loaded:
             veh_current_lane = traci.vehicle.getLaneID(veh)
@@ -166,7 +164,7 @@ def run(numberOfVehicles, schema, sumoCmd):
             if veh_current_lane[1:3] == '07':
                 vehicles[veh]['isCrossing'] = 0
                 if vehicles[veh]['hasCrossed'] == 0:
-                    print(f"Veicolo {veh} è stato servito")
+                    # print(f"Veicolo {veh} è stato servito")
                     counter_served[vehicles[veh]['startingLane']] += 1
                     vehicles[veh]['hasCrossed'] = 1
                 if schema in ['s', 'S']:
@@ -181,7 +179,7 @@ def run(numberOfVehicles, schema, sumoCmd):
                 leader = traci.vehicle.getLeader(veh)
                 spawn_distance = traci.vehicle.getDistance(veh)
                 if vehicles[veh]['hasEntered'] == 0:
-                    print(f"Veicolo {veh} deve essere servito")
+                    # print(f"Veicolo {veh} deve essere servito")
                     counter_serving[veh_current_lane] += 1
                     vehicles[veh]['hasEntered'] = 1
                 if traci.vehicle.getSpeed(veh) <= 1:
@@ -226,18 +224,29 @@ def run(numberOfVehicles, schema, sumoCmd):
         varTailTime += (tailTime - meanTailTime) ** 2
     varTailTime /= len(tailTimes)
 
+    meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
+    for speed in meanSpeeds:
+        varSpeed += (speed - meanSpeed) ** 2
+    varSpeed /= len(meanSpeeds)
+
     for lane in tails_per_lane:
         meanTailLength.append(sum(tails_per_lane[lane]) / len(tails_per_lane[lane]))
         lane_max = max(tails_per_lane[lane])
         if lane_max > maxTail:
             maxTail = lane_max
 
+    meanTail = sum(meanTailLength) / len(meanTailLength)
+    for tail in meanTailLength:
+        varTail += (tail - meanTail) ** 2
+    varTail /= len(meanTailLength)
+
     instant_throughput = {}
     for lane in serving:
         instant_throughput[lane] = []
+
     mean_served = {}
     for lane in serving:
-        print(f"Serving: {serving[lane]}, Served: {served[lane]}, Lane: {lane}")
+        # print(f"Serving: {serving[lane]}, Served: {served[lane]}, Lane: {lane}")
         for i in range(0, len(serving[lane])):
             if serving[lane][i] == 0:
                 instant_throughput[lane].append(1)
@@ -249,8 +258,8 @@ def run(numberOfVehicles, schema, sumoCmd):
     traci.close()
 
     return totalTime, meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime, \
-           max(tailTimes), sum(meanSpeeds) / len(meanSpeeds), maxSpeed, sum(meanTailLength) / len(meanTailLength), \
-           maxTail, sum(nStoppedVehicles), meanTP
+           max(tailTimes), meanSpeed, varSpeed, maxSpeed, meanTail, varTail, maxTail, sum(nStoppedVehicles), \
+           meanTP
 
 
 def checkInput(d, def_string, ask_string, error_string):
@@ -299,36 +308,101 @@ if __name__ == "__main__":
     numberOfSimulations = checkInput(1, '\nInserire il numero di simulazioni: ',
                                      f'\nUtilizzo una simulazione come default...',
                                      '\nInserire un numero di simulazioni positivo!')
-    f = open("output_no_batch.txt", "w")
-    hists_per_sims = []
-    for i in range(0, num_measures):
-        hists_per_sims.append([])
+
+    measures = {}
+    measures['total_time'] = []
+    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#FF5733', 'title': 'total_time',
+                                   'values': []})
+    measures['head_time'] = []
+    measures['head_time'].append(
+        {'label': 'Tempo medio in testa (s)', 'color': '#FFF933', 'title': 'mean_head_time', 'values': []})
+    measures['head_time'].append(
+        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#9FFF33', 'title': 'st_dev_head_time',
+         'values': []})
+    measures['head_time'].append(
+        {'label': 'Massimo tempo in testa (s)', 'color': '#33FF3C', 'title': 'max_head_time', 'values': []})
+    measures['tail_time'] = []
+    measures['tail_time'].append(
+        {'label': 'Tempo medio in coda (s)', 'color': '#FFF933', 'title': 'mean_tail_time', 'values': []})
+    measures['tail_time'].append(
+        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#9FFF33', 'title': 'st_dev_tail_time',
+         'values': []})
+    measures['tail_time'].append(
+        {'label': 'Massimo tempo in coda (s)', 'color': '#33FF3C', 'title': 'max_tail_time', 'values': []})
+    measures['speed'] = []
+    measures['speed'].append(
+        {'label': 'Velocità media (m/s)', 'color': '#FFF933', 'title': 'mean_speed', 'values': []})
+    measures['speed'].append(
+        {'label': 'Deviazione standard velocità (m/s)', 'color': '#9FFF33', 'title': 'st_dev_speed',
+         'values': []})
+    measures['speed'].append(
+        {'label': 'Massima velocità (m/s)', 'color': '#33FF3C', 'title': 'max_speed', 'values': []})
+    measures['tail_length'] = []
+    measures['tail_length'].append(
+        {'label': 'Lunghezza media delle code', 'color': '#FFF933', 'title': 'mean_tail_length', 'values': []})
+    measures['tail_length'].append(
+        {'label': 'Deviazione standard lunghezza delle code', 'color': '#9FFF33', 'title': 'st_dev_tail_length',
+         'values': []})
+    measures['tail_length'].append(
+        {'label': 'Massima lunghezza delle code', 'color': '#33FF3C', 'title': 'max_tail_length', 'values': []})
+    measures['stopped_vehicles'] = []
+    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#FF5733', 'title': 'stopped_vehicles',
+                                   'values': []})
+    measures['throughput'] = []
+    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#FF5733',
+                                   'title': 'mean_throughput', 'values': []})
+
+    root = os.path.abspath(os.path.split(__file__)[0])
+    path = os.path.join(root, "output_no_batch")
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed..." % path)
+    output_file = os.path.join(path, f'no_batch.txt')
+    f = open(output_file, "w")
+
     for i in range(1, numberOfSimulations + 1):
         numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                       f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
                                       '\nInserire un numero di veicoli positivo!')
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
-        totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, maxSpeed, \
-        meanTailLength, maxTailLength, nStoppedVehicles, meanThroughput = run(numberOfVehicles, schema, sumoCmd)
+        totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, \
+        varSpeed, maxSpeed, meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput = \
+            run(numberOfVehicles, schema, sumoCmd)
         output.writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime,
-                                   meanTailTime, varTailTime, maxTailTime, meanSpeed, maxSpeed, meanTailLength,
-                                   maxTailLength, nStoppedVehicles,
-                                   meanThroughput)
-        hists_per_sims[0].append(round(totalTime, 2))
-        hists_per_sims[1].append(round(meanHeadTime, 2))
-        hists_per_sims[2].append(round(varHeadTime, 2))
-        hists_per_sims[3].append(round(sqrt(varHeadTime), 2))
-        hists_per_sims[4].append(round(maxHeadTime, 2))
-        hists_per_sims[5].append(round(meanTailTime, 2))
-        hists_per_sims[6].append(round(varTailTime, 2))
-        hists_per_sims[7].append(round(sqrt(varTailTime), 2))
-        hists_per_sims[8].append(round(maxTailTime, 2))
-        hists_per_sims[9].append(round(meanSpeed, 2))
-        hists_per_sims[10].append(round(maxSpeed, 2))
-        hists_per_sims[11].append(round(meanTailLength, 2))
-        hists_per_sims[12].append(round(maxTailTime, 2))
-        hists_per_sims[13].append(round(nStoppedVehicles, 2))
-        hists_per_sims[14].append(round(meanThroughput, 2))
+                                   meanTailTime, varTailTime, maxTailTime, meanSpeed, varSpeed, maxSpeed,
+                                   meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput)
+
+        measures['total_time'][0]['values'].append(round(totalTime, 2))
+        measures['head_time'][0]['values'].append(round(meanHeadTime, 2))
+        measures['head_time'][1]['values'].append(round(sqrt(varHeadTime), 2))
+        measures['head_time'][2]['values'].append(round(maxHeadTime, 2))
+        measures['tail_time'][0]['values'].append(round(meanTailTime, 2))
+        measures['tail_time'][1]['values'].append(round(sqrt(varTailTime), 2))
+        measures['tail_time'][2]['values'].append(round(maxTailTime, 2))
+        measures['speed'][0]['values'].append(round(meanSpeed, 2))
+        measures['speed'][1]['values'].append(round(sqrt(varSpeed), 2))
+        measures['speed'][2]['values'].append(round(maxSpeed, 2))
+        measures['tail_length'][0]['values'].append(round(meanTailLength, 2))
+        measures['tail_length'][1]['values'].append(round(sqrt(varTailLength), 2))
+        measures['tail_length'][2]['values'].append(round(maxTailLength, 2))
+        measures['stopped_vehicles'][0]['values'].append(round(nStoppedVehicles, 2))
+        measures['throughput'][0]['values'].append(round(meanThroughput, 2))
+
     f.close()
 
-    output.histPerMeasures(hists_per_sims, labels_per_sims, period)
+    values = []
+    labels = []
+    titles = []
+    colors = []
+    arr = []
+    for k in measures:
+        arr.append(len(measures[k]))
+        titles.append(k)
+        for i in range(0, len(measures[k])):
+            values.append(measures[k][i]['values'])
+            labels.append(measures[k][i]['label'])
+            colors.append(measures[k][i]['color'])
+
+    output.histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path)
