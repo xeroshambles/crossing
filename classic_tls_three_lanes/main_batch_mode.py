@@ -17,7 +17,7 @@ import traci  # noqa
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
 repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-numberOfVehicles = [15, 20, 25, 30]  # lista contenente il numero di veicoli per ogni simulazione diversa
+numberOfVehicles = [50, 100, 200, 500]  # lista contenente il numero di veicoli per ogni simulazione diversa
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         measures['throughput'][0]['values'].append(round(sum(meanThroughputArr) / len(meanThroughputArr), 2))
 
         f.close()
-
+    # print(f"Throughputs: {measures['throughput'][0]['values']}")
     values = []
     labels = []
     titles = []

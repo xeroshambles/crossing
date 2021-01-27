@@ -33,7 +33,7 @@ def writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHead
 
 
 def autolabel(rects, ax):
-    """Attach a text label above each bar in *rects*, displaying its height."""
+    """Funzione per mettere il numero sopra la barra dell'istogramma"""
     for rect in rects:
         height = rect.get_height()
         ax.annotate('{}'.format(height),
@@ -44,7 +44,7 @@ def autolabel(rects, ax):
 
 
 def histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path):
-    """Salvo su immagine l'istogramma con le misure medie per ogni simulazione"""
+    """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
     j = 0
     for i in range(0, len(arr)):

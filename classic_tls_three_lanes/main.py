@@ -129,9 +129,12 @@ def run(numberOfVehicles, schema, sumoCmd):
         for lane in tails_per_lane:
             tails_per_lane[lane].append(0)
             if totalTime % period == 0:
+                # print(f"Counter Serving: {counter_serving[lane]}, Counter Served: {counter_served[lane]}")
                 serving[lane].append(counter_serving[lane])
                 served[lane].append(counter_served[lane])
+                # print(f"Serving: {serving[lane]}, Served: {served[lane]}, Lane: {lane}")
                 counter_serving[lane] -= counter_served[lane]
+                counter_served[lane] = 0
         # loop per tutti i veicoli
         for veh in vehs_loaded:
             veh_current_lane = traci.vehicle.getLaneID(veh)
