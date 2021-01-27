@@ -1,9 +1,9 @@
 import sys
 import os
-from main import checkInput, run
 from math import sqrt
 from multiprocessing import Pool
 import output
+import importlib.util
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -14,16 +14,24 @@ else:
 from sumolib import checkBinary  # noqa
 import traci  # noqa
 
-config_file = "intersection.sumocfg"  # file di configurazione della simulazione
-mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
-repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-numberOfVehicles = [50, 100, 200, 500]  # lista contenente il numero di veicoli per ogni simulazione diversa
-diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
-period = 10  # tempo di valutazione del throughput del sistema incrocio
 
-if __name__ == "__main__":
+def main(project):
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
 
+    mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
+    repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
+    numberOfVehicles = [50, 100, 200, 500]  # lista contenente il numero di veicoli per ogni simulazione diversa
+    diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
+    period = 10  # tempo di valutazione del throughput del sistema incrocio
+
+    try:
+        module = importlib.import_module(".main", package=project)
+    except Exception:
+        print("Impossibile trovare il progetto...")
+        sys.exit(0)
+
+    config_file = os.path.join(os.path.split(__file__)[0], project,
+                               "intersection.sumocfg")  # file di configurazione della simulazione
     choice = ''
     schema = 'n'
     default = ['d', 'dati']
@@ -49,7 +57,7 @@ if __name__ == "__main__":
                 print('\nInserire un carattere tra s e n!')
         schema = choice
     if mode != 'auto':
-        diffSim = checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
+        diffSim = module.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
                              f'\nUtilizzo default ({4}) numero di run diverse...',
                              '\nInserire un numero di simulazioni positivo!')
     else:
@@ -57,49 +65,49 @@ if __name__ == "__main__":
 
     measures = {}
     measures['total_time'] = []
-    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#FF5733', 'title': 'total_time',
+    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#E6390D', 'title': 'total_time',
                                    'values': []})
     measures['head_time'] = []
     measures['head_time'].append(
-        {'label': 'Tempo medio in testa (s)', 'color': '#FFF933', 'title': 'mean_head_time', 'values': []})
+        {'label': 'Tempo medio in testa (s)', 'color': '#E6390D', 'title': 'mean_head_time', 'values': []})
     measures['head_time'].append(
-        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#9FFF33', 'title': 'st_dev_head_time',
+        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#0D14E6', 'title': 'st_dev_head_time',
          'values': []})
     measures['head_time'].append(
-        {'label': 'Massimo tempo in testa (s)', 'color': '#33FF3C', 'title': 'max_head_time', 'values': []})
+        {'label': 'Massimo tempo in testa (s)', 'color': '#10E60D', 'title': 'max_head_time', 'values': []})
     measures['tail_time'] = []
     measures['tail_time'].append(
-        {'label': 'Tempo medio in coda (s)', 'color': '#FFF933', 'title': 'mean_tail_time', 'values': []})
+        {'label': 'Tempo medio in coda (s)', 'color': '#E6390D', 'title': 'mean_tail_time', 'values': []})
     measures['tail_time'].append(
-        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#9FFF33', 'title': 'st_dev_tail_time',
+        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#0D14E6', 'title': 'st_dev_tail_time',
          'values': []})
     measures['tail_time'].append(
-        {'label': 'Massimo tempo in coda (s)', 'color': '#33FF3C', 'title': 'max_tail_time', 'values': []})
+        {'label': 'Massimo tempo in coda (s)', 'color': '#10E60D', 'title': 'max_tail_time', 'values': []})
     measures['speed'] = []
     measures['speed'].append(
-        {'label': 'Velocità media (m/s)', 'color': '#FFF933', 'title': 'mean_speed', 'values': []})
+        {'label': 'Velocità media (m/s)', 'color': '#E6390D', 'title': 'mean_speed', 'values': []})
     measures['speed'].append(
-        {'label': 'Deviazione standard velocità (m/s)', 'color': '#9FFF33', 'title': 'st_dev_speed',
+        {'label': 'Deviazione standard velocità (m/s)', 'color': '#0D14E6', 'title': 'st_dev_speed',
          'values': []})
     measures['speed'].append(
-        {'label': 'Massima velocità (m/s)', 'color': '#33FF3C', 'title': 'max_speed', 'values': []})
+        {'label': 'Massima velocità (m/s)', 'color': '#10E60D', 'title': 'max_speed', 'values': []})
     measures['tail_length'] = []
     measures['tail_length'].append(
-        {'label': 'Lunghezza media delle code', 'color': '#FFF933', 'title': 'mean_tail_length', 'values': []})
+        {'label': 'Lunghezza media delle code', 'color': '#E6390D', 'title': 'mean_tail_length', 'values': []})
     measures['tail_length'].append(
-        {'label': 'Deviazione standard lunghezza delle code', 'color': '#9FFF33', 'title': 'st_dev_tail_length',
+        {'label': 'Deviazione standard lunghezza delle code', 'color': '#0D14E6', 'title': 'st_dev_tail_length',
          'values': []})
     measures['tail_length'].append(
-        {'label': 'Massima lunghezza delle code', 'color': '#33FF3C', 'title': 'max_tail_length', 'values': []})
+        {'label': 'Massima lunghezza delle code', 'color': '#10E60D', 'title': 'max_tail_length', 'values': []})
     measures['stopped_vehicles'] = []
-    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#FF5733', 'title': 'stopped_vehicles',
+    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#E6390D', 'title': 'stopped_vehicles',
                                          'values': []})
     measures['throughput'] = []
-    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#FF5733',
+    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#E6390D',
                                    'title': 'mean_throughput', 'values': []})
 
     root = os.path.abspath(os.path.split(__file__)[0])
-    path = os.path.join(root, "output_batch")
+    path = os.path.join(root, "output_batch_" + project)
     if not os.path.exists(path):
         try:
             os.mkdir(path)
@@ -111,13 +119,13 @@ if __name__ == "__main__":
         output_file = os.path.join(path, f'batch_{i}.txt')
         f = open(output_file, "w")
         if mode != 'auto':
-            repeatSim = checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
+            repeatSim = module.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
                                    f'\nUtilizzo default ({10}) numero di stesse run...',
                                    '\nInserire un numero di simulazioni positivo!')
         else:
             print(f'\nEseguo {repeatSim} simulazioni identiche in parallelo...')
         if mode != 'auto':
-            numberOfVehicles[i - 1] = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
+            numberOfVehicles[i - 1] = module.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                                  f'\nUtilizzo default ({50}) veicoli...',
                                                  '\nInserire un numero di veicoli positivo!')
         else:
@@ -125,7 +133,7 @@ if __name__ == "__main__":
         pool = Pool(processes=repeatSim)
         pool_arr = []
         for j in range(0, repeatSim):
-            pool_arr.append(pool.apply_async(run, (numberOfVehicles[i - 1], schema, sumoCmd)))
+            pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd)))
         pool.close()
         totalTimeArr = []
         meanHeadTimeArr = []
