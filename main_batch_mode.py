@@ -27,7 +27,7 @@ def main(project):
     try:
         module = importlib.import_module(".main", package=project)
     except Exception:
-        print("Impossibile trovare il progetto...")
+        print("\nImpossibile trovare il progetto...")
         sys.exit(0)
 
     config_file = os.path.join(os.path.split(__file__)[0], project,
@@ -58,8 +58,8 @@ def main(project):
         schema = choice
     if mode != 'auto':
         diffSim = module.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
-                             f'\nUtilizzo default ({4}) numero di run diverse...',
-                             '\nInserire un numero di simulazioni positivo!')
+                                    f'\nUtilizzo default ({4}) numero di run diverse...',
+                                    '\nInserire un numero di simulazioni positivo!')
     else:
         print(f'\nEseguo {diffSim} simulazioni differenti...')
 
@@ -120,14 +120,14 @@ def main(project):
         f = open(output_file, "w")
         if mode != 'auto':
             repeatSim = module.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
-                                   f'\nUtilizzo default ({10}) numero di stesse run...',
-                                   '\nInserire un numero di simulazioni positivo!')
+                                          f'\nUtilizzo default ({10}) numero di stesse run...',
+                                          '\nInserire un numero di simulazioni positivo!')
         else:
             print(f'\nEseguo {repeatSim} simulazioni identiche in parallelo...')
         if mode != 'auto':
             numberOfVehicles[i - 1] = module.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
-                                                 f'\nUtilizzo default ({50}) veicoli...',
-                                                 '\nInserire un numero di veicoli positivo!')
+                                                        f'\nUtilizzo default ({50}) veicoli...',
+                                                        '\nInserire un numero di veicoli positivo!')
         else:
             print(f'\nUtilizzo {numberOfVehicles[i - 1]} veicoli...')
         pool = Pool(processes=repeatSim)
@@ -213,3 +213,12 @@ def main(project):
             colors.append(measures[k][i]['color'])
 
     output.histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        project = sys.argv[1]
+        if project:
+            main(project)
+    else:
+        print("\nInserire un nome di progetto da eseguire...")
