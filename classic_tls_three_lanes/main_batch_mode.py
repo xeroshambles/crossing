@@ -1,6 +1,6 @@
 import sys
 import os
-import main
+from main import checkInput, run
 from math import sqrt
 from multiprocessing import Pool
 import output
@@ -20,28 +20,6 @@ repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripe
 numberOfVehicles = [50, 100, 200, 500]  # lista contenente il numero di veicoli per ogni simulazione diversa
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 period = 10  # tempo di valutazione del throughput del sistema incrocio
-
-
-def checkInput(d, def_string, ask_string, error_string):
-    """Funzione che verifica se l'input dell'utente è corretto"""
-
-    i = 0
-    while i <= 0:
-        t = input(def_string)
-        if t == '':
-            i = d  # default
-            print(ask_string)
-        else:
-            try:
-                i = int(t)
-            except:
-                print(error_string)
-                i = 0
-                continue
-            if i <= 0:
-                print(error_string)
-    return i
-
 
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
@@ -147,7 +125,7 @@ if __name__ == "__main__":
         pool = Pool(processes=repeatSim)
         pool_arr = []
         for j in range(0, repeatSim):
-            pool_arr.append(pool.apply_async(main.run, (numberOfVehicles[i - 1], schema, sumoCmd)))
+            pool_arr.append(pool.apply_async(run, (numberOfVehicles[i - 1], schema, sumoCmd)))
         pool.close()
         totalTimeArr = []
         meanHeadTimeArr = []
@@ -170,9 +148,11 @@ if __name__ == "__main__":
         meanThroughputArr = []
         for j in range(0, repeatSim):
             ret = pool_arr[j].get()
+
             output.writeMeasuresToFile(f, f'{i}:{j + 1}', numberOfVehicles[i - 1], ret[0], ret[1], ret[2], ret[3],
                                        ret[4], ret[5], ret[6], ret[7], ret[8], ret[9], ret[10], ret[11], ret[12],
                                        ret[13], ret[14])
+
             totalTimeArr.append(ret[0])
             meanHeadTimeArr.append(ret[1])
             varHeadTimeArr.append(ret[2])

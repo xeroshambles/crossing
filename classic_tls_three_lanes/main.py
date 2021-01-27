@@ -373,6 +373,7 @@ if __name__ == "__main__":
         totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, \
         varSpeed, maxSpeed, meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput = \
             run(numberOfVehicles, schema, sumoCmd)
+
         output.writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime,
                                    meanTailTime, varTailTime, maxTailTime, meanSpeed, varSpeed, maxSpeed,
                                    meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput)
