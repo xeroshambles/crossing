@@ -141,7 +141,6 @@ def generaVeicoli():
             continue
         else:
             id_veh = "veh_" + str(i)
-            print(f"DEPART LANE: {lane}, ROUTE: route_{i}")
             traci.vehicle.add(id_veh, f'route_{i}', depart=str(r_depart), departLane=lane, departSpeed="6.944444")
             traci.vehicle.setMaxSpeed(id_veh, 6.944444)
             traci.vehicle.setSpeedMode(id_veh, 0)

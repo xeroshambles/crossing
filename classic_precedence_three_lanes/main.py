@@ -320,7 +320,7 @@ if __name__ == "__main__":
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
     else:
         sumoBinary = checkBinary('sumo-gui')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
+        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
         choice = ''
         while choice not in ['s', 'S', 'n', 'N']:
             choice = input('\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ')
