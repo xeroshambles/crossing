@@ -171,15 +171,11 @@ def run(port_t, gui, celle_per_lato):
 
     # -----------------------------------------------
 
-    sumoProcess = subprocess.Popen(
-        [sumoBinary, "-c", direct + config_sumo, "--remote-port", str(PORT), "--time-to-teleport", "-1", "-Q",
-         "--step-length", "0.001"],
-        stdout=sys.stdout,
-        stderr=sys.stderr)
+    sumoCmd = [sumoBinary, "-c", direct + config_sumo, "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
 
     # -------- dichiarazione variabili --------
 
-    traci.init(PORT)
+    traci.start(sumoCmd, numRetries=50)
     step = 0.000
     step_incr = 0.036
     generaVeicoli()  # genero veicoli

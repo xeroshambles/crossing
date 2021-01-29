@@ -361,7 +361,7 @@ if __name__ == "__main__":
         try:
             os.mkdir(path)
         except OSError:
-            print("Creation of the directory %s failed..." % path)
+            print(f"\nCreazione della cartella {path} fallita...")
     output_file = os.path.join(path, f'no_batch.txt')
     f = open(output_file, "w")
 
