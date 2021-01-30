@@ -4,90 +4,21 @@
 
 import os
 import sys
-import subprocess
 import traci
 
+if 'SUMO_HOME' in os.environ:
+    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
+    sys.path.append(tools)
+else:
+    sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-# -------- FUNZIONI --------
-
-
-# calcolo gli estremi dell'incrocio, dove sono presenti gli stop
-def stopXY(shape_temp):
-    stop_temp = []
-
-    for count in range(0, len(shape_temp) - 1):
-        if shape_temp[count][0] == shape_temp[count + 1][0]:
-            stop_temp.append(shape_temp[count][0])
-        elif shape_temp[count][1] == shape_temp[count + 1][1]:
-            stop_temp.append(shape_temp[count][1])
-
-    return stop_temp
-
-
-# calcolo i metri all'interno dell'incrocio di ogni cella della matrice
-def limiti_celle(estremi_incrocio, celle_per_lato):
-    # definisco i vettori
-    limiti_celle_X_temp = []
-    limiti_celle_Y_temp = []
-
-    # lunghezza totale incrocio nell'asse X e Y
-    lunghezza_X = estremi_incrocio[1] - estremi_incrocio[3]
-    lunghezza_Y = estremi_incrocio[0] - estremi_incrocio[2]
-
-    # lunghezza di una sola cella
-    lungh_cella_X = float(lunghezza_X) / float(celle_per_lato)
-    lungh_cella_Y = float(lunghezza_Y) / float(celle_per_lato)
-
-    for i in range(0, celle_per_lato + 1):  # scrivo sui vettori
-        limiti_celle_X_temp.append(round((estremi_incrocio[3] + (lungh_cella_X * i)), 3))
-        limiti_celle_Y_temp.append(round((estremi_incrocio[0] - (lungh_cella_Y * i)), 3))
-
-    return [limiti_celle_X_temp, limiti_celle_Y_temp]
-
-
-# ritorno le coordinate della cella nella matrice in cui si trova l'auto
-def get_cella_from_pos_auto(auto_temp, limiti_celle_X_temp, limiti_celle_Y_temp):
-    cella_X = 0
-    cella_Y = 0
-    pos = traci.vehicle.getPosition(auto_temp)
-
-    for x in range(0, len(limiti_celle_X_temp) - 1):
-        if limiti_celle_X_temp[x] <= pos[0] <= limiti_celle_X_temp[x + 1]:
-            cella_X = x
-
-    for y in range(0, len(limiti_celle_Y_temp) - 1):
-        if limiti_celle_Y_temp[y] >= pos[1] >= limiti_celle_Y_temp[y + 1]:
-            cella_Y = y
-
-    return [auto_temp, cella_X, cella_Y]
-
-
-# controllo se l'auto è all'incrocio
-def in_incrocio(pos_temp, estremi_incrocio):
-    if (estremi_incrocio[3] <= pos_temp[0] <= estremi_incrocio[1]) and \
-            (estremi_incrocio[2] <= pos_temp[1] <= estremi_incrocio[0]):
-        return True
-    else:
-        return False
-
-
-# costruisco l'array composto dal nome delle auto presenti nella simulazione
-def costruzioneArray(arrayAuto_temp):
-    loadedIDList = traci.simulation.getDepartedIDList()  # carica nell'array le auto partite
-
-    for id_auto in loadedIDList:
-        if id_auto not in arrayAuto_temp:
-            arrayAuto_temp.append(id_auto)
-    arrivedIDList = traci.simulation.getArrivedIDList()  # elimina nell'array le auto arrivate
-
-    for id_auto in arrivedIDList:
-        if id_auto in arrayAuto_temp:
-            arrayAuto_temp.pop(arrayAuto_temp.index(id_auto))
-
-    return arrayAuto_temp
+from sumolib import checkBinary  # noqa
 
 
 def getLaneFromEdges(node_ids, start, end):
+    """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
+        destinazione"""
+
     distance = -1
     i = 0
     trovato = False
@@ -111,6 +42,8 @@ def getLaneFromEdges(node_ids, start, end):
 
 
 def generateRoute(node_ids, junction_id):
+    """Genero tutte le route possibili per l'incrocio"""
+
     n = 0
 
     for i in node_ids:
@@ -124,8 +57,9 @@ def generateRoute(node_ids, junction_id):
             n += 1
 
 
-# genero veicoli per ogni route
 def generaVeicoli():
+    """Genero veicoli per ogni route"""
+
     r_depart = -9
     auto_ogni = 10
     node_ids = [2, 8, 12, 6]
@@ -146,36 +80,100 @@ def generaVeicoli():
             traci.vehicle.setSpeedMode(id_veh, 0)
 
 
-# funzione chiamata da BatchExe.py
-def run(port_t, gui, celle_per_lato):
-    # -------- import python modules from the $SUMO_HOME/tools directory --------
+def stopXY(shape_temp):
+    """Calcolo gli estremi dell'incrocio, dove sono presenti gli stop"""
 
-    try:
-        sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', "tools"))  # tutorial in tests
-        sys.path.append(os.path.join(os.environ.get("SUMO_HOME", os.path.join(
-            os.path.dirname(__file__), "..", "..", "..")), "tools"))  # tutorial in docs
-        from sumolib import checkBinary
-    except ImportError:
-        sys.exit("please declare environment variable 'SUMO_HOME' as the root directory of your sumo installation "
-                 "(it should contain folders 'bin', 'tools' and 'docs')")
-    PORT = port_t
+    stop_temp = []
+
+    for count in range(0, len(shape_temp) - 1):
+        if shape_temp[count][0] == shape_temp[count + 1][0]:
+            stop_temp.append(shape_temp[count][0])
+        elif shape_temp[count][1] == shape_temp[count + 1][1]:
+            stop_temp.append(shape_temp[count][1])
+
+    return stop_temp
+
+
+def limiti_celle(estremi_incrocio, celle_per_lato):
+    """Calcolo i metri all'interno dell'incrocio di ogni cella della matrice definisco i vettori"""
+
+    limiti_celle_X_temp = []
+    limiti_celle_Y_temp = []
+
+    # lunghezza totale incrocio nell'asse X e Y
+    lunghezza_X = estremi_incrocio[1] - estremi_incrocio[3]
+    lunghezza_Y = estremi_incrocio[0] - estremi_incrocio[2]
+
+    # lunghezza di una sola cella
+    lungh_cella_X = float(lunghezza_X) / float(celle_per_lato)
+    lungh_cella_Y = float(lunghezza_Y) / float(celle_per_lato)
+
+    for i in range(0, celle_per_lato + 1):  # scrivo sui vettori
+        limiti_celle_X_temp.append(round((estremi_incrocio[3] + (lungh_cella_X * i)), 3))
+        limiti_celle_Y_temp.append(round((estremi_incrocio[0] - (lungh_cella_Y * i)), 3))
+
+    return [limiti_celle_X_temp, limiti_celle_Y_temp]
+
+
+def get_cella_from_pos_auto(auto_temp, limiti_celle_X_temp, limiti_celle_Y_temp):
+    """Ritorno le coordinate della cella nella matrice in cui si trova l'auto"""
+
+    cella_X = 0
+    cella_Y = 0
+    pos = traci.vehicle.getPosition(auto_temp)
+
+    for x in range(0, len(limiti_celle_X_temp) - 1):
+        if limiti_celle_X_temp[x] <= pos[0] <= limiti_celle_X_temp[x + 1]:
+            cella_X = x
+
+    for y in range(0, len(limiti_celle_Y_temp) - 1):
+        if limiti_celle_Y_temp[y] >= pos[1] >= limiti_celle_Y_temp[y + 1]:
+            cella_Y = y
+
+    return [auto_temp, cella_X, cella_Y]
+
+
+def in_incrocio(pos_temp, estremi_incrocio):
+    """Controllo se l'auto è all'incrocio"""
+
+    if (estremi_incrocio[3] <= pos_temp[0] <= estremi_incrocio[1]) and \
+            (estremi_incrocio[2] <= pos_temp[1] <= estremi_incrocio[0]):
+        return True
+    else:
+        return False
+
+
+def costruzioneArray(arrayAuto_temp):
+    """Costruisco l'array composto dal nome delle auto presenti nella simulazione"""
+
+    loadedIDList = traci.simulation.getDepartedIDList()  # carica nell'array le auto partite
+
+    for id_auto in loadedIDList:
+        if id_auto not in arrayAuto_temp:
+            arrayAuto_temp.append(id_auto)
+    arrivedIDList = traci.simulation.getArrivedIDList()  # elimina nell'array le auto arrivate
+
+    for id_auto in arrivedIDList:
+        if id_auto in arrayAuto_temp:
+            arrayAuto_temp.pop(arrayAuto_temp.index(id_auto))
+
+    return arrayAuto_temp
+
+
+def run(gui, celle_per_lato):
+    """Main che date tutte le traiettorie possibili all'interno dell'incrocio calcola la matrice di celle"""
+
     if gui:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
 
-    # -------- percorsi cartella e file SUMO --------
+    sumoCmd = [sumoBinary, "-c", "intersection.sumocfg", "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
 
-    direct = "SUMO/"  # percorso cartella
-    config_sumo = "intersection.sumocfg"  # nome del file SUMO config
-
-    # -----------------------------------------------
-
-    sumoCmd = [sumoBinary, "-c", direct + config_sumo, "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
+    traci.start(sumoCmd, numRetries=50)
 
     # -------- dichiarazione variabili --------
 
-    traci.start(sumoCmd, numRetries=50)
     step = 0.000
     step_incr = 0.036
     generaVeicoli()  # genero veicoli
@@ -293,13 +291,9 @@ def run(port_t, gui, celle_per_lato):
                     else:
                         metri_to_cella = [metri]
                         ang_in_cella = [round(ang, 3)]
-                        lista_occupazione_celle[index][1].append([pos_attuale_Y, pos_attuale_X, metri,
-                                                                      round(ang, 3)])
+                        lista_occupazione_celle[index][1].append([pos_attuale_Y, pos_attuale_X, metri, round(ang, 3)])
         step += step_incr
         traci.simulationStep(step)  # faccio avanzare la simulazione
         arrayAuto = costruzioneArray(arrayAuto)  # inserisco nell'array le auto presenti nella simulazione
-    # stampo la matrice
-    # for x in lista_occupazione_celle:
-    #     print(x)
     traci.close()
     return lista_occupazione_celle

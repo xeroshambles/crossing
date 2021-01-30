@@ -54,6 +54,8 @@ def getLaneFromEdges(node_ids, start, end):
 
 
 def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
+    """Calcolo la distanza tra il veicolo e l'inizio dell'incrocio"""
+
     min_x = shape[0][0]
     max_x = shape[0][0]
     # print(f"Shape: {shape}\n")
@@ -1102,8 +1104,11 @@ if __name__ == "__main__":
     n_porta_base = 5000
     celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
     secondi_di_sicurezza = 0.6
+    gui = False
 
-    traiettorie_matrice = Traiettorie.run(n_porta_base, gui=False, celle_per_lato=celle_per_lato)
+    print("\nCalcolo la matrice dell'incrocio a partire da tutte le traiettorie possibili...")
+
+    traiettorie_matrice = Traiettorie.run(gui, celle_per_lato)
 
     for i in range(1, numberOfSimulations + 1):
         numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',

@@ -53,6 +53,8 @@ def getLaneFromEdges(node_ids, start, end):
 
 
 def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
+    """Calcolo la distanza tra il veicolo e l'inizio dell'incrocio"""
+
     min_x = shape[0][0]
     max_x = shape[0][0]
     # print(f"Shape: {shape}\n")
