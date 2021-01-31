@@ -13,7 +13,7 @@ import output
 
 node_ids = [2, 8, 12, 6]
 junction_id = 7
-config_file = "intersection.sumocfg"
+config_file = "../intersection.sumocfg"
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 
 
@@ -573,9 +573,9 @@ def run(port_t, n_auto, t_generazione, gui, celle_per_lato, traiettorie_matrice,
     # -------- import python modules from the $SUMO_HOME/tools directory --------
 
     try:
-        sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', "tools"))  # tutorial in tests
+        sys.path.append(os.path.join(os.path.dirname(__file__), '../..', '..', '..', '..', "tools"))  # tutorial in tests
         sys.path.append(os.path.join(os.environ.get("SUMO_HOME", os.path.join(
-            os.path.dirname(__file__), "..", "..", "..")), "tools"))  # tutorial in docs
+            os.path.dirname(__file__), "../..", "..", "..")), "tools"))  # tutorial in docs
         from sumolib import checkBinary
     except ImportError:
         sys.exit("please declare environment variable 'SUMO_HOME' as the root directory of your sumo installation "

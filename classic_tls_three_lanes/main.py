@@ -87,7 +87,7 @@ def run(numberOfVehicles, schema, sumoCmd):
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
-    for n in range(1, numberOfVehicles + 1):
+    for n in range(0, numberOfVehicles):
         idV = str(n)
         # oggetto veicolo:
         # headStopTime: considera il tempo passato in testa (con un piccolo delay dovuto alla ripartenza del veicolo)

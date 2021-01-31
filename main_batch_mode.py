@@ -14,13 +14,15 @@ else:
 from sumolib import checkBinary  # noqa
 import traci  # noqa
 
+from reservation.traiettorie import Traiettorie
+
 
 def main(project):
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
 
     mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
-    repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-    numberOfVehicles = [50, 100, 200, 500]  # lista contenente il numero di veicoli per ogni simulazione diversa
+    repeatSim = 1  # numero di volte per cui la stessa simulazione deve essere ripetuta
+    numberOfVehicles = [50, 100, 200, 400]  # lista contenente il numero di veicoli per ogni simulazione diversa
     diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
     period = 10  # tempo di valutazione del throughput del sistema incrocio
 
@@ -46,10 +48,16 @@ def main(project):
             print(f'\nUtilizzo la configurazione di default ({default[1]})')
     if choice in ['d', 'D']:
         sumoBinary = checkBinary('sumo')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
+        if project == "reservation":
+            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "--step-length", "0.025"]
+        else:
+            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
     else:
         sumoBinary = checkBinary('sumo-gui')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
+        if project == "reservation":
+            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q", "--step-length", "0.025"]
+        else:
+            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
         choice = ''
         while choice not in ['s', 'S', 'n', 'N']:
             choice = input('\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ')
@@ -112,7 +120,14 @@ def main(project):
         try:
             os.mkdir(path)
         except OSError:
-            print("Creation of the directory %s failed..." % path)
+            print(f"\nCreazione della cartella {path} fallita...")
+
+    celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
+    secondi_di_sicurezza = 0.6
+
+    if project == "reservation":
+        print("\nCalcolo la matrice dell'incrocio a partire da tutte le traiettorie possibili...")
+        traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
 
     for i in range(1, diffSim + 1):
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles[i - 1]} veicoli)')
@@ -133,7 +148,11 @@ def main(project):
         pool = Pool(processes=repeatSim)
         pool_arr = []
         for j in range(0, repeatSim):
-            pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd)))
+            if project == "reservation":
+                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd, celle_per_lato,
+                                                              traiettorie_matrice, secondi_di_sicurezza)))
+            else:
+                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd)))
         pool.close()
         totalTimeArr = []
         meanHeadTimeArr = []

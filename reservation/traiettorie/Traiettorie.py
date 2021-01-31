@@ -168,7 +168,9 @@ def run(gui, celle_per_lato):
     else:
         sumoBinary = checkBinary('sumo')
 
-    sumoCmd = [sumoBinary, "-c", "intersection.sumocfg", "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
+    conf = os.path.join(os.path.split(os.path.dirname(__file__))[0], "intersection.sumocfg")
+
+    sumoCmd = [sumoBinary, "-c", conf, "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
 
     traci.start(sumoCmd, numRetries=50)
 

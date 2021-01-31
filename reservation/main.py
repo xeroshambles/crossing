@@ -12,7 +12,7 @@ else:
 
 from sumolib import checkBinary  # noqa
 import traci  # noqa
-import Traiettorie
+from reservation.traiettorie import Traiettorie
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 junction_id = 7  # id dell'incrocio
@@ -615,7 +615,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
-    for n in range(1, numberOfVehicles + 1):
+    for n in range(0, numberOfVehicles):
         if schema in ['n', 'N']:
             if n % 8 == 1:
                 traci.vehicle.setColor(f'{n}', (0, 255, 255))  # azzurro
@@ -857,7 +857,6 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
         arrayAuto = costruzioneArray(arrayAuto)
 
         if n_step % sec == 0:
-            print(f"NSTEP: {n_step}, SEC: {sec}, STEP: {step}\n")
             vehs_loaded = traci.vehicle.getIDList()
             for lane in tails_per_lane:
                 tails_per_lane[lane].append(0)
@@ -880,7 +879,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
                     leader_lane = ''
                     if leader:
                         leader_lane = traci.vehicle.getLaneID(leader[0])
-                    if traci.vehicle.getSpeed(veh) <= 1:
+                    if traci.vehicle.getSpeed(veh) <= 2:
                         tails_per_lane[vehicles[veh]['startingLane']][int(n_step / sec) - 1] += 1
                         # verifico se il veicolo è in testa
                         if (leader and leader_lane != veh_current_lane) or not leader:
@@ -927,7 +926,9 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
                             vehicles[veh]['hasStopped'] = 1
                             tails_per_lane[veh_current_lane][int(n_step / sec) - 1] += 1
                         # verifico se il veicolo è in testa
-                        if check >= distance and ((leader and leader[1] > 0.5) or not leader):
+                        if check >= distance and ((leader and leader[1] > 0.5 and
+                                                   vehicles[leader[0]]['startingLane'] != veh_current_lane)
+                                                  or not leader):
                             vehicles[veh]['headStopTime'] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))  # blu
