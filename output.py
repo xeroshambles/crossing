@@ -32,15 +32,17 @@ def writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHead
     f.write(f'\nTHROUGHPUT MEDIO: {round(meanThroughput, 2)}\n\n')
 
 
-def autolabel(rects, ax):
+def autolabel(values, r, offset, ax):
     """Funzione per mettere il numero sopra la barra dell'istogramma"""
-    for rect in rects:
-        height = rect.get_height()
-        ax.annotate('{}'.format(height),
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
+
+    i = 0
+    for value in values:
+        ax.annotate(f'{value}',
+                    xy=(r[i] + offset, value),
                     xytext=(0, 3),  # 3 points vertical offset
                     textcoords="offset points",
                     ha='center', va='bottom')
+        i += 1
 
 
 def histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path):
@@ -52,32 +54,31 @@ def histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path):
         dx = 0
         c = arr[i]
         r = np.arange(len(values[i]))
-        width = 0.01
         fig, ax = plt.subplots()
         # controllo se è pari
         if arr[i] % 2 == 0:
             c -= 2
             sx = -0.1
             dx = 0.1
-            rect = ax.bar(r + sx, values[j], width, color=colors[j], label=labels[j])
-            autolabel(rect, ax)
+            ax.plot(r + sx, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
+            autolabel(values[j], r, sx, ax)
             j += 1
-            rect = ax.bar(r + dx, values[j], width, color=colors[j], label=labels[j])
-            autolabel(rect, ax)
+            ax.plot(r + dx, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
+            autolabel(values[j], r, dx, ax)
             j += 1
         else:
             c -= 1
-            rect = ax.bar(r, values[j], width, color=colors[j], label=labels[j])
-            autolabel(rect, ax)
+            ax.plot(r, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
+            autolabel(values[j], r, 0, ax)
             j += 1
         for k in range(0, int(c / 2)):
             sx -= 0.2
-            rect = ax.bar(r + sx, values[j], width, color=colors[j], label=labels[j])
-            autolabel(rect, ax)
+            ax.plot(r + sx, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
+            autolabel(values[j], r, sx, ax)
             j += 1
             dx += 0.2
-            rect = ax.bar(r + dx, values[j], width, color=colors[j], label=labels[j])
-            autolabel(rect, ax)
+            ax.plot(r + dx, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
+            autolabel(values[j], r, dx, ax)
             j += 1
         plt.ylabel("Valori")
         ax.set_xticks(r)

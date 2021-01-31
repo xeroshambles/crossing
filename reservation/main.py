@@ -1050,45 +1050,45 @@ if __name__ == "__main__":
 
     measures = {}
     measures['total_time'] = []
-    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#FF5733', 'title': 'total_time',
+    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#DF1515', 'title': 'total_time',
                                    'values': []})
     measures['head_time'] = []
     measures['head_time'].append(
-        {'label': 'Tempo medio in testa (s)', 'color': '#FFF933', 'title': 'mean_head_time', 'values': []})
+        {'label': 'Tempo medio in testa (s)', 'color': '#DF1515', 'title': 'mean_head_time', 'values': []})
     measures['head_time'].append(
-        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#9FFF33', 'title': 'st_dev_head_time',
+        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#1524DF', 'title': 'st_dev_head_time',
          'values': []})
     measures['head_time'].append(
-        {'label': 'Massimo tempo in testa (s)', 'color': '#33FF3C', 'title': 'max_head_time', 'values': []})
+        {'label': 'Massimo tempo in testa (s)', 'color': '#15DF1E', 'title': 'max_head_time', 'values': []})
     measures['tail_time'] = []
     measures['tail_time'].append(
-        {'label': 'Tempo medio in coda (s)', 'color': '#FFF933', 'title': 'mean_tail_time', 'values': []})
+        {'label': 'Tempo medio in coda (s)', 'color': '#DF1515', 'title': 'mean_tail_time', 'values': []})
     measures['tail_time'].append(
-        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#9FFF33', 'title': 'st_dev_tail_time',
+        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#1524DF', 'title': 'st_dev_tail_time',
          'values': []})
     measures['tail_time'].append(
-        {'label': 'Massimo tempo in coda (s)', 'color': '#33FF3C', 'title': 'max_tail_time', 'values': []})
+        {'label': 'Massimo tempo in coda (s)', 'color': '#15DF1E', 'title': 'max_tail_time', 'values': []})
     measures['speed'] = []
     measures['speed'].append(
-        {'label': 'Velocità media (m/s)', 'color': '#FFF933', 'title': 'mean_speed', 'values': []})
+        {'label': 'Velocità media (m/s)', 'color': '#DF1515', 'title': 'mean_speed', 'values': []})
     measures['speed'].append(
-        {'label': 'Deviazione standard velocità (m/s)', 'color': '#9FFF33', 'title': 'st_dev_speed',
+        {'label': 'Deviazione standard velocità (m/s)', 'color': '#1524DF', 'title': 'st_dev_speed',
          'values': []})
     measures['speed'].append(
-        {'label': 'Massima velocità (m/s)', 'color': '#33FF3C', 'title': 'max_speed', 'values': []})
+        {'label': 'Massima velocità (m/s)', 'color': '#15DF1E', 'title': 'max_speed', 'values': []})
     measures['tail_length'] = []
     measures['tail_length'].append(
-        {'label': 'Lunghezza media delle code', 'color': '#FFF933', 'title': 'mean_tail_length', 'values': []})
+        {'label': 'Lunghezza media delle code', 'color': '#DF1515', 'title': 'mean_tail_length', 'values': []})
     measures['tail_length'].append(
-        {'label': 'Deviazione standard lunghezza delle code', 'color': '#9FFF33', 'title': 'st_dev_tail_length',
+        {'label': 'Deviazione standard lunghezza delle code', 'color': '#1524DF', 'title': 'st_dev_tail_length',
          'values': []})
     measures['tail_length'].append(
-        {'label': 'Massima lunghezza delle code', 'color': '#33FF3C', 'title': 'max_tail_length', 'values': []})
+        {'label': 'Massima lunghezza delle code', 'color': '#15DF1E', 'title': 'max_tail_length', 'values': []})
     measures['stopped_vehicles'] = []
-    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#FF5733', 'title': 'stopped_vehicles',
+    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#DF1515', 'title': 'stopped_vehicles',
                                          'values': []})
     measures['throughput'] = []
-    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#FF5733',
+    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#DF1515',
                                    'title': 'mean_throughput', 'values': []})
 
     root = os.path.abspath(os.path.split(__file__)[0])
