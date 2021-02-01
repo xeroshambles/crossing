@@ -12,7 +12,7 @@ from trafficElements.junction import Junction
 
 class Vehicle:
 
-    def __init__(self, ID, iP=False, bB=False):
+    def __init__(self, ID, measures, iP=False, bB=False):
         self.idVehicle = ID
         self.numericID = int(ID[3:])
         self.isOnAStop = False
@@ -55,6 +55,8 @@ class Vehicle:
         self.passedTotalWaitingTimes = []
         self.passedMainGroupTimes = []
         self.passedSponsorGroupTimes = []
+
+        self.measures = measures
 
     def makeBid(self):
         """Funzione utilizzata per effettuare le offerte per le aste. Attualmente impiegata solo dalla versione delle

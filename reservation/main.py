@@ -87,12 +87,16 @@ def generateRoute(node_ids, junction_id):
             n += 1
 
 
-def generaVeicoli(n_auto_t, vehicles):
+def generaVeicoli(n_auto_t, t_gen, vehicles):
     """Genero veicoli per ogni route"""
+
+    r_depart = 0
+    auto_ogni = float(t_gen) / float(n_auto_t)
 
     generateRoute(node_ids, junction_id)
 
     for i in range(0, n_auto_t):
+        r_depart += auto_ogni
         idV = str(i)
         vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'hasStopped': 0, 'hasEntered': 0,
                    'isCrossing': 0, 'hasCrossed': 0, 'startingLane': ''}
@@ -575,7 +579,8 @@ def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
     return matrice_incrocio
 
 
-def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza):
+def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
+        secondi_di_sicurezza):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     traci.start(sumoCmd, numRetries=50)
@@ -610,7 +615,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
             counter_serving[lane] = 0
             counter_served[lane] = 0
 
-    generaVeicoli(numberOfVehicles, vehicles)
+    generaVeicoli(numberOfVehicles, tempo_generazione, vehicles)
 
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
@@ -1102,12 +1107,12 @@ if __name__ == "__main__":
     output_file = os.path.join(path, f'no_batch.txt')
     f = open(output_file, "w")
 
-    n_porta_base = 5000
+    tempo_generazione = 43.2  # fissato
     celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
     secondi_di_sicurezza = 0.6
     gui = False
 
-    print("\nCalcolo la matrice dell'incrocio a partire da tutte le traiettorie possibili...")
+    print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
 
     traiettorie_matrice = Traiettorie.run(gui, celle_per_lato)
 
@@ -1118,7 +1123,8 @@ if __name__ == "__main__":
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
         totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, \
         varSpeed, maxSpeed, meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput = \
-            run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza)
+            run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
+                secondi_di_sicurezza)
 
         output.writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime,
                                    meanTailTime, varTailTime, maxTailTime, meanSpeed, varSpeed, maxSpeed,

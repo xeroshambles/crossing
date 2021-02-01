@@ -3,7 +3,7 @@ from math import sqrt
 from random import randint
 
 import traci
-from trafficElements.junction import FourWayJunction
+from auctions.output_no_batch.junction2 import FourWayJunction
 from trafficElements.vehicle import Vehicle
 
 

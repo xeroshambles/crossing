@@ -87,8 +87,9 @@ def run(numberOfVehicles, schema, sumoCmd):
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
-    for n in range(0, numberOfVehicles):
-        idV = str(n)
+
+    for i in range(0, numberOfVehicles):
+        idV = str(i)
         # oggetto veicolo:
         # headStopTime: considera il tempo passato in testa (con un piccolo delay dovuto alla ripartenza del veicolo)
         # followerStopTime: considera il tempo passato in coda
@@ -100,28 +101,29 @@ def run(numberOfVehicles, schema, sumoCmd):
         start = random.choice(node_ids)
         end = random.choice([x for x in node_ids if x != start])
         lane = getLaneFromEdges(node_ids, start, end)
-        traci.route.add(f'route_{n}', [f'e{"0" if start != 12 else ""}{start}_0{junction_id}',
+        traci.route.add(f'route_{i}', [f'e{"0" if start != 12 else ""}{start}_0{junction_id}',
                                        f'e0{junction_id}_{"0" if end != 12 else ""}{end}'])
-        traci.vehicle.add(idV, f'route_{n}', departLane=lane)
+        traci.vehicle.add(idV, f'route_{i}', departLane=lane)
         if schema in ['n', 'N']:
-            if n % 8 == 1:
-                traci.vehicle.setColor(f'{n}', (0, 255, 255))  # azzurro
-            if n % 8 == 2:
-                traci.vehicle.setColor(f'{n}', (160, 100, 100))  # rosa
-            if n % 8 == 3:
-                traci.vehicle.setColor(f'{n}', (255, 0, 0))  # rosso
-            if n % 8 == 4:
-                traci.vehicle.setColor(f'{n}', (0, 255, 0))  # verde
-            if n % 8 == 5:
-                traci.vehicle.setColor(f'{n}', (0, 0, 255))  # blu
-            if n % 8 == 6:
-                traci.vehicle.setColor(f'{n}', (255, 255, 255))  # bianco
-            if n % 8 == 7:
-                traci.vehicle.setColor(f'{n}', (255, 0, 255))  # viola
-            if n % 8 == 8:
-                traci.vehicle.setColor(f'{n}', (255, 100, 0))  # arancione
+            if i % 8 == 1:
+                traci.vehicle.setColor(f'{i}', (0, 255, 255))  # azzurro
+            if i % 8 == 2:
+                traci.vehicle.setColor(f'{i}', (160, 100, 100))  # rosa
+            if i % 8 == 3:
+                traci.vehicle.setColor(f'{i}', (255, 0, 0))  # rosso
+            if i % 8 == 4:
+                traci.vehicle.setColor(f'{i}', (0, 255, 0))  # verde
+            if i % 8 == 5:
+                traci.vehicle.setColor(f'{i}', (0, 0, 255))  # blu
+            if i % 8 == 6:
+                traci.vehicle.setColor(f'{i}', (255, 255, 255))  # bianco
+            if i % 8 == 7:
+                traci.vehicle.setColor(f'{i}', (255, 0, 255))  # viola
+            if i % 8 == 8:
+                traci.vehicle.setColor(f'{i}', (255, 100, 0))  # arancione
 
-    """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa."""
+    """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
+
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         totalTime += 1
@@ -207,7 +209,8 @@ def run(numberOfVehicles, schema, sumoCmd):
             serving[lane].append(counter_serving[lane])
             served[lane].append(counter_served[lane])
 
-    """Salvo tutti i risultati della simulazione e li ritorno."""
+    """Salvo tutti i risultati della simulazione e li ritorno"""
+
     for veh in vehicles:
         headTimes.append(vehicles[veh]['headStopTime'])
         tailTimes.append(vehicles[veh]['followerStopTime'])

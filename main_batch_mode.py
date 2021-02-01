@@ -66,7 +66,7 @@ def main(project):
         schema = choice
     if mode != 'auto':
         diffSim = module.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
-                                    f'\nUtilizzo default ({4}) numero di run diverse...',
+                                    f'\nUtilizzo come default 4 run diverse...',
                                     '\nInserire un numero di simulazioni positivo!')
     else:
         print(f'\nEseguo {diffSim} simulazioni differenti...')
@@ -122,11 +122,12 @@ def main(project):
         except OSError:
             print(f"\nCreazione della cartella {path} fallita...")
 
+    tempo_generazione = 43.2  # fissato
     celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
     secondi_di_sicurezza = 0.6
 
     if project == "reservation":
-        print("\nCalcolo la matrice dell'incrocio a partire da tutte le traiettorie possibili...")
+        print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
         traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
 
     for i in range(1, diffSim + 1):
@@ -135,7 +136,7 @@ def main(project):
         f = open(output_file, "w")
         if mode != 'auto':
             repeatSim = module.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
-                                          f'\nUtilizzo default ({10}) numero di stesse run...',
+                                          f'\nUtilizzo come default 10 stesse run...',
                                           '\nInserire un numero di simulazioni positivo!')
         else:
             print(f'\nEseguo {repeatSim} simulazioni identiche in parallelo...')
@@ -149,7 +150,8 @@ def main(project):
         pool_arr = []
         for j in range(0, repeatSim):
             if project == "reservation":
-                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd, celle_per_lato,
+                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd,
+                                                              tempo_generazione, celle_per_lato,
                                                               traiettorie_matrice, secondi_di_sicurezza)))
             else:
                 pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd)))
