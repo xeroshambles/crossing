@@ -3,9 +3,9 @@ from abc import abstractmethod, ABC
 
 import traci # noqa
 
-from auction import CompetitiveAuction, CooperativeAuction
-from competitive import CompetitiveCrossingManager
-from cooperative import CooperativeCrossingManager
+from .auction import CompetitiveAuction, CooperativeAuction
+from .competitive import CompetitiveCrossingManager
+from .cooperative import CooperativeCrossingManager
 
 
 class Junction(ABC):

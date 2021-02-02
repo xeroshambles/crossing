@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 
 import traci # noqa
 
-from auction import CompetitiveAuction
+from .auction import CompetitiveAuction
 
 
 class CrossingManager(ABC):

@@ -1,5 +1,5 @@
-from auction import CompetitiveAuction
-from crossingManager import CrossingManager
+from .auction import CompetitiveAuction
+from .crossingManager import CrossingManager
 
 import traci # noqa
 

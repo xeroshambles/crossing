@@ -4,7 +4,7 @@ from random import randint, choice
 
 import traci # noqa
 
-from junction import Junction
+from .junction import Junction
 
 
 class Vehicle:
