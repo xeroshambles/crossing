@@ -1,6 +1,7 @@
-from trafficElements.auction import CompetitiveAuction
-from trafficElements.crossingManager import CrossingManager
-import traci
+from auction import CompetitiveAuction
+from crossingManager import CrossingManager
+
+import traci # noqa
 
 
 class CompetitiveCrossingManager(CrossingManager):

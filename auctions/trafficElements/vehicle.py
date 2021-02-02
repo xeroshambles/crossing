@@ -1,13 +1,10 @@
 import random
 import re
-import sys
-from math import sqrt
-# noinspection PyUnresolvedReferences
 from random import randint, choice
 
-import traci
+import traci # noqa
 
-from trafficElements.junction import Junction
+from junction import Junction
 
 
 class Vehicle:

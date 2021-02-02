@@ -1,6 +1,7 @@
-from trafficElements.auction import CooperativeAuction
-from trafficElements.crossingManager import CrossingManager
-import traci
+from auction import CooperativeAuction
+from crossingManager import CrossingManager
+
+import traci # noqa
 
 
 class CooperativeCrossingManager(CrossingManager):
