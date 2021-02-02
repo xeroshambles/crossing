@@ -136,7 +136,7 @@ class Vehicle:
                 traci.vehicle.setStop(self.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
                                     pos=traci.lane.getLength(stopLane))
             except traci.exceptions.TraCIException as e:
-                print(f"ERROR: {e}")
+                # print(f"ERROR: {e}")
                 pass
             self.isOnAStop = True
 

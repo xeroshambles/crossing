@@ -107,7 +107,7 @@ class CrossingManager(ABC):
                         int(traci.vehicle.getLaneID(i.getID())[1:3]) == self.junction.getNumericID():
                     vehiclesPassed.append(i)
         for i in vehiclesPassed:
-            print(i.getID())
+            # print(i.getID())
             self.removeVehicleFromPartecipants(i)
 
             """codice utilizzato per la distribuzione del traffico."""
