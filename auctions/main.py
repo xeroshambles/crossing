@@ -13,8 +13,8 @@ else:
 from sumolib import checkBinary  # noqa
 import traci  # noqa
 
-from trafficElements.junction import FourWayJunction
-from trafficElements.vehicle import Vehicle
+from .trafficElements.junction import FourWayJunction
+from .trafficElements.vehicle import Vehicle
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 junction_id = 7  # id dell'incrocio

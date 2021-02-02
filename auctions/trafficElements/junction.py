@@ -642,13 +642,3 @@ class FourWayJunction(Junction):
                     clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_2',
                                      f'e{"0" if self.nID < 10 else ""}{self.nID}_{i[1:3]}_2')
                     self.clashingEdges[i][k].append(clashingEdge4)
-
-
-if __name__ == '__main__':
-    a = FourWayJunction(13, True, True, True, True)
-    print(a.edges)
-    print(a.lanes)
-    print('NESO', a.mapNESO)
-    print('PR', a.possibleRoutes)
-    print(a.clashingEdges)
-    # print(a.isClashing(('e17_22_1', 'e22_23_1'), ('e21_22_1', 'e22_23_1')))

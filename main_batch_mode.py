@@ -153,6 +153,9 @@ def main(project):
                 pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd,
                                                               tempo_generazione, celle_per_lato,
                                                               traiettorie_matrice, secondi_di_sicurezza)))
+            elif project == "auctions":
+                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd,
+                                                              True, True, 1)))
             else:
                 pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd)))
         pool.close()
