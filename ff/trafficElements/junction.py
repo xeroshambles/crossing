@@ -55,7 +55,7 @@ class Junction(ABC):
     def laneCalc(self):
         """Funzione che determina le corsie a partire dall'insieme delle strade."""
         for i in self.edges:
-            lanes = [f'{i}_0', f'{i}_1']
+            lanes = [f'{i}_0', f'{i}_2', f'{i}_4']
             self.lanes += lanes
 
     def incomingLanesCalc(self):
@@ -68,7 +68,7 @@ class Junction(ABC):
 
     def outgoingLanesCalc(self):
         """Funzione utilizzata per calcolare l'insieme delle corsie uscenti dall'incrocio"""
-        self.outgoingLanes = [i for i in self.lanes if int(i[1:3]) != self.nID]
+        self.outgoingLanes = [i for i in self.lanes if int(i[1:3]) == self.nID]
 
     def getIncomingLanes(self):
         """Ritorna l'insieme delle corsie entranti nell'incrocio."""
@@ -150,6 +150,27 @@ class Junction(ABC):
             return True
         return False
 
+    def getArrivalEdgesFromEdge(self, start):
+        """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
+        destinazione"""
+
+        distance = -1
+        i = 0
+        trovato = False
+        node_ids = [2, 8, 12, 6]
+        edges = []
+        while True:
+            if node_ids[i % 4] == start:
+                trovato = True
+            if trovato:
+                distance += 1
+                edges.append(node_ids[i % 4])
+                if distance == 3:
+                    break
+            i += 1
+        return edges
+
+
     def findPossibleRoutes(self):
         """Metodo che trova tutte le possibili corsie obbiettivo (outgoing lanes) per ogni corsia entrante
         nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
@@ -157,41 +178,26 @@ class Junction(ABC):
         # TODO: controlla la def bs => è refactoring
 
         for l in self.getLanes():
-            #print(f'lane currently considered: {l}')
             e1 = int(l[1:3])
             e2 = int(l[4:6])
-            suffix = l[-1]
             if e1 > e2:
                 continue
-            #solo le entranti
-            #if e1 == self.nID:
-            #    continue
 
-            frontEdge = rightEdge = leftEdge = ''
             """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
-            j = 5
-            #e03_05_0 -> e05_01_0
-            '''if (l == 'e02_05_0'):
-                print('resto incriminato: ' + str((e1 + 2) % 4))
-                print(f'lane generata: e0{j}_0{(e1 + 2) % 4}_{suffix}')'''
-            mod = ((e1 + 1) % 4) + 1
-            frontEdge = f'e0{j}_0{mod}_{suffix}'
 
-            """Determino se sono presenti curve a destra e ne calcolo l'id"""
-            if suffix == '0': #vado a dx
+            j = 7
 
-                mod = ((e1 + 2) % 4) + 1
-                rightEdge = f'e0{j}_0{mod}_0'
+            rightEdge, frontEdge, leftEdge = self.getArrivalEdgesFromEdge(e1)
 
+            rightLane = f'e0{j}_0{rightEdge}_0'
 
-            """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
-            if suffix == '1':
-                mod = (e1 % 4) + 1
-                leftEdge = f'e0{j}_0{mod}_1'
+            frontLane = f'e0{j}_0{frontEdge}_2'
+
+            leftLane = f'e0{j}_0{leftEdge}_4'
 
 
             """Salvo le traiettorie trovate."""
-            self.possibleRoutes[l] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
+            self.possibleRoutes[l] = {'front': frontLane, 'right': rightLane, 'left': leftLane}
 
     @abstractmethod
     def laneNESOMapping(self):
@@ -513,11 +519,10 @@ class FourWayJunction(Junction):
         """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
         pre-processing."""
 
-
-        self.edges = [f'e0{self.nID}_0{self.nID - 1}', f'e0{self.nID - 1}_0{self.nID}',
-                      f'e0{self.nID - 2 }_0{self.nID}', f'e0{self.nID}_0{self.nID - 2 }',
-                      f'e0{self.nID}_0{self.nID - 3}', f'e0{self.nID - 3}_0{self.nID}',
-                      f'e0{self.nID - 4}_0{self.nID}', f'e0{self.nID}_0{self.nID - 4}']
+        self.edges = [f'e0{self.nID}_02', f'e02_0{self.nID}',
+                      f'e0{self.nID}_06', f'e06_0{self.nID}',
+                      f'e0{self.nID}_08', f'e08_0{self.nID}',
+                      f'e0{self.nID}_12', f'e12_0{self.nID}']
 
     def laneNESOMapping(self):
         """Mapping effettuato sulla base della rete utilizzata, altamente specifico per essa."""
@@ -591,13 +596,13 @@ class FourWayJunction(Junction):
     def findClashingEdges(self):
         """Funzione che avvia la ricerca delle traiettorie incidentali nell'incrocio."""
         # inizializzo le liste dei possibili clash
-        #print(f'possible routes are: {self.possibleRoutes}')
+        print(f'possible routes are: {self.findPossibleRoutes()}')
         for i in self.possibleRoutes:
             self.clashingEdges[i] = {self.possibleRoutes[i][j]: [] for j in self.possibleRoutes[i]
                                      if self.possibleRoutes[i][j] != ''}
-        #print(f'found possible clashing edges: {self.clashingEdges}')
+        print(f'found possible clashing edges: {self.clashingEdges}')
         for i in self.possibleRoutes:
-            if i[-1] == '0': # front + right
+            if i[-1] == '0':  # front + right
                 self.findClashingRoutes(i)
                 self.findCommonRoute(i, 'right')
                 self.findCommonRoute(i, 'front')
