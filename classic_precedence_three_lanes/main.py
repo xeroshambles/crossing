@@ -3,6 +3,7 @@ import os
 import random
 from math import sqrt
 import output
+import subprocess
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -10,7 +11,7 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary  # noqa
+from sumolib import checkBinary, miscutils  # noqa
 import traci  # noqa
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
@@ -70,10 +71,21 @@ def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
     return lane_end - spawn_distance
 
 
-def run(numberOfVehicles, schema, sumoCmd):
+def run(numberOfVehicles, schema, sumoCmd, path, index=0):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
-    traci.start(sumoCmd, numRetries=50)
+    dir = os.path.join(path, 'terminals')
+
+    if not os.path.exists(dir):
+        try:
+            os.mkdir(dir)
+        except OSError:
+            print(f"\nCreazione della cartella {dir} fallita...")
+
+    sumoProc = subprocess.Popen(sumoCmd, stdout=open(os.path.join(dir, f"{index}.txt"), "w"),
+                                stderr=open(os.path.join(dir, f"{index}.txt"), "w"))
+    traci.init(int(sumoCmd[-1]), numRetries=50)
+
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
     counter_serving = {}  # dizionario contenente valori incrementali
@@ -286,6 +298,8 @@ def run(numberOfVehicles, schema, sumoCmd):
 
     traci.close()
 
+    sumoProc.terminate()
+
     return totalTime, meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime, \
            max(tailTimes), meanSpeed, varSpeed, maxSpeed, meanTail, varTail, maxTail, sum(nStoppedVehicles), \
            meanTP
@@ -392,13 +406,16 @@ if __name__ == "__main__":
     f = open(output_file, "w")
 
     for i in range(1, numberOfSimulations + 1):
+        port = miscutils.getFreeSocketPort()
+        sumoCmd.append("--remote-port")
+        sumoCmd.append(str(port))
         numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                       f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
                                       '\nInserire un numero di veicoli positivo!')
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
         totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, \
         varSpeed, maxSpeed, meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput = \
-            run(numberOfVehicles, schema, sumoCmd)
+            run(numberOfVehicles, schema, sumoCmd, path, i)
 
         output.writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime,
                                    meanTailTime, varTailTime, maxTailTime, meanSpeed, varSpeed, maxSpeed,

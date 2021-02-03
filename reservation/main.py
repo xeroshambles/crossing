@@ -3,6 +3,7 @@ import os
 import random
 import math
 import output
+import subprocess
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -10,7 +11,7 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary  # noqa
+from sumolib import checkBinary, miscutils  # noqa
 import traci  # noqa
 from reservation.traiettorie import Traiettorie
 
@@ -580,10 +581,21 @@ def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
 
 
 def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-        secondi_di_sicurezza):
+        secondi_di_sicurezza, path, index=0):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
-    traci.start(sumoCmd, numRetries=50)
+    dir = os.path.join(path, 'terminals')
+
+    if not os.path.exists(dir):
+        try:
+            os.mkdir(dir)
+        except OSError:
+            print(f"\nCreazione della cartella {dir} fallita...")
+
+    sumoProc = subprocess.Popen(sumoCmd, stdout=open(os.path.join(dir, f"{index}.txt"), "w"),
+                     stderr=open(os.path.join(dir, f"{index}.txt"), "w"))
+    traci.init(int(sumoCmd[-1]), numRetries=50)
+
     vehicles = {}  # dizionario contente gli id dei veicoli
     step = 0.000  # tempo totale di simulazione
     step_incr = 0.025  # incremento del numero di step della simulazione
@@ -1005,6 +1017,8 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
 
     traci.close()
 
+    sumoProc.terminate()
+
     return int(step), meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime, \
            max(tailTimes), meanSpeed, varSpeed, maxSpeed, meanTail, varTail, maxTail, sum(nStoppedVehicles), \
            meanTP
@@ -1120,6 +1134,9 @@ if __name__ == "__main__":
     traiettorie_matrice = Traiettorie.run(gui, celle_per_lato)
 
     for i in range(1, numberOfSimulations + 1):
+        port = miscutils.getFreeSocketPort()
+        sumoCmd.append("--remote-port")
+        sumoCmd.append(str(port))
         numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                       f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
                                       '\nInserire un numero di veicoli positivo!')
@@ -1127,7 +1144,7 @@ if __name__ == "__main__":
         totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, \
         varSpeed, maxSpeed, meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput = \
             run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-                secondi_di_sicurezza)
+                secondi_di_sicurezza, path, i)
 
         output.writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime,
                                    meanTailTime, varTailTime, maxTailTime, meanSpeed, varSpeed, maxSpeed,

@@ -30,7 +30,7 @@
     </pedestrian>
 
     <netedit>
-        <route-files value="/Users/Enrico/Documents/TraCI/Incrocio-corsie/incrocio.rou.xml"/>
+        <route-files value="/Users/Enrico/Documents/TraCI/Incrocio-corsie/intersection.rou.xml"/>
     </netedit>
 
     <report>

@@ -11,7 +11,7 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary  # noqa
+from sumolib import checkBinary, miscutils  # noqa
 import traci  # noqa
 
 from reservation.traiettorie import Traiettorie
@@ -21,8 +21,8 @@ def main(project):
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
 
     mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
-    repeatSim = 1  # numero di volte per cui la stessa simulazione deve essere ripetuta
-    numberOfVehicles = [50]  # lista contenente il numero di veicoli per ogni simulazione diversa
+    repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
+    numberOfVehicles = [50, 100, 150, 200]  # lista contenente il numero di veicoli per ogni simulazione diversa
     diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
     period = 10  # tempo di valutazione del throughput del sistema incrocio
 
@@ -114,8 +114,10 @@ def main(project):
     measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#DF1515',
                                    'title': 'mean_throughput', 'values': []})
 
+    dir = "output_batch_" + project
+
     root = os.path.abspath(os.path.split(__file__)[0])
-    path = os.path.join(root, "output_batch_" + project)
+    path = os.path.join(root, dir)
     if not os.path.exists(path):
         try:
             os.mkdir(path)
@@ -149,15 +151,18 @@ def main(project):
         pool = Pool(processes=repeatSim)
         pool_arr = []
         for j in range(0, repeatSim):
+            port = miscutils.getFreeSocketPort()
+            sumoCmd.append("--remote-port")
+            sumoCmd.append(str(port))
             if project == "reservation":
                 pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd,
                                                               tempo_generazione, celle_per_lato,
-                                                              traiettorie_matrice, secondi_di_sicurezza)))
+                                                              traiettorie_matrice, secondi_di_sicurezza, path, j)))
             elif project == "auctions":
                 pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd,
-                                                              True, True, 1)))
+                                                              True, True, 1, path, j)))
             else:
-                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd)))
+                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd, path, j)))
         pool.close()
         totalTimeArr = []
         meanHeadTimeArr = []

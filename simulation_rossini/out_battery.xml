@@ -5,7 +5,7 @@
 
     <input>
         <net-file value="SUMO/incrocio.net.xml"/>
-        <route-files value="SUMO/incrocio.rou.xml"/>
+        <route-files value="SUMO/intersection.rou.xml"/>
     </input>
 
     <output>
@@ -27,7 +27,7 @@
     </traci_server>
 
     <gui_only>
-        <gui-settings-file value="SUMO/incrocio.settings.xml"/>
+        <gui-settings-file value="SUMO/intersection.settings.xml"/>
         <quit-on-end value="true"/>
         <start value="true"/>
     </gui_only>
