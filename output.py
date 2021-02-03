@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date
@@ -45,7 +46,7 @@ def autolabel(values, r, offset, ax):
         i += 1
 
 
-def histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path):
+def histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path, project=''):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
     j = 0
@@ -82,6 +83,7 @@ def histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path):
             j += 1
         plt.ylabel("Valori")
         ax.set_xticks(r)
+        ax.set_title(project)
         ax.set_xticklabels(labels_per_sims)
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(path + "/" + titles[i] + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')

@@ -22,7 +22,7 @@ def main(project):
 
     mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
     repeatSim = 1  # numero di volte per cui la stessa simulazione deve essere ripetuta
-    numberOfVehicles = [50, 100, 200, 400]  # lista contenente il numero di veicoli per ogni simulazione diversa
+    numberOfVehicles = [50]  # lista contenente il numero di veicoli per ogni simulazione diversa
     diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
     period = 10  # tempo di valutazione del throughput del sistema incrocio
 
@@ -236,7 +236,7 @@ def main(project):
             labels.append(measures[k][i]['label'])
             colors.append(measures[k][i]['color'])
 
-    output.histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path)
+    output.histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path, project)
 
 
 if __name__ == "__main__":
