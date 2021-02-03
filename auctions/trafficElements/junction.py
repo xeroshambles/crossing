@@ -1,4 +1,3 @@
-import sys
 from abc import abstractmethod, ABC
 
 import traci # noqa
@@ -550,56 +549,37 @@ class FourWayJunction(Junction):
                     self.clashingEdges[edge][self.possibleRoutes[edge][turn]].append(clashingEdge1)
                     # self.clashingEdges[k][self.possibleRoutes[k][x]].append(clashingEdge2)
 
-    def findClashingRoutes(self, edge):
+    def findClashingRoutesWhenGoForward(self, left, front, right, base, obj):
         """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
-        all'incrocio."""
-        # troviamo i clash per le strade perpendicolari
-        opRightEdge = f'e{self.possibleRoutes[edge]["right"][4:6]}_{self.possibleRoutes[edge]["right"][1:3]}'
-        clashingEdge1 = (f'{opRightEdge}_0', self.possibleRoutes[f'{opRightEdge}_0']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge1)
-        clashingEdge2 = (f'{opRightEdge}_1', self.possibleRoutes[f'{opRightEdge}_1']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge2)
-        opRightOpFrontEdge = f'e{self.possibleRoutes[f"{opRightEdge}_0"]["front"][4:6]}_' \
-                             f'{self.possibleRoutes[f"{opRightEdge}_0"]["front"][1:3]}'
-        #print(f'self.possibleRoutes[opRightEdge_0]: {self.possibleRoutes[f"{opRightEdge}_0"]}')
-        #print(f'opRightOpFrontEdge: {opRightOpFrontEdge}')
-        clashingEdge1 = (f'{opRightOpFrontEdge}_0', self.possibleRoutes[f'{opRightOpFrontEdge}_0']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge1)
-        clashingEdge2 = (f'{opRightOpFrontEdge}_1', self.possibleRoutes[f'{opRightOpFrontEdge}_1']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge2)
+        all'incrocio, in particolare quelle che si hanno nell'andare diritto."""
+        clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if left < 10 else ""}{left}_2')
+        self.clashingEdges[base][obj].append(clashingEdge1)
+        clashingEdge2 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_4',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_4')
+        self.clashingEdges[base][obj].append(clashingEdge2)
+        clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
+        self.clashingEdges[base][obj].append(clashingEdge3)
+        clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_4',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_4')
+        self.clashingEdges[base][obj].append(clashingEdge4)
 
-        # troviamo i clash per le strade
-        clashingEdge1 = (f'{opRightEdge}_1', self.possibleRoutes[f'{opRightEdge}_1']["left"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge1)
-        opFrontEdge = f'e{self.possibleRoutes[edge]["front"][4:6]}_{self.possibleRoutes[edge]["front"][1:3]}'
-        clashingEdge2 = (f'{opFrontEdge}_1', self.possibleRoutes[f'{opFrontEdge}_1']["left"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['front']].append(clashingEdge2)
-
-    def findClashingRoutesWhenTurningLeft(self, edge):
+    def findClashingRoutesWhenTurningLeft(self, left, front, right, base, obj):
         """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
         all'incrocio, in particolare quelle che si hanno nello svoltare a sinistra."""
-        # troviamo i clash per le strade perpendicolari
-        opLeftEdge = f'e{self.possibleRoutes[edge]["left"][4:6]}_{self.possibleRoutes[edge]["left"][1:3]}'
-        clashingEdge1 = (f'{opLeftEdge}_0', self.possibleRoutes[f'{opLeftEdge}_0']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['left']].append(clashingEdge1)
-        clashingEdge2 = (f'{opLeftEdge}_1', self.possibleRoutes[f'{opLeftEdge}_1']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['left']].append(clashingEdge2)
-        opFrontEdge = f'e{self.possibleRoutes[edge]["front"][4:6]}_{self.possibleRoutes[edge]["front"][1:3]}'
-        clashingEdge1 = (f'{opFrontEdge}_0', self.possibleRoutes[f'{opFrontEdge}_0']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['left']].append(clashingEdge1)
-        clashingEdge2 = (f'{opFrontEdge}_1', self.possibleRoutes[f'{opFrontEdge}_1']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['left']].append(clashingEdge2)
-
-        # troviamo i clash per le strade
-        clashingEdge1 = (f'{opLeftEdge}_1', self.possibleRoutes[f'{opLeftEdge}_1']["left"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['left']].append(clashingEdge1)
-        opLeftOpFrontEdge = f'e{self.possibleRoutes[f"{opLeftEdge}_0"]["front"][4:6]}_' \
-                            f'{self.possibleRoutes[f"{opLeftEdge}_0"]["front"][1:3]}'
-        clashingEdge2 = (f'{opLeftOpFrontEdge}_1', self.possibleRoutes[f'{opLeftOpFrontEdge}_1']["left"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['left']].append(clashingEdge2)
-        # aggiungo l'ultimo perpendicolare, si potrebbe trovare anche con il commonRoute
-        clashingEdge1 = (f'{opLeftOpFrontEdge}_1', self.possibleRoutes[f'{opLeftOpFrontEdge}_1']["front"])
-        self.clashingEdges[edge][self.possibleRoutes[edge]['left']].append(clashingEdge1)
+        clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_4',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_4')
+        self.clashingEdges[base][obj].append(clashingEdge1)
+        clashingEdge2 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
+        self.clashingEdges[base][obj].append(clashingEdge2)
+        clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_4',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if front < 10 else ""}{front}_4')
+        self.clashingEdges[base][obj].append(clashingEdge3)
+        clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_2')
+        self.clashingEdges[base][obj].append(clashingEdge4)
 
     def findClashingEdges(self):
         """Funzione che avvia la ricerca delle traiettorie incidentali nell'incrocio."""
@@ -614,31 +594,8 @@ class FourWayJunction(Junction):
                 if self.possibleRoutes[i][j] == '':
                     continue
                 k = self.possibleRoutes[i][j]
+                left, front, right = self.getArrivalEdgesFromEdge(int(i[1:3]))
                 if i[-1] == '2':  # front
-                    left, front, right = self.getArrivalEdgesFromEdge(int(i[1:3]))
-                    clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_2',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if left < 10 else ""}{left}_2')
-                    self.clashingEdges[i][k].append(clashingEdge1)
-                    clashingEdge2 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{i[1:3]}_4')
-                    self.clashingEdges[i][k].append(clashingEdge2)
-                    clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_2',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
-                    self.clashingEdges[i][k].append(clashingEdge3)
-                    clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_4')
-                    self.clashingEdges[i][k].append(clashingEdge4)
+                    self.findClashingRoutesWhenGoForward(left, front, right, i, k)
                 if i[-1] == '4':  # left
-                    left, front, right = self.getArrivalEdgesFromEdge(int(i[1:3]))
-                    clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{i[1:3]}_4')
-                    self.clashingEdges[i][k].append(clashingEdge1)
-                    clashingEdge2 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_2',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
-                    self.clashingEdges[i][k].append(clashingEdge2)
-                    clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if front < 10 else ""}{front}_4')
-                    self.clashingEdges[i][k].append(clashingEdge3)
-                    clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_2',
-                                     f'e{"0" if self.nID < 10 else ""}{self.nID}_{i[1:3]}_2')
-                    self.clashingEdges[i][k].append(clashingEdge4)
+                    self.findClashingRoutesWhenTurningLeft(left, front, right, i, k)
