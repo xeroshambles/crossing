@@ -217,7 +217,7 @@ def main(project):
         measures['speed'][2]['values'].append(round(sum(maxSpeedArr) / len(maxSpeedArr), 2))
         measures['tail_length'][0]['values'].append(round(sum(meanTailLengthArr) / len(meanTailLengthArr), 2))
         measures['tail_length'][1]['values'].append(round(sum(stDevTailLengthArr) / len(stDevTailLengthArr), 2))
-        measures['tail_length'][2]['values'].append(round(sum(maxTailTimeArr) / len(maxTailTimeArr), 2))
+        measures['tail_length'][2]['values'].append(round(sum(maxTailLengthArr) / len(maxTailLengthArr), 2))
         measures['stopped_vehicles'][0]['values'].append(round(sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr), 2))
         measures['throughput'][0]['values'].append(round(sum(meanThroughputArr) / len(meanThroughputArr), 2))
 

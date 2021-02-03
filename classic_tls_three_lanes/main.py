@@ -204,6 +204,9 @@ def run(numberOfVehicles, schema, sumoCmd):
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
                         continue
+                else:
+                    if schema in ['s', 'S']:
+                        traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
     if totalTime % period != 0:
         for lane in tails_per_lane:
             serving[lane].append(counter_serving[lane])

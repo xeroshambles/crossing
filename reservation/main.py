@@ -944,6 +944,9 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
                             continue
+                    else:
+                        if schema in ['s', 'S']:
+                            traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
     if n_step % (period * sec) != 0:
         for lane in tails_per_lane:
             serving[lane].append(counter_serving[lane])
@@ -1040,7 +1043,7 @@ if __name__ == "__main__":
             print('\nInserire un carattere tra d e g!')
     if choice in ['d', 'D']:
         sumoBinary = checkBinary('sumo')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
+        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "--step-length", "0.025"]
     else:
         sumoBinary = checkBinary('sumo-gui')
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q", "--step-length", "0.025"]
