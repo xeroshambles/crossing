@@ -1,7 +1,7 @@
 import sys
 import os
 from math import sqrt
-from multiprocessing import Pool
+from multiprocessing import Process, Queue
 import output
 import importlib.util
 
@@ -22,7 +22,7 @@ def main(project):
 
     mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
     repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-    numberOfVehicles = [50, 100, 150, 200]  # lista contenente il numero di veicoli per ogni simulazione diversa
+    numberOfVehicles = [50, 100, 200, 400]  # lista contenente il numero di veicoli per ogni simulazione diversa
     diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
     period = 10  # tempo di valutazione del throughput del sistema incrocio
 
@@ -148,22 +148,26 @@ def main(project):
                                                         '\nInserire un numero di veicoli positivo!')
         else:
             print(f'\nUtilizzo {numberOfVehicles[i - 1]} veicoli...')
-        pool = Pool(processes=repeatSim)
-        pool_arr = []
+
+        procs = []
+        q = Queue()
+
         for j in range(0, repeatSim):
-            port = miscutils.getFreeSocketPort()
-            sumoCmd.append("--remote-port")
-            sumoCmd.append(str(port))
             if project == "reservation":
-                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd,
-                                                              tempo_generazione, celle_per_lato,
-                                                              traiettorie_matrice, secondi_di_sicurezza, path, j)))
+                p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, tempo_generazione,
+                                                     celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
+                                                     path, j, q))
             elif project == "auctions":
-                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd,
-                                                              True, True, 1, path, j)))
+                p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, True, True,
+                                                     1, path, j, q))
             else:
-                pool_arr.append(pool.apply_async(module.run, (numberOfVehicles[i - 1], schema, sumoCmd, path, j)))
-        pool.close()
+                p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, path,
+                                                     j, q))
+            p.start()
+            procs.append(p)
+        for p in procs:
+            p.join()
+
         totalTimeArr = []
         meanHeadTimeArr = []
         varHeadTimeArr = []
@@ -183,12 +187,12 @@ def main(project):
         maxTailLengthArr = []
         nStoppedVehiclesArr = []
         meanThroughputArr = []
-        for j in range(0, repeatSim):
-            ret = pool_arr[j].get()
 
-            output.writeMeasuresToFile(f, f'{i}:{j + 1}', numberOfVehicles[i - 1], ret[0], ret[1], ret[2], ret[3],
-                                       ret[4], ret[5], ret[6], ret[7], ret[8], ret[9], ret[10], ret[11], ret[12],
-                                       ret[13], ret[14])
+        for j in range(0, repeatSim):
+
+            ret = q.get()
+
+            output.writeMeasuresToFile(f, f'{i}:{j + 1}', numberOfVehicles[i - 1], ret)
 
             totalTimeArr.append(ret[0])
             meanHeadTimeArr.append(ret[1])
@@ -227,7 +231,7 @@ def main(project):
         measures['throughput'][0]['values'].append(round(sum(meanThroughputArr) / len(meanThroughputArr), 2))
 
         f.close()
-    # print(f"Throughputs: {measures['throughput'][0]['values']}")
+
     values = []
     labels = []
     titles = []

@@ -5,32 +5,30 @@ from datetime import date
 from math import sqrt
 
 
-def writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime,
-                        varTailTime, maxTailTime, meanSpeed, varSpeed, maxSpeed, meanTailLength, varTailLength,
-                        maxTailLength, nStoppedVehicles, meanThroughput):
+def writeMeasuresToFile(f, i, numberOfVehicles, ret):
     """Salvo su un file le misure effettuate"""
     f.write('----------------------------------------------------\n')
     f.write(f'\nSIMULAZIONE NUMERO {i}\n')
     f.write('\n----------------------------------------------------\n')
     f.write(f'\nNUMERO DI VEICOLI: {numberOfVehicles}\n')
-    f.write(f'\nTEMPO TOTALE DI SIMULAZIONE: {totalTime} step\n')
-    f.write(f'\nTEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(meanHeadTime, 2)} step\n')
+    f.write(f'\nTEMPO TOTALE DI SIMULAZIONE: {ret[0]} step\n')
+    f.write(f'\nTEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(ret[1], 2)} step\n')
     f.write(
-        f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sqrt(varHeadTime), 2)} step\n')
-    f.write(f'\nTEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {maxHeadTime} step\n')
-    f.write(f'\nTEMPO MEDIO PASSATO IN CODA: {round(meanTailTime, 2)} step\n')
+        f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(sqrt(ret[2]), 2)} step\n')
+    f.write(f'\nTEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {ret[3]} step\n')
+    f.write(f'\nTEMPO MEDIO PASSATO IN CODA: {round(ret[4], 2)} step\n')
     f.write(
-        f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sqrt(varTailTime), 2)} step\n')
-    f.write(f'\nTEMPO MASSIMO PASSATO IN CODA: {maxTailTime} step\n')
-    f.write(f'\nVELOCITA MEDIA DEI VEICOLI: {round(meanSpeed, 2)} m/s\n')
-    f.write(f'\nDEVIAZIONE STANDARD VELOCITA MEDIA DEI VEICOLI: {round(sqrt(varSpeed), 2)} m/s\n')
-    f.write(f'\nVELOCITA MASSIMA DEI VEICOLI: {round(maxSpeed, 2)} m/s\n')
-    f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(meanTailLength, 2)} auto\n')
-    f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE: {round(sqrt(varTailLength), 2)} m/s\n')
-    f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(maxTailLength, 2)} auto\n')
+        f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(sqrt(ret[5]), 2)} step\n')
+    f.write(f'\nTEMPO MASSIMO PASSATO IN CODA: {ret[6]} step\n')
+    f.write(f'\nVELOCITA MEDIA DEI VEICOLI: {round(ret[7], 2)} m/s\n')
+    f.write(f'\nDEVIAZIONE STANDARD VELOCITA MEDIA DEI VEICOLI: {round(sqrt(ret[8]), 2)} m/s\n')
+    f.write(f'\nVELOCITA MASSIMA DEI VEICOLI: {round(ret[9], 2)} m/s\n')
+    f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(ret[10], 2)} auto\n')
+    f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE: {round(sqrt(ret[11]), 2)} m/s\n')
+    f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(ret[12], 2)} auto\n')
     f.write(
-        f'\nNUMERO DI VEICOLI FERMI: {nStoppedVehicles} ({round(nStoppedVehicles / numberOfVehicles * 100, 2)}%)\n')
-    f.write(f'\nTHROUGHPUT MEDIO: {round(meanThroughput, 2)}\n\n')
+        f'\nNUMERO DI VEICOLI FERMI: {ret[13]} ({round(ret[13] / numberOfVehicles * 100, 2)}%)\n')
+    f.write(f'\nTHROUGHPUT MEDIO: {round(ret[14], 2)}\n\n')
 
 
 def autolabel(values, r, offset, ax):

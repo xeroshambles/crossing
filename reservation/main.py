@@ -2,8 +2,9 @@ import sys
 import os
 import random
 import math
+from math import sqrt
 import output
-import subprocess
+from multiprocessing import Queue
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -581,8 +582,10 @@ def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
 
 
 def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-        secondi_di_sicurezza, path, index=0):
+        secondi_di_sicurezza, path, index, queue):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
+
+    port = miscutils.getFreeSocketPort()
 
     dir = os.path.join(path, 'terminals')
 
@@ -592,9 +595,15 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
         except OSError:
             print(f"\nCreazione della cartella {dir} fallita...")
 
-    sumoProc = subprocess.Popen(sumoCmd, stdout=open(os.path.join(dir, f"{index}.txt"), "w"),
-                     stderr=open(os.path.join(dir, f"{index}.txt"), "w"))
-    traci.init(int(sumoCmd[-1]), numRetries=50)
+    origin_stdout = sys.stdout
+
+    origin_stderr = sys.stderr
+
+    sys.stdout = open(os.path.join(dir, f"{index}.txt"), "w")
+
+    sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
+
+    traci.start(sumoCmd, port=port)
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     step = 0.000  # tempo totale di simulazione
@@ -1017,11 +1026,13 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
 
     traci.close()
 
-    sumoProc.terminate()
+    sys.stdout = origin_stdout
 
-    return int(step), meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime, \
-           max(tailTimes), meanSpeed, varSpeed, maxSpeed, meanTail, varTail, maxTail, sum(nStoppedVehicles), \
-           meanTP
+    sys.stderr = origin_stderr
+
+    queue.put([int(step), meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime,
+               max(tailTimes), meanSpeed, varSpeed, maxSpeed, meanTail, varTail, maxTail, sum(nStoppedVehicles),
+               meanTP])
 
 
 def checkInput(d, def_string, ask_string, error_string):
@@ -1133,6 +1144,8 @@ if __name__ == "__main__":
 
     traiettorie_matrice = Traiettorie.run(gui, celle_per_lato)
 
+    queue = Queue()
+
     for i in range(1, numberOfSimulations + 1):
         port = miscutils.getFreeSocketPort()
         sumoCmd.append("--remote-port")
@@ -1141,30 +1154,28 @@ if __name__ == "__main__":
                                       f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
                                       '\nInserire un numero di veicoli positivo!')
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
-        totalTime, meanHeadTime, varHeadTime, maxHeadTime, meanTailTime, varTailTime, maxTailTime, meanSpeed, \
-        varSpeed, maxSpeed, meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput = \
-            run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-                secondi_di_sicurezza, path, i)
 
-        output.writeMeasuresToFile(f, i, numberOfVehicles, totalTime, meanHeadTime, varHeadTime, maxHeadTime,
-                                   meanTailTime, varTailTime, maxTailTime, meanSpeed, varSpeed, maxSpeed,
-                                   meanTailLength, varTailLength, maxTailLength, nStoppedVehicles, meanThroughput)
+        run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
+            secondi_di_sicurezza, path, i, queue)
 
-        measures['total_time'][0]['values'].append(round(totalTime, 2))
-        measures['head_time'][0]['values'].append(round(meanHeadTime, 2))
-        measures['head_time'][1]['values'].append(round(math.sqrt(varHeadTime), 2))
-        measures['head_time'][2]['values'].append(round(maxHeadTime, 2))
-        measures['tail_time'][0]['values'].append(round(meanTailTime, 2))
-        measures['tail_time'][1]['values'].append(round(math.sqrt(varTailTime), 2))
-        measures['tail_time'][2]['values'].append(round(maxTailTime, 2))
-        measures['speed'][0]['values'].append(round(meanSpeed, 2))
-        measures['speed'][1]['values'].append(round(math.sqrt(varSpeed), 2))
-        measures['speed'][2]['values'].append(round(maxSpeed, 2))
-        measures['tail_length'][0]['values'].append(round(meanTailLength, 2))
-        measures['tail_length'][1]['values'].append(round(math.sqrt(varTailLength), 2))
-        measures['tail_length'][2]['values'].append(round(maxTailLength, 2))
-        measures['stopped_vehicles'][0]['values'].append(round(nStoppedVehicles, 2))
-        measures['throughput'][0]['values'].append(round(meanThroughput, 2))
+        ret = queue.get()
+        output.writeMeasuresToFile(f, i, numberOfVehicles, ret)
+
+        measures['total_time'][0]['values'].append(round(ret[0], 2))
+        measures['head_time'][0]['values'].append(round(ret[1], 2))
+        measures['head_time'][1]['values'].append(round(sqrt(ret[2]), 2))
+        measures['head_time'][2]['values'].append(round(ret[3], 2))
+        measures['tail_time'][0]['values'].append(round(ret[4], 2))
+        measures['tail_time'][1]['values'].append(round(sqrt(ret[5]), 2))
+        measures['tail_time'][2]['values'].append(round(ret[6], 2))
+        measures['speed'][0]['values'].append(round(ret[7], 2))
+        measures['speed'][1]['values'].append(round(sqrt(ret[8]), 2))
+        measures['speed'][2]['values'].append(round(ret[9], 2))
+        measures['tail_length'][0]['values'].append(round(ret[10], 2))
+        measures['tail_length'][1]['values'].append(round(sqrt(ret[11]), 2))
+        measures['tail_length'][2]['values'].append(round(ret[12], 2))
+        measures['stopped_vehicles'][0]['values'].append(round(ret[13], 2))
+        measures['throughput'][0]['values'].append(round(ret[14], 2))
 
     f.close()
 

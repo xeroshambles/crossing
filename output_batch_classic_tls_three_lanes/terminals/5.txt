@@ -1,0 +1,19 @@
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
+Could not connect to TraCI server at localhost:50287 [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione
+ Retrying in 1 seconds
