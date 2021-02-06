@@ -34,42 +34,31 @@ def main(project):
 
     config_file = os.path.join(os.path.split(__file__)[0], project,
                                "intersection.sumocfg")  # file di configurazione della simulazione
-    choice = ''
-    schema = 'n'
-    default = ['d', 'dati']
+
+    choice = module.checkChoice(['d', 'D', 'g', 'G'],
+                         '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
+                         "\nUtilizzo la modalità grafica come default...", '\nInserire un carattere tra d e g!', mode)
+
+    sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
+
+    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
+        [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
+
+    if project == "reservation":
+        sumoCmd.append("--step-length")
+        sumoCmd.append("0.025")
+
+    schema = module.checkChoice(['s', 'S', 'n', 'N'],
+                         '\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ',
+                         "\nUtilizzo lo schema significativo come default...",
+                         '\nInserire un carattere tra s e n!', mode)
+
+    diffSim = module.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
+                                f'\nUtilizzo come default 4 run diverse...',
+                                '\nInserire un numero di simulazioni positivo!', mode,
+                                f'\nEseguo {diffSim} simulazioni differenti...', diffSim)
+
     labels_per_sims = []
-    while choice not in ['d', 'D', 'g', 'G']:
-        if mode == 'auto':
-            choice = default[0]
-        else:
-            choice = input('\nVuoi raccogliere dati o avere una visualizzazione grafica? (d = dati, g = grafica): ')
-        if choice not in ['d', 'D', 'g', 'G']:
-            choice = default[0]
-            print(f'\nUtilizzo la configurazione di default ({default[1]})')
-    if choice in ['d', 'D']:
-        sumoBinary = checkBinary('sumo')
-        if project == "reservation":
-            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "--step-length", "0.025"]
-        else:
-            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
-    else:
-        sumoBinary = checkBinary('sumo-gui')
-        if project == "reservation":
-            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q", "--step-length", "0.025"]
-        else:
-            sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
-        choice = ''
-        while choice not in ['s', 'S', 'n', 'N']:
-            choice = input('\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ')
-            if choice not in ['s', 'S', 'n', 'N']:
-                print('\nInserire un carattere tra s e n!')
-        schema = choice
-    if mode != 'auto':
-        diffSim = module.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
-                                    f'\nUtilizzo come default 4 run diverse...',
-                                    '\nInserire un numero di simulazioni positivo!')
-    else:
-        print(f'\nEseguo {diffSim} simulazioni differenti...')
 
     measures = {}
     measures['total_time'] = []
@@ -132,37 +121,36 @@ def main(project):
         print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
         traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
 
-    for i in range(1, diffSim + 1):
-        labels_per_sims.append(f'Sim. {i} ({numberOfVehicles[i - 1]} veicoli)')
+    for i in range(0, diffSim):
+        labels_per_sims.append(f'Sim. {i} ({numberOfVehicles[i]} veicoli)')
+
         output_file = os.path.join(path, f'batch_{i}.txt')
         f = open(output_file, "w")
-        if mode != 'auto':
-            repeatSim = module.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
-                                          f'\nUtilizzo come default 10 stesse run...',
-                                          '\nInserire un numero di simulazioni positivo!')
-        else:
-            print(f'\nEseguo {repeatSim} simulazioni identiche in parallelo...')
-        if mode != 'auto':
-            numberOfVehicles[i - 1] = module.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
-                                                        f'\nUtilizzo default ({50}) veicoli...',
-                                                        '\nInserire un numero di veicoli positivo!')
-        else:
-            print(f'\nUtilizzo {numberOfVehicles[i - 1]} veicoli...')
+
+        repeatSim = module.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
+                                      f'\nUtilizzo come default 10 stesse run...',
+                                      '\nInserire un numero di simulazioni positivo!', mode,
+                                      f'\nEseguo {repeatSim} simulazioni identiche in parallelo...', repeatSim)
+
+        numberOfVehicles[i] = module.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
+                                                f'\nUtilizzo default ({50}) veicoli...',
+                                                '\nInserire un numero di veicoli positivo!', mode,
+                                                f'\nUtilizzo {numberOfVehicles[i]} veicoli...', numberOfVehicles[i])
 
         procs = []
-        q = Queue()
+        queue = Queue()
 
         for j in range(0, repeatSim):
             if project == "reservation":
-                p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, tempo_generazione,
+                p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, tempo_generazione,
                                                      celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
-                                                     path, j, q))
+                                                     path, j, queue))
             elif project == "auctions":
                 p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, True, True,
-                                                     1, path, j, q))
+                                                     1, path, j, queue))
             else:
                 p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, path,
-                                                     j, q))
+                                                     j, queue))
             p.start()
             procs.append(p)
         for p in procs:
@@ -190,9 +178,9 @@ def main(project):
 
         for j in range(0, repeatSim):
 
-            ret = q.get()
+            ret = queue.get()
 
-            output.writeMeasuresToFile(f, f'{i}:{j + 1}', numberOfVehicles[i - 1], ret)
+            output.writeMeasuresToFile(f, f'{i}:{j}', numberOfVehicles[i], ret)
 
             totalTimeArr.append(ret[0])
             meanHeadTimeArr.append(ret[1])

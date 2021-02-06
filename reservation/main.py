@@ -24,6 +24,7 @@ node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 
 """Con questo ciclo inizializzo i nomi delle lane così come sspecificate nel file intersection.net.xml"""
+
 for i in node_ids:
     for lane in lanes_ids:
         lanes.append(f'e{"0" if i < 12 else ""}{i}_0{junction_id}_{lane}')
@@ -548,20 +549,6 @@ def output1(arrayAuto_temp, consumo_temp):
     return ferme_count, vmed, cmed, cmax, consumo_temp
 
 
-def output_t_in_coda(arrayAuto_temp, auto_coda_temp, step_temp, attesa_temp):
-    """Scrivo in un array il tempo in coda medio rispetto al tempo totale di simulazione"""
-
-    for auto_temp in arrayAuto_temp:
-        auto_temp_ID = int(auto_temp)
-        if auto_coda_temp[auto_temp_ID][0] == 0:
-            if round(traci.vehicle.getSpeed(auto_temp), 3) == 0:  # se auto ferma allora segno timestep inizio coda
-                auto_coda_temp[auto_temp_ID][0] = step_temp
-        if auto_coda_temp[auto_temp_ID][0] != 0 and auto_coda_temp[auto_temp_ID][1] == 0 and \
-                auto_temp not in attesa_temp:  # se non e' piu' in attesa allora segno timestep di fine coda
-            auto_coda_temp[auto_temp_ID][1] = step_temp
-    return auto_coda_temp
-
-
 def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
     "Ogni 10 step pulisco la matrice da valori vecchi"
 
@@ -849,8 +836,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
                             ferme[incrID] = info[2]
                             matrice_incrocio[incrID] = info[3]
                             passaggio_cella[incrID] = info[4]
-        if int(step / step_incr) % 4 == 0:
-            tempo_coda[incrID] = output_t_in_coda(arrayAuto, tempo_coda[incrID], step, attesa[incrID])
         # riaccelero i veicoli all'uscita dall'incrocio
         if int(step / step_incr) % 10 == 0:
             for auto_uscita in passaggio_precedente[incrID]:
@@ -872,8 +857,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
         # ogni 10 step pulisco la matrice da valori troppo vecchi
         if int(step / step_incr) % 10 == 0:
             matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
-        # assegno colori alle auto
-        # coloreAuto(arrayAuto, junctIDList, attesa, ferme)
 
         step += step_incr
         n_step += 1
@@ -888,10 +871,8 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
                 tails_per_lane[lane].append(0)
                 # supponendo che period sia sempre multiplo di 5
                 if n_step % (period * sec) == 0:
-                    # print(f"Counter Serving: {counter_serving[lane]}, Counter Served: {counter_served[lane]}")
                     serving[lane].append(counter_serving[lane])
                     served[lane].append(counter_served[lane])
-                    # print(f"Serving: {serving[lane]}, Served: {served[lane]}, Lane: {lane}")
                     counter_serving[lane] -= counter_served[lane]
                     counter_served[lane] = 0
             # loop per tutti i veicoli
@@ -926,7 +907,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
                 if veh_current_lane[1:3] == '07':
                     vehicles[veh]['isCrossing'] = 0
                     if vehicles[veh]['hasCrossed'] == 0:
-                        # print(f"Veicolo {veh} è stato servito")
                         counter_served[vehicles[veh]['startingLane']] += 1
                         vehicles[veh]['hasCrossed'] = 1
                     if schema in ['s', 'S']:
@@ -943,7 +923,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
                     check = veh_length / 2 + 0.2
                     leader = traci.vehicle.getLeader(veh)
                     if vehicles[veh]['hasEntered'] == 0:
-                        # print(f"Veicolo {veh} deve essere servito")
                         counter_serving[veh_current_lane] += 1
                         vehicles[veh]['hasEntered'] = 1
                     if traci.vehicle.getSpeed(veh) <= 1:
@@ -1015,7 +994,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
 
     mean_served = {}
     for lane in serving:
-        # print(f"Serving: {serving[lane]}, Served: {served[lane]}, Lane: {lane}")
         for i in range(0, len(serving[lane])):
             if serving[lane][i] == 0:
                 instant_throughput[lane].append(1)
@@ -1035,52 +1013,81 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
                meanTP])
 
 
-def checkInput(d, def_string, ask_string, error_string):
+def checkChoice(choices, inp, default, err, mode=''):
+    choice = ''
+    while choice not in choices:
+        if mode == 'auto':
+            choice = choices[0]
+            print(default)
+            break
+        else:
+            choice = input(inp)
+            if choice == '':
+                choice = choices[0]
+                print(default)
+                break
+            if choice not in choices:
+                print(err)
+    return choice
+
+
+def checkInput(d, inp, default, err, mode='', ret='', value=0):
     """Funzione che verifica se l'input dell'utente è corretto"""
+
+    if mode == 'auto':
+        print(ret)
+        return value
 
     i = 0
     while i <= 0:
-        t = input(def_string)
+        t = input(inp)
         if t == '':
-            i = d  # default
-            print(ask_string)
-        else:
-            try:
-                i = int(t)
-            except:
-                print(error_string)
-                i = 0
-                continue
-            if i <= 0:
-                print(error_string)
+            i = d
+            print(default)
+            break
+        try:
+            i = int(t)
+        except:
+            i = 0
+            print(err)
+            continue
+        if i <= 0:
+            print(err)
     return i
 
 
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in serie"""
 
-    choice = ''
-    schema = 'n'
-    labels_per_sims = []
-    while choice not in ['d', 'D', 'g', 'G']:
-        choice = input('\nVuoi raccogliere dati o avere una visualizzazione grafica? (d = dati, g = grafica): ')
-        if choice not in ['d', 'D', 'g', 'G']:
-            print('\nInserire un carattere tra d e g!')
-    if choice in ['d', 'D']:
-        sumoBinary = checkBinary('sumo')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "--step-length", "0.025"]
-    else:
-        sumoBinary = checkBinary('sumo-gui')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q", "--step-length", "0.025"]
-        choice = ''
-        while choice not in ['s', 'S', 'n', 'N']:
-            choice = input('\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ')
-            if choice not in ['s', 'S', 'n', 'N']:
-                print('\nInserire un carattere tra s e n!')
-        schema = choice
+    tempo_generazione = 43.2  # fissato
+    celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
+    secondi_di_sicurezza = 0.6
+    gui = False
+
+    print("Calcolo la matrice di celle a partire da tutte le traiettorie possibili...")
+
+    traiettorie_matrice = Traiettorie.run(gui, celle_per_lato)
+
+    choice = checkChoice(['g', 'G', 'd', 'D'],
+                         '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
+                         "\nUtilizzo la modalità grafica come default...", '\nInserire un carattere tra d e g!')
+
+    sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
+
+    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "--step-length", "0.025"] if \
+        choice in ['d', 'D'] else [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q",
+                                   "--step-length", "0.025"]
+
+    schema = checkChoice(['s', 'S', 'n', 'N'],
+                         '\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ',
+                         "\nUtilizzo lo schema significativo come default...",
+                         '\nInserire un carattere tra s e n!')
+
     numberOfSimulations = checkInput(1, '\nInserire il numero di simulazioni: ',
                                      f'\nUtilizzo una simulazione come default...',
                                      '\nInserire un numero di simulazioni positivo!')
+
+    labels_per_sims = []
 
     measures = {}
     measures['total_time'] = []
@@ -1132,27 +1139,17 @@ if __name__ == "__main__":
             os.mkdir(path)
         except OSError:
             print(f"\nCreazione della cartella {path} fallita...")
+
     output_file = os.path.join(path, f'no_batch.txt')
     f = open(output_file, "w")
 
-    tempo_generazione = 43.2  # fissato
-    celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
-    secondi_di_sicurezza = 0.6
-    gui = False
-
-    print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
-
-    traiettorie_matrice = Traiettorie.run(gui, celle_per_lato)
-
     queue = Queue()
 
-    for i in range(1, numberOfSimulations + 1):
-        port = miscutils.getFreeSocketPort()
-        sumoCmd.append("--remote-port")
-        sumoCmd.append(str(port))
+    for i in range(0, numberOfSimulations):
         numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                       f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
                                       '\nInserire un numero di veicoli positivo!')
+
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
 
         run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,

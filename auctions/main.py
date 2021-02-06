@@ -25,6 +25,7 @@ node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 
 """Con questo ciclo inizializzo i nomi delle lane così come sspecificate nel file intersection.net.xml"""
+
 for i in node_ids:
     for lane in lanes_ids:
         lanes.append(f'e{"0" if i < 12 else ""}{i}_0{junction_id}_{lane}')
@@ -94,6 +95,7 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
     traci.start(sumoCmd, port=port)
 
     """Inizializzazione di alcune variabili"""
+
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
     totalTime = 0  # tempo totale di simulazione
     counter_serving = {}  # dizionario contenente valori incrementali
@@ -215,32 +217,12 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
             if veh_current_lane[1:3] == 'n7':
                 vehicles[veh].measures['hasEntered'] = 0
                 vehicles[veh].measures['isCrossing'] = 1
-                leader = traci.vehicle.getLeader(veh)
-                leader_lane = ''
-                if leader:
-                    leader_lane = traci.vehicle.getLaneID(leader[0])
-                if traci.vehicle.getSpeed(veh) <= 1:
-                    tails_per_lane[vehicles[veh].measures['startingLane']][totalTime - 1] += 1
-                    # verifico se il veicolo è in testa
-                    if (leader and leader_lane != veh_current_lane) or not leader:
-                        vehicles[veh].measures['headStopTime'] += 1
-                        if schema in ['s', 'S']:
-                            traci.vehicle.setColor(veh, (0, 0, 255))  # blu
-                        continue
-                    # verifico se il veicolo è in coda
-                    if leader and leader[1] <= 0.5 and leader and leader_lane == veh_current_lane:
-                        vehicles[veh].measures['followerStopTime'] += 1
-                        if schema in ['s', 'S']:
-                            traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
-                        continue
-                else:
-                    if schema in ['s', 'S']:
-                        traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
+                if schema in ['s', 'S']:
+                    traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
             # controllo se il veicolo è in una lane uscente
             if veh_current_lane[1:3] == '07':
                 vehicles[veh].measures['isCrossing'] = 0
                 if vehicles[veh].measures['hasCrossed'] == 0:
-                    # print(f"Veicolo {veh} è stato servito")
                     counter_served[vehicles[veh].measures['startingLane']] += 1
                     vehicles[veh].measures['hasCrossed'] = 1
                 if schema in ['s', 'S']:
@@ -327,7 +309,6 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
 
     mean_served = {}
     for lane in serving:
-        # print(f"Serving: {serving[lane]}, Served: {served[lane]}, Lane: {lane}")
         for i in range(0, len(serving[lane])):
             if serving[lane][i] == 0:
                 instant_throughput[lane].append(1)
@@ -347,49 +328,68 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
                meanTP])
 
 
-def checkInput(d, def_string, ask_string, error_string):
+def checkChoice(choices, inp, default, err, mode=''):
+    choice = ''
+    while choice not in choices:
+        if mode == 'auto':
+            choice = choices[0]
+            print(default)
+            break
+        else:
+            choice = input(inp)
+            if choice == '':
+                choice = choices[0]
+                print(default)
+                break
+            if choice not in choices:
+                print(err)
+    return choice
+
+
+def checkInput(d, inp, default, err, mode='', ret='', value=0):
     """Funzione che verifica se l'input dell'utente è corretto"""
+
+    if mode == 'auto':
+        print(ret)
+        return value
 
     i = 0
     while i <= 0:
-        t = input(def_string)
+        t = input(inp)
         if t == '':
-            i = d  # default
-            print(ask_string)
-        else:
-            try:
-                i = int(t)
-            except:
-                print(error_string)
-                i = 0
-                continue
-            if i <= 0:
-                print(error_string)
+            i = d
+            print(default)
+            break
+        try:
+            i = int(t)
+        except:
+            i = 0
+            print(err)
+            continue
+        if i <= 0:
+            print(err)
     return i
 
 
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in serie"""
 
-    choice = ''
-    schema = 'n'
+    choice = checkChoice(['g', 'G', 'd', 'D'],
+                         '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
+                         "\nUtilizzo la modalità grafica come default...", '\nInserire un carattere tra d e g!')
+
+    sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
+
+    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
+        [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
+
+    schema = checkChoice(['s', 'S', 'n', 'N'],
+                         '\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ',
+                         "\nUtilizzo lo schema significativo come default...",
+                         '\nInserire un carattere tra s e n!')
+
     labels_per_sims = []
-    while choice not in ['d', 'D', 'g', 'G']:
-        choice = input('\nVuoi raccogliere dati o avere una visualizzazione grafica? (d = dati, g = grafica): ')
-        if choice not in ['d', 'D', 'g', 'G']:
-            print('\nInserire un carattere tra d e g!')
-    if choice in ['d', 'D']:
-        sumoBinary = checkBinary('sumo')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"]
-    else:
-        sumoBinary = checkBinary('sumo-gui')
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
-        choice = ''
-        while choice not in ['s', 'S', 'n', 'N']:
-            choice = input('\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ')
-            if choice not in ['s', 'S', 'n', 'N']:
-                print('\nInserire un carattere tra s e n!')
-        schema = choice
+
     numberOfSimulations = checkInput(1, '\nInserire il numero di simulazioni: ',
                                      f'\nUtilizzo una simulazione come default...',
                                      '\nInserire un numero di simulazioni positivo!')
@@ -444,21 +444,47 @@ if __name__ == "__main__":
             os.mkdir(path)
         except OSError:
             print(f"\nCreazione della cartella {path} fallita...")
+
     output_file = os.path.join(path, f'no_batch.txt')
     f = open(output_file, "w")
 
     queue = Queue()
 
-    for i in range(1, numberOfSimulations + 1):
-        port = miscutils.getFreeSocketPort()
-        sumoCmd.append("--remote-port")
-        sumoCmd.append(str(port))
+    for i in range(0, numberOfSimulations):
         numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                       f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
                                       '\nInserire un numero di veicoli positivo!')
+
         labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
 
-        run(numberOfVehicles, schema, sumoCmd, True, True, 1, path, i, queue)
+        choice = checkChoice(['s', 'S', 'n', 'N'],
+                             f'\nNella simulazione {i} si vuole un approccio competitivo o cooperativo? (s = '
+                             f'competitivo, n = cooperativo): ', '\nUtilizzo la modalità competitiva come default...',
+                             '\nInserire un carattere tra s e n!')
+
+        simulationMode = True if choice in ['s', 'S'] else False
+
+        choice = checkChoice(['s', 'S', 'n', 'N'],
+                             f'\nI veicoli nella simulazione {i} devono pagare subito? Altrimenti pagano solo i '
+                             f'vincitori delle aste (s = si, n = no): ',
+                             '\nUtilizzo il pagamento immediato come default...',
+                             '\nInserire un carattere tra s e n!')
+
+        instantPay = True if choice in ['s', 'S'] else False
+
+        choice = checkChoice([str(j) for j in range(1, 8)] + ['-1'],
+                             '\nQuale dimensione deve avere il numero di veicoli considerato? '
+                             'I gruppi possono avere una dimensione che va da 1 a 7, se si inserisce -1 '
+                             'si usa un numero di veicoli proporzionale: ',
+                             '\nUtilizzo come gruppo un numero di veicoli pari a 1...',
+                             '\nInserire un numero compreso tra 1 e 7 oppure -1! '
+                             )
+
+        dimensionOfGroups = int(choice)
+
+        print(numberOfVehicles, schema, simulationMode, instantPay, dimensionOfGroups)
+
+        run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, i, queue)
 
         ret = queue.get()
         output.writeMeasuresToFile(f, i, numberOfVehicles, ret)
