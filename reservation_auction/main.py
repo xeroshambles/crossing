@@ -7,6 +7,7 @@ import output
 from multiprocessing import Queue
 import trafficElements.auction
 from trafficElements.competitive import CompetitiveCrossingManager
+from reservation_auction.trafficElements.auction import CompetitiveAuction
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -24,8 +25,13 @@ lanes = []  # lista dei nomi delle lane
 lanes_ids = [0, 2, 4]  # lista degli id delle lanes nell'incrocio
 node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell'incrocio
 period = 10  # tempo di valutazione del throughput del sistema
+partecipants = []
+precedences = {}
+partecipantsRoutes = {}
 vehiclesInAuction = []
 currentWinners = []
+currentLosers = []
+winnersLanes = {}
 
 """Con questo ciclo inizializzo i nomi delle lane così come sspecificate nel file intersection.net.xml"""
 for i in node_ids:
@@ -34,7 +40,7 @@ for i in node_ids:
         lanes.append(f'e0{junction_id}_{"0" if i < 12 else ""}{i}_{lane}')
 
 
-def getLaneFromEdges(node_ids, start, end):
+def getIndexFromEdges(node_ids, start, end):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione"""
 
@@ -109,9 +115,10 @@ def generaVeicoli(n_auto_t, t_gen, vehicles):
         vehicles[idV] = vehicle
         r = int(random.randint(0, 11))
         edges = traci.route.getEdges(f'route_{r}')
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getIndexFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
         id_veh = str(i)
         traci.vehicle.add(id_veh, f'route_{r}', departLane=lane)
+        traci.vehicle.setParameter(id_veh, "wallet", random.randint(10, 100))
 
     return vehicles
 
@@ -296,7 +303,7 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
 
         rotta = traci.vehicle.getRouteID(auto_temp)
         edges = traci.route.getEdges(rotta)
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getIndexFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
         # se l'auto non gira a destra
         if lane != 0:
             passaggio_cella_temp.append([auto_temp, None, None])
@@ -308,7 +315,7 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
     return ritorno
 
 
-def set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp, estermi_incrocio,
+def set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp, estremi_incrocio,
                             x_auto_in_celle_temp, y_auto_in_celle_temp):
     """Segna sulla matrice_incrocio l'occupazione delle celle toccate dall'auto durante l'attraversamento"""
 
@@ -318,7 +325,7 @@ def set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matric
         if route[0] == rotta:
             for celle in route[1]:
                 # calcolo timestep di arrivo su tale cella
-                timestep = t_arrivo_cella(auto_temp, metri_da_incrocio(auto_temp, estermi_incrocio), celle[2])
+                timestep = t_arrivo_cella(auto_temp, metri_da_incrocio(auto_temp, estremi_incrocio), celle[2])
                 celle_occupate = celle_occupate_data_ang(celle[3], x_auto_in_celle_temp, y_auto_in_celle_temp)
                 # controllo le celle occupate dall'auto
                 for celle_circostanti in celle_occupate:
@@ -332,7 +339,7 @@ def set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matric
     return matrice_incrocio_temp
 
 
-def get_from_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp, estermi_incrocio,
+def get_from_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp, estremi_incrocio,
                               sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp):
     """Data l'auto e la matrice dell'incrocio restituisce True se non sono state rilevate collisioni
     dall'attuale situazione di passaggio rilevata all'interno della matrice, False se sono rilevate collisioni"""
@@ -344,7 +351,7 @@ def get_from_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matr
     for route in traiettorie_matrice_temp:
         if route[0] == rotta and libero:
             for celle in route[1]:
-                timestep = t_arrivo_cella(auto_temp, metri_da_incrocio(auto_temp, estermi_incrocio), celle[2])
+                timestep = t_arrivo_cella(auto_temp, metri_da_incrocio(auto_temp, estremi_incrocio), celle[2])
                 celle_occupate = celle_occupate_data_ang(celle[3], x_auto_in_celle_temp, y_auto_in_celle_temp)
                 # controllo le celle occupate dall'auto
                 for celle_circostanti in celle_occupate:
@@ -376,7 +383,7 @@ def percorso_libero(passaggio_temp, matrice_incrocio_temp, passaggio_cella_temp,
 
         rotta = traci.vehicle.getRouteID(x[0])
         edges = traci.route.getEdges(rotta)
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getIndexFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
         # se l'auto non gira a destra
         if lane != 0:
             for y in passaggio_cella_temp:
@@ -512,15 +519,18 @@ def getLanesFromEdges(node_ids, start, end):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione"""
 
+    s = start[1:3]
+    e = end[1:3]
+
     distance = -1
     i = 0
     trovato = False
     while True:
-        if node_ids[i % 4] == start:
+        if node_ids[i % 4] == s:
             trovato = True
         if trovato:
             distance += 1
-            if node_ids[i % 4] == end:
+            if node_ids[i % 4] == e:
                 break
         i += 1
     lane = 0
@@ -533,38 +543,42 @@ def getLanesFromEdges(node_ids, start, end):
     return start + f"_{str(lane)}", end + f"_{str(lane)}"
 
 
-def findClashingRoutesWhenGoForward(junction_id, left, front, right, base, obj):
+def findClashingRoutesWhenGoForward(junction_id, left, front, right, base):
     """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
     all'incrocio, in particolare quelle che si hanno nell'andare diritto."""
+    clashingEdges = []
     clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if junction_id < 10 else ""}{junction_id}_2',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{"0" if left < 10 else ""}{left}_2')
-    self.clashingEdges[base][obj].append(clashingEdge1)
+    clashingEdges.append(clashingEdge1)
     clashingEdge2 = (f'e{"0" if right < 10 else ""}{right}_{"0" if junction_id < 10 else ""}{junction_id}_4',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{base[1:3]}_4')
-    self.clashingEdges[base][obj].append(clashingEdge2)
+    clashingEdges.append(clashingEdge2)
     clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if junction_id < 10 else ""}{junction_id}_2',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{"0" if right < 10 else ""}{right}_2')
-    self.clashingEdges[base][obj].append(clashingEdge3)
+    clashingEdges.append(clashingEdge3)
     clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if junction_id < 10 else ""}{junction_id}_4',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{"0" if right < 10 else ""}{right}_4')
-    self.clashingEdges[base][obj].append(clashingEdge4)
+    clashingEdges.append(clashingEdge4)
+    return clashingEdges
 
 
-def findClashingRoutesWhenTurningLeft(junction_id, left, front, right, base, obj):
+def findClashingRoutesWhenTurningLeft(junction_id, left, front, right, base):
     """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
     all'incrocio, in particolare quelle che si hanno nello svoltare a sinistra."""
+    clashingEdges = []
     clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if junction_id < 10 else ""}{junction_id}_4',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{base[1:3]}_4')
-    self.clashingEdges[base][obj].append(clashingEdge1)
+    clashingEdges.append(clashingEdge1)
     clashingEdge2 = (f'e{"0" if left < 10 else ""}{left}_{"0" if junction_id < 10 else ""}{junction_id}_2',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{"0" if right < 10 else ""}{right}_2')
-    self.clashingEdges[base][obj].append(clashingEdge2)
+    clashingEdges.append(clashingEdge2)
     clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if junction_id < 10 else ""}{junction_id}_4',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{"0" if front < 10 else ""}{front}_4')
-    self.clashingEdges[base][obj].append(clashingEdge3)
+    clashingEdges.append(clashingEdge3)
     clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if junction_id < 10 else ""}{junction_id}_2',
                      f'e{"0" if junction_id < 10 else ""}{junction_id}_{base[1:3]}_2')
-    self.clashingEdges[base][obj].append(clashingEdge4)
+    clashingEdges.append(clashingEdge4)
+    return clashingEdges
 
 
 def getArrivalEdgesFromEdge(start):
@@ -591,17 +605,87 @@ def isClashing(route1, route2):
     """funzione che prende in ingresso 2 coppie del tipo: lane attuale e lane obbiettivo, ritornando True se le
     route sono in collisione, False altrimenti"""
     left, front, right = getArrivalEdgesFromEdge(route1[0])
-    index = getLanesFromEdges(node_ids, route1[0], route1[1])
+    index = getIndexFromEdges(node_ids, int(route1[0][1:3]), int(route1[1][1:3]))
+    r2 = ("", "")
+    r2[0], r2[1] = getLanesFromEdges(node_ids, route2[0], route2[1])
     if index == 2:
-        if findClashingRoutesWhenGoForward(junction_id, left, front, right, route1[0], route1[1]):
+        if r2 in findClashingRoutesWhenGoForward(junction_id, left, front, right, route1[0]):
             return True
     if index == 4:
-        if findClashingRoutesWhenTurningLeft(junction_id, left, front, right, route1[0], route1[1]):
+        if r2 in findClashingRoutesWhenTurningLeft(junction_id, left, front, right, route1[0]):
             return True
     return False
 
 
-def createAuction(idVeh, vehicles, isCompetitive=True):
+def addWinner(vehicle):
+    """Funzione che aggiunge il vincitore sia ai veicoli vincitori sia a quelli in un'asta"""
+    currentWinners.append(vehicle)
+    vehiclesInAuction.append(vehicle)
+    assert currentWinners.count(vehicle) == 1, vehicle
+    assert vehiclesInAuction.count(vehicle) == 1, vehicle
+
+
+def removeWinner(vehicle):
+    """Funzione che rimuove un veicolo vincitore dalla lista dei vincitori e dei partecipanti ad un'asta"""
+    currentWinners.remove(vehicle)
+    vehiclesInAuction.remove(vehicle)
+    assert currentWinners.count(vehicle) == 0, vehicle
+    assert vehiclesInAuction.count(vehicle) == 0, vehicle
+
+
+def addLoser(vehicle):
+    """Funzione che aggiunge il vincitore sia ai veicoli sconfitti sia a quelli in un'asta"""
+    currentLosers.append(vehicle)
+    vehiclesInAuction.append(vehicle)
+    assert currentLosers.count(vehicle) == 1, vehicle
+    assert vehiclesInAuction.count(vehicle) == 1, vehicle
+
+
+def removeLoser(vehicle):
+    """Funzione che rimuove un veicolo vincitore dalla lista degli sconfitti e dei partecipanti ad un'asta"""
+    currentLosers.remove(vehicle)
+    vehiclesInAuction.remove(vehicle)
+    assert currentLosers.count(vehicle) == 0, vehicle
+    assert vehiclesInAuction.count(vehicle) == 0, vehicle
+
+
+def saveAuctionResults(auction):
+    """Funzione utilizzata per salvare i risultati di un'asta nel caso di non bufferizzazione e quindi di non
+    necessità di un merge dei vincitori. Evita di utilizzare la struttura delle precedenze, in modo da risparmiare
+    complessità computazionale."""
+    winners = auction.getWinners()
+    losers = auction.getLosers()
+    winnersLanes[winners[0].getCurrentLane()] = winners
+    # print(f'BBB {[v.getID() for v in winners]}')
+    for i in winners:
+        if i not in partecipants:
+            partecipants.append(i)
+            if not i.isStopped():
+                i.stopVehicle()
+            # print('saving', i.getID(), 'sar', self.junction.getID(), 'w', i.distanceFromEndLane())
+            partecipantsRoutes[i] = getLanesFromEdges(node_ids, traci.vehicle.getRoute(i)[0],
+                                                      traci.vehicle.getRoute(i)[1])
+        if i in currentLosers:
+            removeLoser(i)
+        addWinner(i)
+        precedences[i] = losers
+    #     print(f'precedences of veh {i.getID()}: {[j.getID() for j in self.precedences[i]]}')
+    # print([i.getID() for i in self.getCurrentWinners()], 'junction', self.junction.getID())
+    for i in losers:
+        addLoser(i)
+        partecipantsRoutes[i] = getLanesFromEdges(node_ids, traci.vehicle.getRoute(i)[0], traci.vehicle.getRoute(i)[1])
+        i.nVehiclesToWait += len(winners)
+        if i not in partecipants:
+            partecipants.append(i)
+            if not i.isStopped():
+                i.stopVehicle()
+            precedences[i] = []
+            # print('saving', i.getID(), 'sar', self.junction.getID(), 'l', i.distanceFromEndLane())
+
+    # print('saving auction result of', self.junction.getID())
+
+
+def createAuction(idVeh, vehicles):
         """Funzione che permette di aggiungere un'asta all'elenco di quelle attualmente in corso nell'incrocio
            :param idVeh: ID del veicolo di cui si cercheranno i rivali.
            :param vehicles: veicoli raggruppati per corsia d'appartenenza;"""
@@ -660,7 +744,7 @@ def createAuction(idVeh, vehicles, isCompetitive=True):
                 if otherVeh != veh and otherVeh not in clashingVehicles:
                     lanes_veh = getLanesFromEdges(node_ids, traci.vehicle.getRoute(veh)[0], traci.vehicle.getRoute(veh)[1])
                     lanes_other_veh = getLanesFromEdges(node_ids, traci.vehicle.getRoute(otherVeh)[0], traci.vehicle.getRoute(otherVeh[1]))
-                    if isClashing(lanes_veh, lanes_other_veh): ///////////////
+                    if isClashing(lanes_veh, lanes_other_veh):
                         clashingVehicles.append(otherVeh)
                         vlp = []
                         vls = []
@@ -689,57 +773,46 @@ def createAuction(idVeh, vehicles, isCompetitive=True):
         """Blocco di codice che impedisce ai veicoli in traiettoria incidentale con l'insieme dei bloccanti di 
         prendere parte alle aste. Tutti i veicoli dopo un veicolo che non può prendere parte ad un'asta vengono
         messi insieme ad esso nel gruppo degli sponsors."""
-        if isCompetitive:
-            # for cl in clashingLists:
-            #     print('p c l v: ', end='')
-            #     for v in cl[0]:
-            #         print(v.getID(), v.getCurrentLane(), end=', ')
-            #     print()
-            """Caso competitivo. Con questo ciclo individuiamo eventuali veicoli in clash con veicoli vincitori 
-            e gli impediamo di prendere parte all'asta. L'asta non viene permessa nemmeno ai veicoli che vengono 
-            dopo il veicolo in clash."""
-            if currentWinners:
-                blockingVehicles = currentWinners.copy()
-                # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in blockingVehicles)
-                listsToBeRemoved = []
-                for cl in clashingLists:
-                    vehToBeRemoved = []
-                    for veh in cl[0]:
-                        isInAClash = False
-                        for bv in blockingVehicles:
-                            # print(f'bv {bv.getID()}, ({bv.getCurrentLane()})')
-                            # se trovo un veicolo in clash con un vincitore
-                            lanes_veh = getLanesFromEdges(node_ids, traci.vehicle.getRoute(veh)[0],
-                                                          traci.vehicle.getRoute(veh)[1])
-                            lanes_other_veh = getLanesFromEdges(node_ids, traci.vehicle.getRoute(bv)[0],
-                                                                traci.vehicle.getRoute(bv[1]))
-                            if isClashing(lanes_veh, lanes_other_veh):
-                                isInAClash = True
-                                # lo rimuovo insieme a tutti i veicoli vengono dopo di lui
-                                vehToBeRemoved = cl[0][cl[0].index(veh):]
-                                break
-                        if isInAClash:
-                            for v in vehToBeRemoved:
-                                cl[0].remove(v)
-                            if not cl[0]:
-                                # se non ci sono più veicoli rimuoviamo la lista
-                                listsToBeRemoved.append(cl)
-                            else:
-                                # aggiungiamo i veicoli che non possono direttamente partecipare all'asta all'elenco
-                                # degli sponsor.
-                                cl[1].extend(vehToBeRemoved)
+        """Caso competitivo. Con questo ciclo individuiamo eventuali veicoli in clash con veicoli vincitori 
+        e gli impediamo di prendere parte all'asta. L'asta non viene permessa nemmeno ai veicoli che vengono 
+        dopo il veicolo in clash."""
+        if currentWinners:
+            blockingVehicles = currentWinners.copy()
+            # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in blockingVehicles)
+            listsToBeRemoved = []
+            for cl in clashingLists:
+                vehToBeRemoved = []
+                for veh in cl[0]:
+                    isInAClash = False
+                    for bv in blockingVehicles:
+                        # print(f'bv {bv.getID()}, ({bv.getCurrentLane()})')
+                        # se trovo un veicolo in clash con un vincitore
+                        lanes_veh = getLanesFromEdges(node_ids, traci.vehicle.getRoute(veh)[0],
+                                                      traci.vehicle.getRoute(veh)[1])
+                        lanes_other_veh = getLanesFromEdges(node_ids, traci.vehicle.getRoute(bv)[0],
+                                                            traci.vehicle.getRoute(bv[1]))
+                        if isClashing(lanes_veh, lanes_other_veh):
+                            isInAClash = True
+                            # lo rimuovo insieme a tutti i veicoli vengono dopo di lui
+                            vehToBeRemoved = cl[0][cl[0].index(veh):]
                             break
-                for li in listsToBeRemoved:
-                    clashingLists.remove(li)
-        else:
-            pass
+                    if isInAClash:
+                        for v in vehToBeRemoved:
+                            cl[0].remove(v)
+                        if not cl[0]:
+                            # se non ci sono più veicoli rimuoviamo la lista
+                            listsToBeRemoved.append(cl)
+                        else:
+                            # aggiungiamo i veicoli che non possono direttamente partecipare all'asta all'elenco
+                            # degli sponsor.
+                            cl[1].extend(vehToBeRemoved)
+                        break
+            for li in listsToBeRemoved:
+                clashingLists.remove(li)
 
         if len(clashingLists) > 1:
-            if isCompetitive:
-                auction = trafficElements.CompetitiveAuction(clashingLists, junction_id, False, True, False)
-            else:
-                pass
-            self.crossingManager.saveAuctionResults(auction)
+            auction = CompetitiveAuction(clashingLists, junction_id, False, True, False)
+            saveAuctionResults(auction)
 
 
 def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
@@ -975,7 +1048,7 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
             for x in passaggio_cella[incrID]:
                 rotta = traci.vehicle.getRouteID(x[0])
                 edges = traci.route.getEdges(rotta)
-                lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+                lane = getIndexFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
                 if lane != 0:
                     # se l'auto non gira a destra
                     if x[1] is None and x[2] is None:

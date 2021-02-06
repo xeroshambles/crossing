@@ -1,6 +1,30 @@
 import math
+import random
 from abc import abstractmethod, ABC
 from reservation_auction.main import isClashing
+import traci  #noqa
+
+
+def payBid_(bid, veh):
+    """Funzione utilizzata per pagare quanto dovuto dopo un'asta. Attualmente impiegata solo dalla
+    versione delle simulazioni non bufferate."""
+    wallet = traci.vehicle.getParameter(veh, "wallet")
+    wallet -= bid
+    # il portafoglio del veicolo non è mai negativo
+    if wallet < 0:
+        wallet = 0
+    traci.vehicle.setParameter(veh, "wallet", wallet)
+
+
+def makeBid(veh):
+    """Funzione utilizzata per effettuare le offerte per le aste. Attualmente impiegata solo dalla versione delle
+    simulazioni non bufferate."""
+    cap = int(traci.vehicle.getParameter(veh, "wallet") / 2)
+    # controllo per fare in modo che il veicolo effettui un'offerta minima in un asta
+    if cap > 10:
+        return random.randint(10, cap)
+    else:
+        return 10
 
 
 class Auction(ABC):
@@ -69,7 +93,7 @@ class Auction(ABC):
                     # un'asta si è resa necessaria)
                     p.hasPassedFreely = False
                     p.notFreePassageCounter += 1
-                bid = p.makeBid()
+                bid = makeBid(p)
                 bidInc = self.manageStarvation(p, bid, len(partecipants))
                 self.bids[p] = bid
                 self.bidsInc[p] = bidInc
@@ -153,79 +177,27 @@ class CompetitiveAuction(Auction):
         :return winner: i veicoli vincenti;
         :return losers: , i capofila delle corsie perdenti.
         """
-        if not self.bufferMode:
-            """Il ramo della funzione utilizzato è questo. Salvo i vincitori e gli sconfitti e faccio pagare 
-            chi deve pagare in base al setup della simulazione."""
-            winners = self.partecipantsGrouped[0][0]
-            losers = []
-            for lis in self.partecipantsGrouped[1:]:
-                if isClashing(self.junction.fromEdgesToLanes(lis[0][0]),
-                                            self.junction.fromEdgesToLanes(winners[0])):
-                    losers.extend(lis[0])
-            self.winners = winners.copy()
-            self.losers = losers.copy()
-            if self.instantPay:
-                allPartecipants = self.partecipantsNonGrouped.copy()
-                # aggiungo gli sponsor di tutti i partecipanti
-                allPartecipants.extend([i for j in self.partecipantsGrouped for i in j[1]])
-                for v in allPartecipants:
-                    v.payBid_(self.bids[v])
-            else:
-                # aggiungo gli sponsor dei vincitori
-                winners.extend(self.partecipantsGrouped[0][1])
-                for v in winners:
-                    v.payBid_(self.bids[v])
-            # for w in winners:
-            # print(f'winner {w.getID()}, {w.distanceFromEndLane()} (lane {w.getCurrentLane()}) is paying {self.bids[w]}')
-            # for l in losers:
-            # print(f'loser {l.getID()}, {l.distanceFromEndLane()} (lane {l.getCurrentLane()}) is paying {self.bids[l]}')
+        """Il ramo della funzione utilizzato è questo. Salvo i vincitori e gli sconfitti e faccio pagare 
+        chi deve pagare in base al setup della simulazione."""
+        winners = self.partecipantsGrouped[0][0]
+        losers = []
+        for lis in self.partecipantsGrouped[1:]:
+            if isClashing(traci.vehicle.getRoute(lis[0][0]),
+                          traci.vehicle.getRoute(winners[0])):
+                losers.extend(lis[0])
+        self.winners = winners.copy()
+        self.losers = losers.copy()
+        if self.instantPay:
+            allPartecipants = self.partecipantsNonGrouped.copy()
+            # aggiungo gli sponsor di tutti i partecipanti
+            allPartecipants.extend([i for j in self.partecipantsGrouped for i in j[1]])
+            for v in allPartecipants:
+                payBid_(self.bids[v], v)
         else:
-            """Ramo incompleto."""
-            bids = []  # lista contente i veicoli partecipanti e le somme proposte
-            winners = []
-            maxBid = 0
-            for vehiclesInALane in self.partecipantsGrouped:
-                bidsFromALane = []
-                for veh in vehiclesInALane:
-                    if not oneVehicle or vehiclesInALane.index(veh) == 0:
-                        bidVeh = veh.makeABid(self.junction)
-                    else:
-                        bidVeh = veh.makeABid(self.junction, True)
-                    bids.append((veh, bidVeh))
-                    bidsFromALane.append(bidVeh)
-                    self.bids[veh] = bidVeh
-                totalBid = sum(bidsFromALane)
-                if totalBid > maxBid:
-                    winners = vehiclesInALane.copy()
-                    maxBid = totalBid
-            losers = []
-            if not oneVehicle:
-                for veh in self.partecipantsNonGrouped:
-                    if veh not in winners:
-                        losers.append(veh)
-            else:
-                # se tengo conto solo dei veicoli di testa registro come perdenti solo il primo veicolo di ogni lane
-                # avversaria e il secondo elemento di quella vincente (per evitare che possa chiamare aste prima del
-                # passaggio del vincitore)
-                for lane in self.partecipantsGrouped:
-                    if lane != winners:
-                        losers.append(lane[0])
-                    else:
-                        if len(lane) > 1:
-                            losers.append(lane[1])
-            if not oneVehicle:
-                self.winners = winners
-            else:
-                # prendo solo il veicolo in testa
-                self.winners = [winners[0]]
-            if not self.partecipantsNonGrouped[0].instantPay:
-                for i in self.winners:
-                    i.payBid(self.bids[i])
-                    # print(i.getID(), 'is paying', self.bids[i])
-            self.losers = losers
-            # print('partecipants before removal', [p.getID() for p in self.getPartecipants()])
-            # print('partecipants', [p.getID() for p in self.getPartecipants()])
-            # print('winners', [w.getID() for w in self.winners], 'losers', [l.getID() for l in self.losers])
+            # aggiungo gli sponsor dei vincitori
+            winners.extend(self.partecipantsGrouped[0][1])
+            for v in winners:
+                payBid_(self.bids[v], v)
 
 
 class CooperativeAuction(Auction):
