@@ -11,8 +11,8 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary, miscutils  # noqa
-import traci  # noqa
+from sumolib import checkBinary, miscutils
+import traci
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 junction_id = 7  # id dell'incrocio

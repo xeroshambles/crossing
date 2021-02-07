@@ -1,8 +1,6 @@
 from .auction import CooperativeAuction
 from .crossingManager import CrossingManager
 
-import traci # noqa
-
 
 class CooperativeCrossingManager(CrossingManager):
     """Classe che si occupa di coordinare il passaggio dei veicoli all'incrocio, basandosi sulle aste che sono avvenute

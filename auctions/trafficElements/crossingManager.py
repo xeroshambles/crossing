@@ -1,8 +1,8 @@
 from abc import abstractmethod, ABC
 
-import traci # noqa
-
 from .auction import CompetitiveAuction
+
+import traci
 
 
 class CrossingManager(ABC):

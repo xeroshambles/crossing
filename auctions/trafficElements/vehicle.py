@@ -2,9 +2,9 @@ import random
 import re
 from random import randint, choice
 
-import traci # noqa
-
 from .junction import Junction
+
+import traci
 
 
 class Vehicle:

@@ -1,10 +1,10 @@
 from abc import abstractmethod, ABC
 
-import traci # noqa
-
 from .auction import CompetitiveAuction, CooperativeAuction
 from .competitive import CompetitiveCrossingManager
 from .cooperative import CooperativeCrossingManager
+
+import traci
 
 
 class Junction(ABC):

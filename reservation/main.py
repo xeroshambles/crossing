@@ -6,15 +6,16 @@ from math import sqrt
 import output
 from multiprocessing import Queue
 
+from reservation.traiettorie import Traiettorie
+
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
     sys.path.append(tools)
 else:
     sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary, miscutils  # noqa
-import traci  # noqa
-from reservation.traiettorie import Traiettorie
+from sumolib import checkBinary, miscutils
+import traci
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 junction_id = 7  # id dell'incrocio

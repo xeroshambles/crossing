@@ -1,7 +1,7 @@
 from .auction import CompetitiveAuction
 from .crossingManager import CrossingManager
 
-import traci # noqa
+import traci
 
 
 class CompetitiveCrossingManager(CrossingManager):
