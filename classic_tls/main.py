@@ -54,24 +54,6 @@ def getLaneFromEdges(node_ids, start, end):
     return lane
 
 
-def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
-    """Calcolo la distanza tra il veicolo e l'inizio dell'incrocio"""
-
-    min_x = shape[0][0]
-    max_x = shape[0][0]
-    # print(f"Shape: {shape}\n")
-    for point in shape:
-        if point[0] < min_x:
-            min_x = point[0]
-        if point[0] > max_x:
-            max_x = point[0]
-    # print(f"Max x: {max_x}, Min x: {min_x}, Lane length: {lane_length}\n")
-    lane_end = lane_length - (max_x - min_x) / 2
-    # print(f"Lane end = lane_length - (max_x - min_x) / 2 = {lane_end}\n")
-    # print(f"Distance: {lane_end - spawn_distance}")
-    return lane_end - spawn_distance
-
-
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
@@ -93,7 +75,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
 
     sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
 
-    traci.start(sumoCmd, port=port)
+    traci.start(sumoCmd, port=port, numRetries=1000)
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione
@@ -113,7 +95,6 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
     varTail = 0  # varianza rispetto alla coda
     maxTail = -1  # coda massima rilevata su tutte le lane entranti
     tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
-    junction_shape = traci.junction.getShape("n" + str(junction_id))
 
     for lane in lanes:
         # calcolo la lunghezza delle code e il throughput solo per le lane entranti
@@ -215,13 +196,11 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
             if veh_current_lane[4:6] == '07':
                 vehicles[veh]['startingLane'] = veh_current_lane
                 vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
-                spawn_distance = traci.vehicle.getDistance(veh)
-                # print(f"Lane: {veh_current_lane}, Vehicle: {veh}")
-                distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
-                                                  junction_shape)
+                distance = traci.vehicle.getNextTLS(veh)[0][2]
                 veh_length = traci.vehicle.getLength(veh)
                 check = veh_length / 2 + 0.2
                 leader = traci.vehicle.getLeader(veh)
+                spawn_distance = traci.vehicle.getDistance(veh)
                 if vehicles[veh]['hasEntered'] == 0:
                     counter_serving[veh_current_lane] += 1
                     vehicles[veh]['hasEntered'] = 1
@@ -237,7 +216,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
                             traci.vehicle.setColor(veh, (0, 0, 255))  # blu
                         continue
                     # verifico se il veicolo è in coda
-                    if leader and leader[1] <= 0.5 and vehicles[leader[0]]['startingLane'] == veh_current_lane:
+                    if leader and leader[1] <= 0.5:
                         vehicles[veh]['followerStopTime'] += 1
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
@@ -245,13 +224,13 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
                 else:
                     if schema in ['s', 'S']:
                         traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
-
     if totalTime % period != 0:
         for lane in tails_per_lane:
             serving[lane].append(counter_serving[lane])
             served[lane].append(counter_served[lane])
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
+
     for veh in vehicles:
         headTimes.append(vehicles[veh]['headStopTime'])
         tailTimes.append(vehicles[veh]['followerStopTime'])

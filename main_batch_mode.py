@@ -11,8 +11,7 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary, miscutils  # noqa
-import traci  # noqa
+from sumolib import checkBinary
 
 from reservation.traiettorie import Traiettorie
 
@@ -22,7 +21,7 @@ def main(project):
 
     mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
     repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-    numberOfVehicles = [50, 100, 200, 400]  # lista contenente il numero di veicoli per ogni simulazione diversa
+    numberOfVehicles = [50, 100, 150, 200]  # lista contenente il numero di veicoli per ogni simulazione diversa
     diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
     period = 10  # tempo di valutazione del throughput del sistema incrocio
 
@@ -37,7 +36,7 @@ def main(project):
 
     choice = module.checkChoice(['d', 'D', 'g', 'G'],
                          '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
-                         "\nUtilizzo la modalità grafica come default...", '\nInserire un carattere tra d e g!', mode)
+                         "\nUtilizzo la modalità dati come default...", '\nInserire un carattere tra d e g!', mode)
 
     sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
@@ -145,11 +144,11 @@ def main(project):
                 p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, tempo_generazione,
                                                      celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
                                                      path, j, queue))
-            elif project == "auctions":
-                p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, True, True,
-                                                     1, path, j, queue))
+            elif project == "auction":
+                p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, True, True,
+                                                     -1, path, j, queue))
             else:
-                p = Process(target=module.run, args=(numberOfVehicles[i - 1], schema, sumoCmd, path,
+                p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, path,
                                                      j, queue))
             p.start()
             procs.append(p)
@@ -214,7 +213,7 @@ def main(project):
         measures['speed'][2]['values'].append(round(sum(maxSpeedArr) / len(maxSpeedArr), 2))
         measures['tail_length'][0]['values'].append(round(sum(meanTailLengthArr) / len(meanTailLengthArr), 2))
         measures['tail_length'][1]['values'].append(round(sum(stDevTailLengthArr) / len(stDevTailLengthArr), 2))
-        measures['tail_length'][2]['values'].append(round(sum(maxTailLengthArr) / len(maxTailLengthArr), 2))
+        measures['tail_length'][2]['values'].append(max(maxTailLengthArr))
         measures['stopped_vehicles'][0]['values'].append(round(sum(nStoppedVehiclesArr) / len(nStoppedVehiclesArr), 2))
         measures['throughput'][0]['values'].append(round(sum(meanThroughputArr) / len(meanThroughputArr), 2))
 

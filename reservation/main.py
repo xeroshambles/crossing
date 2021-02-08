@@ -62,16 +62,12 @@ def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
 
     min_x = shape[0][0]
     max_x = shape[0][0]
-    # print(f"Shape: {shape}\n")
     for point in shape:
         if point[0] < min_x:
             min_x = point[0]
         if point[0] > max_x:
             max_x = point[0]
-    # print(f"Max x: {max_x}, Min x: {min_x}, Lane length: {lane_length}\n")
     lane_end = lane_length - (max_x - min_x) / 2
-    # print(f"Lane end = lane_length - (max_x - min_x) / 2 = {lane_end}\n")
-    # print(f"Distance: {lane_end - spawn_distance}")
     return lane_end - spawn_distance
 
 
@@ -458,98 +454,6 @@ def costruzioneArray(arrayAuto_temp):
     return arrayAuto_temp
 
 
-def coloreAuto(arrayAuto_temp, junctIDList_temp, attesa_temp, ferme_temp):
-    """Colora le auto a seconda del loro stato"""
-
-    for auto_temp in arrayAuto_temp:
-        colorata = False
-        for junctID in range(0, len(junctIDList_temp)):
-            if auto_temp in attesa_temp[junctID]:
-                colorata = True
-                if auto_temp in ferme_temp[junctID]:
-                    traci.vehicle.setColor(auto_temp, (255, 0, 0))
-                else:
-                    traci.vehicle.setColor(auto_temp, (255, 255, 0))
-        if not colorata:
-            traci.vehicle.setColor(auto_temp, (0, 255, 0))
-
-
-def output1(arrayAuto_temp, consumo_temp):
-    """Preparo i valori per scriverli nei file di output"""
-
-    vmed = 0
-    ferme_count = 0
-    for auto_temp in arrayAuto_temp:
-        if round(traci.vehicle.getSpeed(auto_temp), 3) == 0:
-            ferme_count += 1
-        vmed += traci.vehicle.getSpeed(auto_temp)
-
-        if auto_temp not in consumo_temp:
-            consumo_temp[auto_temp] = []
-            consumo_temp[auto_temp].append(traci.vehicle.getElectricityConsumption(auto_temp) * 8)
-        else:
-            consumo_temp[auto_temp].append(traci.vehicle.getElectricityConsumption(auto_temp) * 8)
-
-    # calcoli per scrivere i valori nel file code
-    code = []
-    # scorro le strade
-    for viaID in traci.edge.getIDList():
-        if not viaID.startswith(":"):
-            # coda per ogni lane nella strada
-            coda0 = 0
-            coda1 = 0
-            coda2 = 0
-            # scorro le auto presenti nella simulazione
-            for auto_temp in arrayAuto_temp:
-                # controllo se l'auto è su quella via
-                if traci.vehicle.getRoadID(auto_temp) == viaID:
-                    # se la velocità è 0 controllo la corsia e aggiungo 1 alla relativa coda
-                    if round(traci.vehicle.getSpeed(auto_temp), 3) == 0:
-                        corsia = traci.vehicle.getLaneIndex(auto_temp)
-                        if corsia == 0:
-                            coda0 += 1
-                        if corsia == 2:
-                            coda1 += 1
-                        if corsia == 4:
-                            coda2 += 1
-            # se ci sono auto nella coda di quella corsia inserisco nel vettore code
-            if coda0 > 0:
-                code.append(coda0)
-            if coda1 > 0:
-                code.append(coda1)
-            if coda2 > 0:
-                code.append(coda2)
-
-    codesum = 0
-    for count in range(0, len(code)):
-        codesum += code[count]
-
-    if len(arrayAuto_temp) > 0:
-
-        # costruisco riga nel file velocità media
-        vmed = float(vmed) / float(len(arrayAuto_temp))
-        vmed = round(vmed, 4)
-
-        if len(code) > 0:
-            # costruisco riga nel file code
-            codemed = float(codesum) / float(len(code))
-            cmed = round(codemed, 4)
-
-            codemax = max(code)
-            cmax = round(codemax, 4)
-
-        else:
-            cmax = 0.0
-            cmed = 0.0
-    else:
-        ferme_count = 0
-        vmed = 0.0
-        cmax = 0.0
-        cmed = 0.0
-
-    return ferme_count, vmed, cmed, cmax, consumo_temp
-
-
 def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
     "Ogni 10 step pulisco la matrice da valori vecchi"
 
@@ -591,7 +495,7 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
 
     sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
 
-    traci.start(sumoCmd, port=port)
+    traci.start(sumoCmd, port=port, numRetries=1000)
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     step = 0.000  # tempo totale di simulazione
@@ -629,6 +533,7 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
+
     for n in range(0, numberOfVehicles):
         if schema in ['n', 'N']:
             if n % 8 == 1:
@@ -846,15 +751,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
                     traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
                     traci.vehicle.setSpeedMode(auto_uscita[0], 7)
             passaggio_precedente[incrID] = passaggio[incrID][:]
-        # ogni 8 step ne calcolo i valori delle metriche attuali
-        if int(step / step_incr) % 8 == 0:
-            # genero la stringhe di output
-            file_rit = output1(arrayAuto, consumo)
-            f_s.append(file_rit[0])
-            vm_s.append(file_rit[1])
-            cm_s.append(file_rit[2])
-            cx_s.append(file_rit[3])
-            consumo = file_rit[4]
         # ogni 10 step pulisco la matrice da valori troppo vecchi
         if int(step / step_incr) % 10 == 0:
             matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
@@ -953,7 +849,8 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
             serving[lane].append(counter_serving[lane])
             served[lane].append(counter_served[lane])
 
-    """Salvo tutti i risultati della simulazione e li ritorno."""
+    """Salvo tutti i risultati della simulazione e li ritorno"""
+
     for veh in vehicles:
         headTimes.append(vehicles[veh]['headStopTime'])
         tailTimes.append(vehicles[veh]['followerStopTime'])
