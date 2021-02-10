@@ -2,10 +2,10 @@ import sys
 import os
 from math import sqrt
 from utils import *
-from config import *
+from config_no_batch import *
 
-from sumolib import miscutils
 import traci
+from sumolib import miscutils
 
 
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
@@ -62,10 +62,10 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generaVeicoli(node_ids, junction_id, numberOfVehicles, 1, vehicles, seed)
+    vehicles = generateVehicles(node_ids, junction_id, numberOfVehicles, 1, vehicles, seed)
 
     if schema in ['n', 'N']:
-        coloraAuto(numberOfVehicles)
+        colorVehicles(numberOfVehicles)
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 

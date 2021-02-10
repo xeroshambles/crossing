@@ -3,6 +3,52 @@ import matplotlib.pyplot as plt
 from datetime import date
 
 
+def checkChoice(choices, inp, default, err, mode=''):
+    "Funzione che verifica se le impostazioni del progetto sono corrette"
+
+    choice = ''
+
+    while choice not in choices:
+        if mode == 'auto':
+            choice = choices[0]
+            print(default)
+            break
+        else:
+            choice = input(inp)
+            if choice == '':
+                choice = choices[0]
+                print(default)
+                break
+            if choice not in choices:
+                print(err)
+    return choice
+
+
+def checkInput(val, inp, default, err, mode='', ret='', value=0):
+    """Funzione che verifica se l'input dell'utente è corretto"""
+
+    if mode == 'auto':
+        print(ret)
+        return value
+
+    i = 0
+    while i <= 0:
+        t = input(inp)
+        if t == '':
+            i = val
+            print(default)
+            break
+        try:
+            i = int(t)
+        except:
+            i = 0
+            print(err)
+            continue
+        if i <= 0:
+            print(err)
+    return i
+
+
 def writeMeasuresToFile(f, i, numberOfVehicles, ret):
     """Salvo su file le misure effettuate"""
 
@@ -58,6 +104,7 @@ def linesPerMeasures(values, labels, titles, colors, groups, labels_per_sims, pa
         ax.set_xticklabels(labels_per_sims)
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(path + "/" + titles[i] + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')
+        plt.close(fig)
 
 
 def histPerMeasures(values, labels, titles, colors, groups, labels_per_sims, path, project=''):
@@ -102,49 +149,3 @@ def histPerMeasures(values, labels, titles, colors, groups, labels_per_sims, pat
         ax.set_xticklabels(labels_per_sims)
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(path + "/" + titles[i] + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')
-
-
-def checkChoice(choices, inp, default, err, mode=''):
-    "Funzione che verifica se le impostazioni del progetto sono corrette"
-
-    choice = ''
-
-    while choice not in choices:
-        if mode == 'auto':
-            choice = choices[0]
-            print(default)
-            break
-        else:
-            choice = input(inp)
-            if choice == '':
-                choice = choices[0]
-                print(default)
-                break
-            if choice not in choices:
-                print(err)
-    return choice
-
-
-def checkInput(val, inp, default, err, mode='', ret='', value=0):
-    """Funzione che verifica se l'input dell'utente è corretto"""
-
-    if mode == 'auto':
-        print(ret)
-        return value
-
-    i = 0
-    while i <= 0:
-        t = input(inp)
-        if t == '':
-            i = val
-            print(default)
-            break
-        try:
-            i = int(t)
-        except:
-            i = 0
-            print(err)
-            continue
-        if i <= 0:
-            print(err)
-    return i

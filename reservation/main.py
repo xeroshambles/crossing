@@ -1,12 +1,12 @@
 import sys
 import os
 import math
-from utils import *
 from math import sqrt
-from config import *
+from utils import *
+from config_no_batch import *
 
-from sumolib import miscutils
 import traci
+from sumolib import miscutils
 
 
 def stopXY(shape_temp):
@@ -398,7 +398,7 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     step = 0.000  # tempo totale di simulazione
-    step_incr = 0.100  # incremento del numero di step della simulazione
+    step_incr = 0.500  # incremento del numero di step della simulazione
     sec = 1 / step_incr
     counter_serving = {}  # dizionario contenente valori incrementali
     counter_served = {}  # dizionario contenente valori incrementali
@@ -430,10 +430,10 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generaVeicoli(node_ids, junction_id, numberOfVehicles, tempo_generazione, vehicles, seed)
+    vehicles = generateVehicles(node_ids, junction_id, numberOfVehicles, tempo_generazione, vehicles, seed)
 
     if schema in ['n', 'N']:
-        coloraAuto(numberOfVehicles)
+        colorVehicles(numberOfVehicles)
 
     # istanzio le matrici [nome_incrocio, variabile]
     attesa = []  # ordine di arrivo su lista, si resetta quando le auto liberano incrocio

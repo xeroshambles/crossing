@@ -2,19 +2,18 @@ import sys
 import os
 from math import sqrt
 from multiprocessing import Process, Queue
-import inpout
-import importlib.util
-from config_batch import *
 from datetime import date
+import importlib.util
+import inpout
+from config_batch import *
+from reservation.traiettorie import Traiettorie
 
 from sumolib import checkBinary
-
-from reservation.traiettorie import Traiettorie
 
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
 
-    dir = f"outputs_batch{date.today().strftime('%d-%m-%Y')}"
+    dir = f"outputs_batch_{date.today().strftime('%d_%m_%Y')}"
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
 
@@ -24,15 +23,23 @@ if __name__ == "__main__":
         except OSError:
             print(f"\nCreazione della cartella {path} fallita...")
 
-    for project in projects:
+    tempo_generazione = 43.2  # fissato
+    celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
+    secondi_di_sicurezza = 0.6
 
-        print(f"\nEseguo progetto {project}...")
+    for project in projects:
 
         try:
             module = importlib.import_module(".main", package=project)
         except Exception:
             print("\nImpossibile trovare il progetto...")
             sys.exit(0)
+
+        print(f"\nEseguo progetto {project}...")
+
+        if project == "reservation":
+            print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
+            traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
 
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
@@ -51,7 +58,7 @@ if __name__ == "__main__":
 
         if project == "reservation":
             sumoCmd.append("--step-length")
-            sumoCmd.append("0.100")
+            sumoCmd.append("0.500")
 
         schema = ''
         if choice in ['g', 'G']:
@@ -100,14 +107,6 @@ if __name__ == "__main__":
                 os.mkdir(dir)
             except OSError:
                 print(f"\nCreazione della cartella {dir} fallita...")
-
-        tempo_generazione = 43.2  # fissato
-        celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
-        secondi_di_sicurezza = 0.6
-
-        if project == "reservation":
-            print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
-            traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
 
         for i in range(0, diffSim):
 

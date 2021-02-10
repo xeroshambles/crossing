@@ -1,13 +1,12 @@
 import sys
 import os
-from utils import *
 from math import sqrt
-from config import *
-
+from utils import *
+from config_no_batch import *
 from auction.trafficElements.junction import FourWayJunction
 
-from sumolib import miscutils
 import traci
+from sumolib import miscutils
 
 
 def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, index, queue):
@@ -67,10 +66,10 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generaVeicoli(node_ids, junction_id, numberOfVehicles, 1, vehicles, seed, True)
+    vehicles = generateVehicles(node_ids, junction_id, numberOfVehicles, 1, vehicles, seed, True)
 
     if schema in ['n', 'N']:
-        coloraAuto(numberOfVehicles)
+        colorVehicles(numberOfVehicles)
 
     """Di seguito inizializzo l'incrocio che fa parte della simulazione, assegnandogli una classe che ne descriva
     il comportamento specifico"""

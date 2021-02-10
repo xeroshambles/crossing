@@ -1,33 +1,29 @@
 import sys
 import os
-import inpout
 import importlib
+from datetime import date
 from multiprocessing import Queue
+import inpout
+from config_no_batch import *
 from reservation.traiettorie import Traiettorie
 
 from sumolib import checkBinary
 
-period = 10  # tempo di valutazione del throughput del sistema incrocio
-
-labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard tempo in testa (s)',
-              'Massimo tempo in testa (s)', 'Tempo in coda (s)', 'Deviazione standard tempo in coda (s)',
-              'Massimo tempo in coda (s)', 'Velocità media (m/s)', 'Deviazione standard velocità (m/s)',
-              'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
-              'Massima lunghezza delle code', 'Veicoli fermi', 'Throughput medio ((% veicoli / {period} step']
-
-colors = ['#DF1515', '#1524DF', '#15DF1E']
-
-titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', 'mean_tail_time', 'st_dev_tail_time',
-          'max_tail_time', 'mean_speed', 'st_dev_mean_speed', 'mean_tail_length', 'st_dev_tail_length',
-          'max_tail_length', 'stopped_vehicles', 'mean_throughput']
-
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in serie"""
 
-    project = inpout.checkChoice(["classic_tls", "classic_precedence", "reservation", "auction"],
-                                    '\nInserire il nome di un progetto (classic_tls, ' 'classic_precedence, '
-                                    'auction, reservation): ', '\nUtilizzo il semaforo classico come default...',
-                                    '\nProgetto non esistente')
+    tempo_generazione = 43.2  # fissato
+    celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
+    secondi_di_sicurezza = 0.6
+
+    project = inpout.checkChoice(['classic_tls', 'classic_precedence', 'reservation', 'auction'],
+                                 '\nInserire il nome di un progetto (t = classic_tls, p = classic_precedence, '
+                                 'r = reservation, a = auction): ', '\nUtilizzo il semaforo classico come '
+                                                                    'default...', '\nProgetto non esistente')
+
+    if project == "reservation":
+        print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
+        traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
 
     try:
         module = importlib.import_module(".main", package=project)
@@ -39,9 +35,9 @@ if __name__ == "__main__":
     # della simulazione
 
     choice = inpout.checkChoice(['g', 'G', 'd', 'D'],
-                                   '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
-                                   "\nUtilizzo la modalità grafica come default...",
-                                   '\nInserire un carattere tra d e g!')
+                                '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
+                                "\nUtilizzo la modalità grafica come default...",
+                                '\nInserire un carattere tra d e g!')
 
     sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
@@ -50,22 +46,22 @@ if __name__ == "__main__":
 
     if project == "reservation":
         sumoCmd.append("--step-length")
-        sumoCmd.append("0.050")
+        sumoCmd.append("0.500")
 
     if choice in ['g', 'G']:
         schema = inpout.checkChoice(['s', 'S', 'n', 'N'],
-                                       '\nDesideri visualizzare le auto con uno schema di colori significativo? '
-                                       '(s, n): ',
-                                       "\nUtilizzo lo schema significativo come default...",
-                                       '\nInserire un carattere tra s e n!')
+                                    '\nDesideri visualizzare le auto con uno schema di colori significativo? '
+                                    '(s, n): ',
+                                    "\nUtilizzo lo schema significativo come default...",
+                                    '\nInserire un carattere tra s e n!')
     else:
         schema = ''
 
     labels_per_sims = []
 
     numberOfSimulations = inpout.checkInput(1, '\nInserire il numero di simulazioni: ',
-                                               f'\nUtilizzo una simulazione come default...',
-                                               '\nInserire un numero di simulazioni positivo!')
+                                            f'\nUtilizzo una simulazione come default...',
+                                            '\nInserire un numero di simulazioni positivo!')
 
     measures = {}
 
@@ -92,7 +88,7 @@ if __name__ == "__main__":
     measures['throughput'] = []
     measures['throughput'].append({'label': labels[13], 'color': colors[0], 'title': titles[13], 'values': []})
 
-    dir = "output_no_batch_" + project
+    dir = "output_" + project + '_' + date.today().strftime('%d_%m_%Y')
 
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
@@ -106,56 +102,47 @@ if __name__ == "__main__":
     output_file = os.path.join(path, f'no_batch.txt')
     f = open(output_file, "w")
 
-    tempo_generazione = 43.2  # fissato
-    celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
-    secondi_di_sicurezza = 0.6
-
-    if project == "reservation":
-        print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
-        traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
-
     queue = Queue()
 
     for i in range(0, numberOfSimulations):
 
         numberOfVehicles = inpout.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
-                                                f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
-                                                '\nInserire un numero di veicoli positivo!')
+                                             f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
+                                             '\nInserire un numero di veicoli positivo!')
 
         labels_per_sims.append(f'{numberOfVehicles} veicoli')
-
-        if project == 'auction':
-            choice = inpout.checkChoice(['s', 'S', 'n', 'N'],
-                                           f'\nNella simulazione {i} si vuole un approccio competitivo o cooperativo? '
-                                           f'(s = competitivo, n = cooperativo): ',
-                                           '\nUtilizzo la modalità competitiva come default...',
-                                           '\nInserire un carattere tra s e n!')
-
-            simulationMode = True if choice in ['s', 'S'] else False
-
-            choice = inpout.checkChoice(['s', 'S', 'n', 'N'],
-                                           f'\nI veicoli nella simulazione {i} devono pagare subito? Altrimenti pagano '
-                                           f'solo i vincitori delle aste (s = si, n = no): ',
-                                           '\nUtilizzo il pagamento immediato come default...',
-                                           '\nInserire un carattere tra s e n!')
-
-            instantPay = True if choice in ['s', 'S'] else False
-
-            choice = inpout.checkChoice([str(j) for j in range(1, 8)] + ['-1'],
-                                           '\nQuale dimensione deve avere il numero di veicoli considerato? '
-                                           'I gruppi possono avere una dimensione che va da 1 a 7, se si inserisce -1 '
-                                           'si usa un numero di veicoli proporzionale: ',
-                                           '\nUtilizzo come gruppo un numero di veicoli pari a 1...',
-                                           '\nInserire un numero compreso tra 1 e 7 oppure -1! '
-                                    )
-
-            dimensionOfGroups = int(choice)
 
         if project == "reservation":
             module.run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
                        secondi_di_sicurezza, path, i, queue)
 
         elif project == "auction":
+            choice = inpout.checkChoice(['s', 'S', 'n', 'N'],
+                                        f'\nNella simulazione {i} si vuole un approccio competitivo o cooperativo? '
+                                        f'(s = competitivo, n = cooperativo): ',
+                                        '\nUtilizzo la modalità competitiva come default...',
+                                        '\nInserire un carattere tra s e n!')
+
+            simulationMode = True if choice in ['s', 'S'] else False
+
+            choice = inpout.checkChoice(['s', 'S', 'n', 'N'],
+                                        f'\nI veicoli nella simulazione {i} devono pagare subito? Altrimenti pagano '
+                                        f'solo i vincitori delle aste (s = si, n = no): ',
+                                        '\nUtilizzo il pagamento immediato come default...',
+                                        '\nInserire un carattere tra s e n!')
+
+            instantPay = True if choice in ['s', 'S'] else False
+
+            choice = inpout.checkChoice([str(j) for j in range(1, 8)] + ['-1'],
+                                        '\nQuale dimensione deve avere il numero di veicoli considerato? '
+                                        'I gruppi possono avere una dimensione che va da 1 a 7, se si inserisce -1 '
+                                        'si usa un numero di veicoli proporzionale: ',
+                                        '\nUtilizzo come gruppo un numero di veicoli pari a 1...',
+                                        '\nInserire un numero compreso tra 1 e 7 oppure -1! '
+                                        )
+
+            dimensionOfGroups = int(choice)
+
             module.run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, i, queue)
 
         else:

@@ -1,7 +1,8 @@
 import random
+from auction.trafficElements.vehicle import Vehicle
+
 import traci
 
-from auction.trafficElements.vehicle import Vehicle
 
 def getLaneFromEdges(node_ids, start, end):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
@@ -58,8 +59,8 @@ def generateRoute(node_ids, junction_id):
             n += 1
 
 
-def generaVeicoli(node_ids, junction_id, numberOfVehicles, t_gen, vehicles, seed, object=False):
-    """Genero veicoli per ogni route"""
+def generateVehicles(node_ids, junction_id, numberOfVehicles, t_gen, vehicles, seed, object=False):
+    """Genero veicoli per ogni route possibile"""
 
     r_depart = 0
     auto_ogni = float(t_gen) / float(numberOfVehicles)
@@ -88,7 +89,9 @@ def generaVeicoli(node_ids, junction_id, numberOfVehicles, t_gen, vehicles, seed
     return vehicles
 
 
-def coloraAuto(numberOfVehicles):
+def colorVehicles(numberOfVehicles):
+    "Assegno un colore diverso alle auto"
+
     for i in range(0, numberOfVehicles):
         if i % 8 == 1:
             traci.vehicle.setColor(f'{i}', (0, 255, 255))  # azzurro
