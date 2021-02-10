@@ -17,7 +17,7 @@ repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripe
 numberOfVehicles = [50, 100, 150, 200]  # lista contenente il numero di veicoli per ogni simulazione diversa
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 period = 10  # tempo di valutazione del throughput del sistema incrocio
-projects = ["classic_tls"]  # progetti da eseguire
+projects = ["classic_tls", "classic_precedence", "reservation", "auction"]  # progetti da eseguire
 
 labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard tempo in testa (s)',
           'Massimo tempo in testa (s)', 'Tempo in coda (s)', 'Deviazione standard tempo in coda (s)',
@@ -118,14 +118,13 @@ if __name__ == "__main__":
         measures['throughput'] = []
         measures['throughput'].append({'label': labels[13], 'color': colors[0], 'title': titles[13], 'values': []})
 
-        dir = os.path.join(dir, project)
-        path = os.path.join(root, dir)
+        dir = os.path.join(path, project)
 
-        if not os.path.exists(path):
+        if not os.path.exists(dir):
             try:
-                os.mkdir(path)
+                os.mkdir(dir)
             except OSError:
-                print(f"\nCreazione della cartella {path} fallita...")
+                print(f"\nCreazione della cartella {dir} fallita...")
 
         tempo_generazione = 43.2  # fissato
         celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
@@ -139,7 +138,7 @@ if __name__ == "__main__":
 
             labels_per_sims.append(f'{numberOfVehicles[i]} veicoli')
 
-            output_file = os.path.join(path, f'batch_{i}.txt')
+            output_file = os.path.join(dir, f'batch_{i}.txt')
             f = open(output_file, "w")
 
             repeatSim = utilities.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
@@ -160,12 +159,12 @@ if __name__ == "__main__":
                 if project == "reservation":
                     p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, tempo_generazione,
                                                          celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
-                                                         path, j, queue))
+                                                         dir, j, queue))
                 elif project == "auction":
                     p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, False, True,
-                                                         -1, path, j, queue))
+                                                         -1, dir, j, queue))
                 else:
-                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, path,
+                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, dir,
                                                          j, queue))
                 p.start()
                 procs.append(p)
@@ -239,4 +238,4 @@ if __name__ == "__main__":
                 lab.append(measures[k][i]['label'])
                 col.append(measures[k][i]['color'])
 
-        utilities.linesPerMeasures(values, lab, ttl, col, grp, labels_per_sims, path, project)
+        utilities.linesPerMeasures(values, lab, ttl, col, grp, labels_per_sims, dir, project)
