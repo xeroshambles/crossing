@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
         if project == "reservation":
             sumoCmd.append("--step-length")
-            sumoCmd.append("0.500")
+            sumoCmd.append("0.100")
 
         schema = ''
         if choice in ['g', 'G']:
