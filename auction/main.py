@@ -2,8 +2,6 @@ import sys
 import os
 import random
 from math import sqrt
-import output
-from multiprocessing import Queue
 
 from auction.trafficElements.junction import FourWayJunction
 from auction.trafficElements.vehicle import Vehicle
@@ -12,16 +10,16 @@ if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
     sys.path.append(tools)
 else:
-    sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
+    sys.exit("\nDichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary, miscutils
+from sumolib import miscutils
 import traci
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 junction_id = 7  # id dell'incrocio
 lanes = []  # lista dei nomi delle lane
 lanes_ids = [0, 2, 4]  # lista degli id delle lanes nell'incrocio
-node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell'incrocio
+node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di groupsivo nell'incrocio
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 
 """Con questo ciclo inizializzo i nomi delle lane così come sspecificate nel file intersection.net.xml"""
@@ -108,7 +106,6 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
     varTailTime = 0  # varianza rispetto al tempo passato in coda
     meanSpeeds = []  # medie delle velocità assunte dai veicoli ad ogni step
     varSpeed = 0  # varianza rispetto alla velocità dei veicoli
-    maxSpeed = -1  # velocità massima rilevata su tutti i veicoli
     nStoppedVehicles = []  # lista che dice se i veicoli si sono fermati all'incrocio o no
     meanTailLength = []  # medie delle lunghezze delle code rilevate sulle lane entranti ad ogni step
     varTail = 0  # varianza rispetto alla coda
@@ -272,9 +269,6 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
         headTimes.append(vehicles[veh].measures['headStopTime'])
         tailTimes.append(vehicles[veh].measures['followerStopTime'])
         meanSpeeds.append(sum(vehicles[veh].measures['speeds']) / len(vehicles[veh].measures['speeds']))
-        speed_max = max(vehicles[veh].measures['speeds'])
-        if speed_max > maxSpeed:
-            maxSpeed = speed_max
         nStoppedVehicles.append(vehicles[veh].measures['hasStopped'])
 
     meanHeadTime = sum(headTimes) / len(headTimes)
@@ -323,201 +317,6 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
 
     sys.stderr = origin_stderr
 
-    queue.put([totalTime, meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime,
-               max(tailTimes), meanSpeed, varSpeed, maxSpeed, meanTail, varTail, maxTail, sum(nStoppedVehicles),
+    queue.put([totalTime, meanHeadTime, sqrt(varHeadTime), max(headTimes), meanTailTime, sqrt(varTailTime),
+               max(tailTimes), meanSpeed, sqrt(varSpeed), meanTail, sqrt(varTail), maxTail, sum(nStoppedVehicles),
                meanTP])
-
-
-def checkChoice(choices, inp, default, err, mode=''):
-    choice = ''
-    while choice not in choices:
-        if mode == 'auto':
-            choice = choices[0]
-            print(default)
-            break
-        else:
-            choice = input(inp)
-            if choice == '':
-                choice = choices[0]
-                print(default)
-                break
-            if choice not in choices:
-                print(err)
-    return choice
-
-
-def checkInput(d, inp, default, err, mode='', ret='', value=0):
-    """Funzione che verifica se l'input dell'utente è corretto"""
-
-    if mode == 'auto':
-        print(ret)
-        return value
-
-    i = 0
-    while i <= 0:
-        t = input(inp)
-        if t == '':
-            i = d
-            print(default)
-            break
-        try:
-            i = int(t)
-        except:
-            i = 0
-            print(err)
-            continue
-        if i <= 0:
-            print(err)
-    return i
-
-
-if __name__ == "__main__":
-    """Main che avvia un certo numero di simulazioni in serie"""
-
-    choice = checkChoice(['g', 'G', 'd', 'D'],
-                         '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
-                         "\nUtilizzo la modalità grafica come default...", '\nInserire un carattere tra d e g!')
-
-    sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
-
-    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
-        [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
-
-    schema = checkChoice(['s', 'S', 'n', 'N'],
-                         '\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ',
-                         "\nUtilizzo lo schema significativo come default...",
-                         '\nInserire un carattere tra s e n!')
-
-    labels_per_sims = []
-
-    numberOfSimulations = checkInput(1, '\nInserire il numero di simulazioni: ',
-                                     f'\nUtilizzo una simulazione come default...',
-                                     '\nInserire un numero di simulazioni positivo!')
-
-    measures = {}
-    measures['total_time'] = []
-    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#DF1515', 'title': 'total_time',
-                                   'values': []})
-    measures['head_time'] = []
-    measures['head_time'].append(
-        {'label': 'Tempo medio in testa (s)', 'color': '#DF1515', 'title': 'mean_head_time', 'values': []})
-    measures['head_time'].append(
-        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#1524DF', 'title': 'st_dev_head_time',
-         'values': []})
-    measures['head_time'].append(
-        {'label': 'Massimo tempo in testa (s)', 'color': '#15DF1E', 'title': 'max_head_time', 'values': []})
-    measures['tail_time'] = []
-    measures['tail_time'].append(
-        {'label': 'Tempo medio in coda (s)', 'color': '#DF1515', 'title': 'mean_tail_time', 'values': []})
-    measures['tail_time'].append(
-        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#1524DF', 'title': 'st_dev_tail_time',
-         'values': []})
-    measures['tail_time'].append(
-        {'label': 'Massimo tempo in coda (s)', 'color': '#15DF1E', 'title': 'max_tail_time', 'values': []})
-    measures['speed'] = []
-    measures['speed'].append(
-        {'label': 'Velocità media (m/s)', 'color': '#DF1515', 'title': 'mean_speed', 'values': []})
-    measures['speed'].append(
-        {'label': 'Deviazione standard velocità (m/s)', 'color': '#1524DF', 'title': 'st_dev_speed',
-         'values': []})
-    measures['speed'].append(
-        {'label': 'Massima velocità (m/s)', 'color': '#15DF1E', 'title': 'max_speed', 'values': []})
-    measures['tail_length'] = []
-    measures['tail_length'].append(
-        {'label': 'Lunghezza media delle code', 'color': '#DF1515', 'title': 'mean_tail_length', 'values': []})
-    measures['tail_length'].append(
-        {'label': 'Deviazione standard lunghezza delle code', 'color': '#1524DF', 'title': 'st_dev_tail_length',
-         'values': []})
-    measures['tail_length'].append(
-        {'label': 'Massima lunghezza delle code', 'color': '#15DF1E', 'title': 'max_tail_length', 'values': []})
-    measures['stopped_vehicles'] = []
-    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#DF1515', 'title': 'stopped_vehicles',
-                                         'values': []})
-    measures['throughput'] = []
-    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#DF1515',
-                                   'title': 'mean_throughput', 'values': []})
-
-    root = os.path.abspath(os.path.split(__file__)[0])
-    path = os.path.join(root, "output_no_batch")
-    if not os.path.exists(path):
-        try:
-            os.mkdir(path)
-        except OSError:
-            print(f"\nCreazione della cartella {path} fallita...")
-
-    output_file = os.path.join(path, f'no_batch.txt')
-    f = open(output_file, "w")
-
-    queue = Queue()
-
-    for i in range(0, numberOfSimulations):
-        numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
-                                      f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
-                                      '\nInserire un numero di veicoli positivo!')
-
-        labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
-
-        choice = checkChoice(['s', 'S', 'n', 'N'],
-                             f'\nNella simulazione {i} si vuole un approccio competitivo o cooperativo? (s = '
-                             f'competitivo, n = cooperativo): ', '\nUtilizzo la modalità competitiva come default...',
-                             '\nInserire un carattere tra s e n!')
-
-        simulationMode = True if choice in ['s', 'S'] else False
-
-        choice = checkChoice(['s', 'S', 'n', 'N'],
-                             f'\nI veicoli nella simulazione {i} devono pagare subito? Altrimenti pagano solo i '
-                             f'vincitori delle aste (s = si, n = no): ',
-                             '\nUtilizzo il pagamento immediato come default...',
-                             '\nInserire un carattere tra s e n!')
-
-        instantPay = True if choice in ['s', 'S'] else False
-
-        choice = checkChoice([str(j) for j in range(1, 8)] + ['-1'],
-                             '\nQuale dimensione deve avere il numero di veicoli considerato? '
-                             'I gruppi possono avere una dimensione che va da 1 a 7, se si inserisce -1 '
-                             'si usa un numero di veicoli proporzionale: ',
-                             '\nUtilizzo come gruppo un numero di veicoli pari a 1...',
-                             '\nInserire un numero compreso tra 1 e 7 oppure -1! '
-                             )
-
-        dimensionOfGroups = int(choice)
-
-        print(numberOfVehicles, schema, simulationMode, instantPay, dimensionOfGroups)
-
-        run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, i, queue)
-
-        ret = queue.get()
-        output.writeMeasuresToFile(f, i, numberOfVehicles, ret)
-
-        measures['total_time'][0]['values'].append(round(ret[0], 2))
-        measures['head_time'][0]['values'].append(round(ret[1], 2))
-        measures['head_time'][1]['values'].append(round(sqrt(ret[2]), 2))
-        measures['head_time'][2]['values'].append(round(ret[3], 2))
-        measures['tail_time'][0]['values'].append(round(ret[4], 2))
-        measures['tail_time'][1]['values'].append(round(sqrt(ret[5]), 2))
-        measures['tail_time'][2]['values'].append(round(ret[6], 2))
-        measures['speed'][0]['values'].append(round(ret[7], 2))
-        measures['speed'][1]['values'].append(round(sqrt(ret[8]), 2))
-        measures['speed'][2]['values'].append(round(ret[9], 2))
-        measures['tail_length'][0]['values'].append(round(ret[10], 2))
-        measures['tail_length'][1]['values'].append(round(sqrt(ret[11]), 2))
-        measures['tail_length'][2]['values'].append(round(ret[12], 2))
-        measures['stopped_vehicles'][0]['values'].append(round(ret[13], 2))
-        measures['throughput'][0]['values'].append(round(ret[14], 2))
-
-    f.close()
-
-    values = []
-    labels = []
-    titles = []
-    colors = []
-    arr = []
-    for k in measures:
-        arr.append(len(measures[k]))
-        titles.append(k)
-        for i in range(0, len(measures[k])):
-            values.append(measures[k][i]['values'])
-            labels.append(measures[k][i]['label'])
-            colors.append(measures[k][i]['color'])
-
-    output.histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path)

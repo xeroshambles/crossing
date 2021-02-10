@@ -3,10 +3,6 @@ import os
 import random
 import math
 from math import sqrt
-import output
-from multiprocessing import Queue
-
-from reservation.traiettorie import Traiettorie
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -14,7 +10,7 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
 
-from sumolib import checkBinary, miscutils
+from sumolib import miscutils
 import traci
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
@@ -511,7 +507,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
     varTailTime = 0  # varianza rispetto al tempo passato in coda
     meanSpeeds = []  # medie delle velocità assunte dai veicoli ad ogni step
     varSpeed = 0  # varianza rispetto alla velocità dei veicoli
-    maxSpeed = -1  # velocità massima rilevata su tutti i veicoli
     nStoppedVehicles = []  # lista che dice se i veicoli si sono fermati all'incrocio o no
     meanTailLength = []  # medie delle lunghezze delle code rilevate sulle lane entranti ad ogni step
     varTail = 0  # varianza rispetto alla coda
@@ -855,9 +850,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
         headTimes.append(vehicles[veh]['headStopTime'])
         tailTimes.append(vehicles[veh]['followerStopTime'])
         meanSpeeds.append(sum(vehicles[veh]['speeds']) / len(vehicles[veh]['speeds']))
-        speed_max = max(vehicles[veh]['speeds'])
-        if speed_max > maxSpeed:
-            maxSpeed = speed_max
         nStoppedVehicles.append(vehicles[veh]['hasStopped'])
 
     meanHeadTime = sum(headTimes) / len(headTimes)
@@ -906,185 +898,6 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
 
     sys.stderr = origin_stderr
 
-    queue.put([int(step), meanHeadTime, varHeadTime, max(headTimes), meanTailTime, varTailTime,
-               max(tailTimes), meanSpeed, varSpeed, maxSpeed, meanTail, varTail, maxTail, sum(nStoppedVehicles),
+    queue.put([int(step), meanHeadTime, sqrt(varHeadTime), max(headTimes), meanTailTime, sqrt(varTailTime),
+               max(tailTimes), meanSpeed, sqrt(varSpeed), meanTail, sqrt(varTail), maxTail, sum(nStoppedVehicles),
                meanTP])
-
-
-def checkChoice(choices, inp, default, err, mode=''):
-    choice = ''
-    while choice not in choices:
-        if mode == 'auto':
-            choice = choices[0]
-            print(default)
-            break
-        else:
-            choice = input(inp)
-            if choice == '':
-                choice = choices[0]
-                print(default)
-                break
-            if choice not in choices:
-                print(err)
-    return choice
-
-
-def checkInput(d, inp, default, err, mode='', ret='', value=0):
-    """Funzione che verifica se l'input dell'utente è corretto"""
-
-    if mode == 'auto':
-        print(ret)
-        return value
-
-    i = 0
-    while i <= 0:
-        t = input(inp)
-        if t == '':
-            i = d
-            print(default)
-            break
-        try:
-            i = int(t)
-        except:
-            i = 0
-            print(err)
-            continue
-        if i <= 0:
-            print(err)
-    return i
-
-
-if __name__ == "__main__":
-    """Main che avvia un certo numero di simulazioni in serie"""
-
-    tempo_generazione = 43.2  # fissato
-    celle_per_lato = 20  # per protocolli basati sulla suddivisione matriciale dell'incrocio
-    secondi_di_sicurezza = 0.6
-    gui = False
-
-    print("Calcolo la matrice di celle a partire da tutte le traiettorie possibili...")
-
-    traiettorie_matrice = Traiettorie.run(gui, celle_per_lato)
-
-    choice = checkChoice(['g', 'G', 'd', 'D'],
-                         '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
-                         "\nUtilizzo la modalità grafica come default...", '\nInserire un carattere tra d e g!')
-
-    sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
-
-    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "--step-length", "0.025"] if \
-        choice in ['d', 'D'] else [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q",
-                                   "--step-length", "0.025"]
-
-    schema = checkChoice(['s', 'S', 'n', 'N'],
-                         '\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ',
-                         "\nUtilizzo lo schema significativo come default...",
-                         '\nInserire un carattere tra s e n!')
-
-    numberOfSimulations = checkInput(1, '\nInserire il numero di simulazioni: ',
-                                     f'\nUtilizzo una simulazione come default...',
-                                     '\nInserire un numero di simulazioni positivo!')
-
-    labels_per_sims = []
-
-    measures = {}
-    measures['total_time'] = []
-    measures['total_time'].append({'label': 'Tempo totale (s)', 'color': '#DF1515', 'title': 'total_time',
-                                   'values': []})
-    measures['head_time'] = []
-    measures['head_time'].append(
-        {'label': 'Tempo medio in testa (s)', 'color': '#DF1515', 'title': 'mean_head_time', 'values': []})
-    measures['head_time'].append(
-        {'label': 'Deviazione standard tempo in testa (s)', 'color': '#1524DF', 'title': 'st_dev_head_time',
-         'values': []})
-    measures['head_time'].append(
-        {'label': 'Massimo tempo in testa (s)', 'color': '#15DF1E', 'title': 'max_head_time', 'values': []})
-    measures['tail_time'] = []
-    measures['tail_time'].append(
-        {'label': 'Tempo medio in coda (s)', 'color': '#DF1515', 'title': 'mean_tail_time', 'values': []})
-    measures['tail_time'].append(
-        {'label': 'Deviazione standard tempo in coda (s)', 'color': '#1524DF', 'title': 'st_dev_tail_time',
-         'values': []})
-    measures['tail_time'].append(
-        {'label': 'Massimo tempo in coda (s)', 'color': '#15DF1E', 'title': 'max_tail_time', 'values': []})
-    measures['speed'] = []
-    measures['speed'].append(
-        {'label': 'Velocità media (m/s)', 'color': '#DF1515', 'title': 'mean_speed', 'values': []})
-    measures['speed'].append(
-        {'label': 'Deviazione standard velocità (m/s)', 'color': '#1524DF', 'title': 'st_dev_speed',
-         'values': []})
-    measures['speed'].append(
-        {'label': 'Massima velocità (m/s)', 'color': '#15DF1E', 'title': 'max_speed', 'values': []})
-    measures['tail_length'] = []
-    measures['tail_length'].append(
-        {'label': 'Lunghezza media delle code', 'color': '#DF1515', 'title': 'mean_tail_length', 'values': []})
-    measures['tail_length'].append(
-        {'label': 'Deviazione standard lunghezza delle code', 'color': '#1524DF', 'title': 'st_dev_tail_length',
-         'values': []})
-    measures['tail_length'].append(
-        {'label': 'Massima lunghezza delle code', 'color': '#15DF1E', 'title': 'max_tail_length', 'values': []})
-    measures['stopped_vehicles'] = []
-    measures['stopped_vehicles'].append({'label': 'Veicoli fermi', 'color': '#DF1515', 'title': 'stopped_vehicles',
-                                         'values': []})
-    measures['throughput'] = []
-    measures['throughput'].append({'label': f'Throughput medio (% veicoli / {period} step', 'color': '#DF1515',
-                                   'title': 'mean_throughput', 'values': []})
-
-    root = os.path.abspath(os.path.split(__file__)[0])
-    path = os.path.join(root, "output_no_batch")
-    if not os.path.exists(path):
-        try:
-            os.mkdir(path)
-        except OSError:
-            print(f"\nCreazione della cartella {path} fallita...")
-
-    output_file = os.path.join(path, f'no_batch.txt')
-    f = open(output_file, "w")
-
-    queue = Queue()
-
-    for i in range(0, numberOfSimulations):
-        numberOfVehicles = checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
-                                      f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
-                                      '\nInserire un numero di veicoli positivo!')
-
-        labels_per_sims.append(f'Sim. {i} ({numberOfVehicles} veicoli)')
-
-        run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-            secondi_di_sicurezza, path, i, queue)
-
-        ret = queue.get()
-        output.writeMeasuresToFile(f, i, numberOfVehicles, ret)
-
-        measures['total_time'][0]['values'].append(round(ret[0], 2))
-        measures['head_time'][0]['values'].append(round(ret[1], 2))
-        measures['head_time'][1]['values'].append(round(sqrt(ret[2]), 2))
-        measures['head_time'][2]['values'].append(round(ret[3], 2))
-        measures['tail_time'][0]['values'].append(round(ret[4], 2))
-        measures['tail_time'][1]['values'].append(round(sqrt(ret[5]), 2))
-        measures['tail_time'][2]['values'].append(round(ret[6], 2))
-        measures['speed'][0]['values'].append(round(ret[7], 2))
-        measures['speed'][1]['values'].append(round(sqrt(ret[8]), 2))
-        measures['speed'][2]['values'].append(round(ret[9], 2))
-        measures['tail_length'][0]['values'].append(round(ret[10], 2))
-        measures['tail_length'][1]['values'].append(round(sqrt(ret[11]), 2))
-        measures['tail_length'][2]['values'].append(round(ret[12], 2))
-        measures['stopped_vehicles'][0]['values'].append(round(ret[13], 2))
-        measures['throughput'][0]['values'].append(round(ret[14], 2))
-
-    f.close()
-
-    values = []
-    labels = []
-    titles = []
-    colors = []
-    arr = []
-    for k in measures:
-        arr.append(len(measures[k]))
-        titles.append(k)
-        for i in range(0, len(measures[k])):
-            values.append(measures[k][i]['values'])
-            labels.append(measures[k][i]['label'])
-            colors.append(measures[k][i]['color'])
-
-    output.histPerMeasures(values, labels, titles, colors, arr, labels_per_sims, path)

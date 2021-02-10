@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 01/22/21 18:20:27 by Eclipse SUMO netedit Version 1.7.0
+<!-- generated on 02/09/21 09:27:28 by Eclipse SUMO netedit Version 1.7.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -47,7 +47,7 @@
         <lane id=":n7_1_0" index="0" speed="13.89" length="27.20" shape="-804.80,813.60 -804.80,786.40"/>
     </edge>
     <edge id=":n7_2" function="internal">
-        <lane id=":n7_2_0" index="0" speed="10.36" length="13.43" shape="-801.60,813.60 -800.65,806.95 -797.80,802.20 -796.80,801.60"/>
+        <lane id=":n7_2_0" index="0" speed="10.36" length="13.42" shape="-801.60,813.60 -800.65,806.95 -797.80,802.20 -796.80,801.60"/>
     </edge>
     <edge id=":n7_12" function="internal">
         <lane id=":n7_12_0" index="0" speed="10.36" length="11.09" shape="-796.80,801.60 -793.05,799.35 -786.40,798.40"/>
@@ -59,7 +59,7 @@
         <lane id=":n7_4_0" index="0" speed="13.89" length="27.20" shape="-786.40,804.80 -813.60,804.80"/>
     </edge>
     <edge id=":n7_5" function="internal">
-        <lane id=":n7_5_0" index="0" speed="10.36" length="13.43" shape="-786.40,801.60 -793.05,800.65 -797.80,797.80 -798.40,796.80"/>
+        <lane id=":n7_5_0" index="0" speed="10.36" length="13.42" shape="-786.40,801.60 -793.05,800.65 -797.80,797.80 -798.40,796.80"/>
     </edge>
     <edge id=":n7_13" function="internal">
         <lane id=":n7_13_0" index="0" speed="10.36" length="11.09" shape="-798.40,796.80 -800.65,793.05 -801.60,786.40"/>
@@ -71,7 +71,7 @@
         <lane id=":n7_7_0" index="0" speed="13.89" length="27.20" shape="-795.20,786.40 -795.20,813.60"/>
     </edge>
     <edge id=":n7_8" function="internal">
-        <lane id=":n7_8_0" index="0" speed="10.36" length="13.43" shape="-798.40,786.40 -799.35,793.05 -802.20,797.80 -803.20,798.40"/>
+        <lane id=":n7_8_0" index="0" speed="10.36" length="13.42" shape="-798.40,786.40 -799.35,793.05 -802.20,797.80 -803.20,798.40"/>
     </edge>
     <edge id=":n7_14" function="internal">
         <lane id=":n7_14_0" index="0" speed="10.36" length="11.09" shape="-803.20,798.40 -806.95,800.65 -813.60,801.60"/>
@@ -83,7 +83,7 @@
         <lane id=":n7_10_0" index="0" speed="13.89" length="27.20" shape="-813.60,795.20 -786.40,795.20"/>
     </edge>
     <edge id=":n7_11" function="internal">
-        <lane id=":n7_11_0" index="0" speed="10.36" length="13.43" shape="-813.60,798.40 -806.95,799.35 -802.20,802.20 -801.60,803.20"/>
+        <lane id=":n7_11_0" index="0" speed="10.36" length="13.42" shape="-813.60,798.40 -806.95,799.35 -802.20,802.20 -801.60,803.20"/>
     </edge>
     <edge id=":n7_15" function="internal">
         <lane id=":n7_15_0" index="0" speed="10.36" length="11.09" shape="-801.60,803.20 -799.35,806.95 -798.40,813.60"/>
@@ -148,19 +148,19 @@
 
     <tlLogic id="n7" type="static" programID="0" offset="0">
         <phase duration="33" state="GGgGrrGGgGrr"/>
-        <phase duration="3"  state="GygGrrGygGrr"/>
-        <phase duration="6"  state="GrGGrrGrGGrr"/>
-        <phase duration="3"  state="GryGrrGryGrr"/>
+        <phase duration="3"  state="yygyrryygyrr"/>
+        <phase duration="6"  state="rrGrrrrrGrrr"/>
+        <phase duration="3"  state="rryrrrrryrrr"/>
         <phase duration="33" state="GrrGGgGrrGGg"/>
-        <phase duration="3"  state="GrrGygGrrGyg"/>
-        <phase duration="6"  state="GrrGrGGrrGrG"/>
-        <phase duration="3"  state="GrrGryGrrGry"/>
+        <phase duration="3"  state="yrryygyrryyg"/>
+        <phase duration="6"  state="rrrrrGrrrrrG"/>
+        <phase duration="3"  state="rrrrryrrrrry"/>
     </tlLogic>
 
     <junction id="n12" type="dead_end" x="-800.00" y="600.00" incLanes="e07_12_0 e07_12_1 e07_12_2 e07_12_3 e07_12_4" intLanes="" shape="-800.00,600.00 -809.60,600.00 -800.00,600.00"/>
     <junction id="n2" type="dead_end" x="-800.00" y="1000.00" incLanes="e07_02_0 e07_02_1 e07_02_2 e07_02_3 e07_02_4" intLanes="" shape="-800.00,1000.00 -790.40,1000.00 -800.00,1000.00"/>
     <junction id="n6" type="dead_end" x="-1000.00" y="800.00" incLanes="e07_06_0 e07_06_1 e07_06_2 e07_06_3 e07_06_4" intLanes="" shape="-1000.00,800.00 -1000.00,809.60 -1000.00,800.00"/>
-    <junction id="n7" type="traffic_light" x="-800.00" y="800.00" incLanes="e02_07_0 e02_07_1 e02_07_2 e02_07_3 e02_07_4 e08_07_0 e08_07_1 e08_07_2 e08_07_3 e08_07_4 e12_07_0 e12_07_1 e12_07_2 e12_07_3 e12_07_4 e06_07_0 e06_07_1 e06_07_2 e06_07_3 e06_07_4" intLanes=":n7_0_0 :n7_1_0 :n7_12_0 :n7_3_0 :n7_4_0 :n7_13_0 :n7_6_0 :n7_7_0 :n7_14_0 :n7_9_0 :n7_10_0 :n7_15_0" shape="-809.60,813.60 -790.40,813.60 -789.95,811.38 -789.40,810.60 -788.62,810.05 -787.62,809.71 -786.40,809.60 -786.40,790.40 -788.62,789.95 -789.40,789.40 -789.95,788.62 -790.29,787.62 -790.40,786.40 -809.60,786.40 -810.05,788.62 -810.60,789.40 -811.38,789.95 -812.38,790.29 -813.60,790.40 -813.60,809.60 -811.38,810.05 -810.60,810.60 -810.05,811.38 -809.71,812.38">
+    <junction id="n7" type="traffic_light" x="-800.00" y="800.00" incLanes="e02_07_0 e02_07_1 e02_07_2 e02_07_3 e02_07_4 e08_07_0 e08_07_1 e08_07_2 e08_07_3 e08_07_4 e12_07_0 e12_07_1 e12_07_2 e12_07_3 e12_07_4 e06_07_0 e06_07_1 e06_07_2 e06_07_3 e06_07_4" intLanes=":n7_0_0 :n7_1_0 :n7_12_0 :n7_3_0 :n7_4_0 :n7_13_0 :n7_6_0 :n7_7_0 :n7_14_0 :n7_9_0 :n7_10_0 :n7_15_0" shape="-809.60,813.60 -790.40,813.60 -789.96,811.38 -789.40,810.60 -788.62,810.04 -787.62,809.71 -786.40,809.60 -786.40,790.40 -788.62,789.96 -789.40,789.40 -789.96,788.62 -790.29,787.62 -790.40,786.40 -809.60,786.40 -810.04,788.62 -810.60,789.40 -811.38,789.96 -812.38,790.29 -813.60,790.40 -813.60,809.60 -811.38,810.04 -810.60,810.60 -810.04,811.38 -809.71,812.38">
         <request index="0"  response="000000000000" foes="000000000000" cont="0"/>
         <request index="1"  response="100000000000" foes="110100010000" cont="0"/>
         <request index="2"  response="100010100000" foes="100010110000" cont="1"/>
