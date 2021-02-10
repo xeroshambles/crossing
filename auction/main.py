@@ -1,66 +1,13 @@
 import sys
 import os
-import random
+from utils import *
 from math import sqrt
+from config import *
 
 from auction.trafficElements.junction import FourWayJunction
-from auction.trafficElements.vehicle import Vehicle
 
 from sumolib import miscutils
 import traci
-
-config_file = "intersection.sumocfg"  # file di configurazione della simulazione
-junction_id = 7  # id dell'incrocio
-lanes = []  # lista dei nomi delle lane
-lanes_ids = [0, 2, 4]  # lista degli id delle lanes nell'incrocio
-node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di groupsivo nell'incrocio
-period = 10  # tempo di valutazione del throughput del sistema incrocio
-
-"""Con questo ciclo inizializzo i nomi delle lane"""
-
-for i in node_ids:
-    for lane in lanes_ids:
-        lanes.append(f'e{"0" if i < 12 else ""}{i}_0{junction_id}_{lane}')
-        lanes.append(f'e0{junction_id}_{"0" if i < 12 else ""}{i}_{lane}')
-
-
-def getLaneFromEdges(node_ids, start, end):
-    """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-    destinazione"""
-
-    distance = -1
-    i = 0
-    trovato = False
-    while True:
-        if node_ids[i % 4] == start:
-            trovato = True
-        if trovato:
-            distance += 1
-            if node_ids[i % 4] == end:
-                break
-        i += 1
-    lane = 0
-    if distance == 1:
-        lane = 4
-    if distance == 2:
-        lane = 2
-    if distance == 3:
-        lane = 0
-    return lane
-
-
-def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
-    """Calcolo la distanza tra il veicolo e l'inizio dell'incrocio"""
-
-    min_x = shape[0][0]
-    max_x = shape[0][0]
-    for point in shape:
-        if point[0] < min_x:
-            min_x = point[0]
-        if point[0] > max_x:
-            max_x = point[0]
-    lane_end = lane_length - (max_x - min_x) / 2
-    return lane_end - spawn_distance
 
 
 def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, index, queue):
@@ -120,39 +67,10 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    for i in range(0, numberOfVehicles):
-        idV = f"idV{i}"
-        # oggetto veicolo:
-        # headStopTime: considera il tempo passato in testa (con un piccolo delay dovuto alla ripartenza del veicolo)
-        # followerStopTime: considera il tempo passato in coda
-        # speeds: lista con i valori delle velocità assunte in ogni step
-        # stopped: variabile che indica che il veicolo si è fermato all'incrocio
-        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'hasStopped': 0, 'hasEntered': 0,
-                   'isCrossing': 0, 'hasCrossed': 0, 'startingLane': ''}
-        vehicles[idV] = Vehicle(idV, vehicle, instantPay)
-        start = random.choice(node_ids)
-        end = random.choice([x for x in node_ids if x != start])
-        lane = getLaneFromEdges(node_ids, start, end)
-        traci.route.add(f'route_{i}', [f'e{"0" if start != 12 else ""}{start}_0{junction_id}',
-                                       f'e0{junction_id}_{"0" if end != 12 else ""}{end}'])
-        traci.vehicle.add(idV, f'route_{i}', departLane=lane)
-        if schema in ['n', 'N']:
-            if i % 8 == 1:
-                traci.vehicle.setColor(f'idV{i}', (0, 255, 255))  # azzurro
-            if i % 8 == 2:
-                traci.vehicle.setColor(f'idV{i}', (160, 100, 100))  # rosa
-            if i % 8 == 3:
-                traci.vehicle.setColor(f'idV{i}', (255, 0, 0))  # rosso
-            if i % 8 == 4:
-                traci.vehicle.setColor(f'idV{i}', (0, 255, 0))  # verde
-            if i % 8 == 5:
-                traci.vehicle.setColor(f'idV{i}', (0, 0, 255))  # blu
-            if i % 8 == 6:
-                traci.vehicle.setColor(f'idV{i}', (255, 255, 255))  # bianco
-            if i % 8 == 7:
-                traci.vehicle.setColor(f'idV{i}', (255, 0, 255))  # viola
-            if i % 8 == 8:
-                traci.vehicle.setColor(f'idV{i}', (255, 100, 0))  # arancione
+    vehicles = generaVeicoli(node_ids, junction_id, numberOfVehicles, 1, vehicles, seed, True)
+
+    if schema in ['n', 'N']:
+        coloraAuto(numberOfVehicles)
 
     """Di seguito inizializzo l'incrocio che fa parte della simulazione, assegnandogli una classe che ne descriva
     il comportamento specifico"""

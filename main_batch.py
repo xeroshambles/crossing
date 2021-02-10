@@ -2,39 +2,14 @@ import sys
 import os
 from math import sqrt
 from multiprocessing import Process, Queue
-import utilities
+import inpout
 import importlib.util
+from config_batch import *
 from datetime import date
 
 from sumolib import checkBinary
 
 from reservation.traiettorie import Traiettorie
-
-# Progetti: "classic_tls", "classic_precedence", "reservation", "auction"
-
-mode = 'auto'  # stringa che imposta la modalità automatica per le simulazioni
-repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripetuta
-numberOfVehicles = [50, 100, 150, 200]  # lista contenente il numero di veicoli per ogni simulazione diversa
-diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
-period = 10  # tempo di valutazione del throughput del sistema incrocio
-projects = ["classic_tls", "classic_precedence", "reservation", "auction"]  # progetti da eseguire
-
-labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard tempo in testa (s)',
-          'Massimo tempo in testa (s)', 'Tempo in coda (s)', 'Deviazione standard tempo in coda (s)',
-          'Massimo tempo in coda (s)', 'Velocità media (m/s)', 'Deviazione standard velocità (m/s)',
-          'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
-          'Massima lunghezza delle code', 'Veicoli fermi', f'Throughput medio ((% veicoli / {period} step']
-
-colors = ['#DF1515', '#1524DF', '#15DF1E', '#DFDF15']
-
-titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', 'mean_tail_time', 'st_dev_tail_time',
-          'max_tail_time', 'mean_speed', 'st_dev_mean_speed', 'mean_tail_length', 'st_dev_tail_length',
-          'max_tail_length', 'stopped_vehicles', 'mean_throughput']
-
-vehicles = []
-
-for num in numberOfVehicles:
-    vehicles.append(f'{num} Veicoli')
 
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
@@ -62,12 +37,12 @@ if __name__ == "__main__":
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
 
-        choice = utilities.checkChoice(['d', 'D', 'g', 'G'],
+        choice = inpout.checkChoice(['d', 'D', 'g', 'G'],
                                        '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, '
                                        'd = dati): ',
                                        "\nUtilizzo la modalità dati come default...",
                                        '\nInserire un carattere tra d e g!',
-                                       mode)
+                                    mode)
 
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
@@ -80,13 +55,13 @@ if __name__ == "__main__":
 
         schema = ''
         if choice in ['g', 'G']:
-            schema = utilities.checkChoice(['s', 'S', 'n', 'N'],
+            schema = inpout.checkChoice(['s', 'S', 'n', 'N'],
                                            '\nDesideri visualizzare le auto con uno schema di colori significativo? '
                                            '(s, n): ',
                                            "\nUtilizzo lo schema significativo come default...",
                                            '\nInserire un carattere tra s e n!', mode)
 
-        diffSim = utilities.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
+        diffSim = inpout.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
                                        f'\nUtilizzo come default 4 run diverse...',
                                        '\nInserire un numero di simulazioni positivo!', mode,
                                        f'\nEseguo {diffSim} simulazioni differenti...', diffSim)
@@ -141,16 +116,16 @@ if __name__ == "__main__":
             output_file = os.path.join(dir, f'batch_{i}.txt')
             f = open(output_file, "w")
 
-            repeatSim = utilities.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
+            repeatSim = inpout.checkInput(10, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
                                              f'\nUtilizzo come default 10 stesse run...',
                                              '\nInserire un numero di simulazioni positivo!', mode,
                                              f'\nEseguo {repeatSim} simulazioni identiche in parallelo...', repeatSim)
 
-            numberOfVehicles[i] = utilities.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
+            numberOfVehicles[i] = inpout.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                                        f'\nUtilizzo default ({50}) veicoli...',
                                                        '\nInserire un numero di veicoli positivo!', mode,
                                                        f'\nUtilizzo {numberOfVehicles[i]} veicoli...',
-                                                       numberOfVehicles[i])
+                                                    numberOfVehicles[i])
 
             procs = []
             queue = Queue()
@@ -190,7 +165,7 @@ if __name__ == "__main__":
             for j in range(0, repeatSim):
                 ret = queue.get()
 
-                utilities.writeMeasuresToFile(f, f'{i}:{j}', numberOfVehicles[i], ret)
+                inpout.writeMeasuresToFile(f, f'{i}:{j}', numberOfVehicles[i], ret)
 
                 totalTime.append(ret[0])
                 meanHeadTime.append(ret[1])
@@ -238,4 +213,4 @@ if __name__ == "__main__":
                 lab.append(measures[k][i]['label'])
                 col.append(measures[k][i]['color'])
 
-        utilities.linesPerMeasures(values, lab, ttl, col, grp, labels_per_sims, dir, project)
+        inpout.linesPerMeasures(values, lab, ttl, col, grp, labels_per_sims, dir, project)

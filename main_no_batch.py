@@ -1,6 +1,6 @@
 import sys
 import os
-import utilities
+import inpout
 import importlib
 from multiprocessing import Queue
 from reservation.traiettorie import Traiettorie
@@ -24,7 +24,7 @@ titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', '
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in serie"""
 
-    project = utilities.checkChoice(["classic_tls", "classic_precedence", "reservation", "auction"],
+    project = inpout.checkChoice(["classic_tls", "classic_precedence", "reservation", "auction"],
                                     '\nInserire il nome di un progetto (classic_tls, ' 'classic_precedence, '
                                     'auction, reservation): ', '\nUtilizzo il semaforo classico come default...',
                                     '\nProgetto non esistente')
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     config_file = os.path.join(os.path.split(__file__)[0], project, "intersection.sumocfg")  # file di configurazione
     # della simulazione
 
-    choice = utilities.checkChoice(['g', 'G', 'd', 'D'],
+    choice = inpout.checkChoice(['g', 'G', 'd', 'D'],
                                    '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, d = dati): ',
                                    "\nUtilizzo la modalità grafica come default...",
                                    '\nInserire un carattere tra d e g!')
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         sumoCmd.append("0.050")
 
     if choice in ['g', 'G']:
-        schema = utilities.checkChoice(['s', 'S', 'n', 'N'],
+        schema = inpout.checkChoice(['s', 'S', 'n', 'N'],
                                        '\nDesideri visualizzare le auto con uno schema di colori significativo? '
                                        '(s, n): ',
                                        "\nUtilizzo lo schema significativo come default...",
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     labels_per_sims = []
 
-    numberOfSimulations = utilities.checkInput(1, '\nInserire il numero di simulazioni: ',
+    numberOfSimulations = inpout.checkInput(1, '\nInserire il numero di simulazioni: ',
                                                f'\nUtilizzo una simulazione come default...',
                                                '\nInserire un numero di simulazioni positivo!')
 
@@ -118,14 +118,14 @@ if __name__ == "__main__":
 
     for i in range(0, numberOfSimulations):
 
-        numberOfVehicles = utilities.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
+        numberOfVehicles = inpout.checkInput(50, f'\nInserire il numero di veicoli nella simulazione {i}: ',
                                                 f'\nUtilizzo la simulazione {i} con 50 veicoli di default...',
                                                 '\nInserire un numero di veicoli positivo!')
 
         labels_per_sims.append(f'{numberOfVehicles} veicoli')
 
         if project == 'auction':
-            choice = utilities.checkChoice(['s', 'S', 'n', 'N'],
+            choice = inpout.checkChoice(['s', 'S', 'n', 'N'],
                                            f'\nNella simulazione {i} si vuole un approccio competitivo o cooperativo? '
                                            f'(s = competitivo, n = cooperativo): ',
                                            '\nUtilizzo la modalità competitiva come default...',
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
             simulationMode = True if choice in ['s', 'S'] else False
 
-            choice = utilities.checkChoice(['s', 'S', 'n', 'N'],
+            choice = inpout.checkChoice(['s', 'S', 'n', 'N'],
                                            f'\nI veicoli nella simulazione {i} devono pagare subito? Altrimenti pagano '
                                            f'solo i vincitori delle aste (s = si, n = no): ',
                                            '\nUtilizzo il pagamento immediato come default...',
@@ -141,13 +141,13 @@ if __name__ == "__main__":
 
             instantPay = True if choice in ['s', 'S'] else False
 
-            choice = utilities.checkChoice([str(j) for j in range(1, 8)] + ['-1'],
+            choice = inpout.checkChoice([str(j) for j in range(1, 8)] + ['-1'],
                                            '\nQuale dimensione deve avere il numero di veicoli considerato? '
                                            'I gruppi possono avere una dimensione che va da 1 a 7, se si inserisce -1 '
                                            'si usa un numero di veicoli proporzionale: ',
                                            '\nUtilizzo come gruppo un numero di veicoli pari a 1...',
                                            '\nInserire un numero compreso tra 1 e 7 oppure -1! '
-                                           )
+                                    )
 
             dimensionOfGroups = int(choice)
 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
         ret = queue.get()
 
-        utilities.writeMeasuresToFile(f, i, numberOfVehicles, ret)
+        inpout.writeMeasuresToFile(f, i, numberOfVehicles, ret)
 
         measures['total_time'][0]['values'].append(round(ret[0], 2))
         measures['head_time'][0]['values'].append(round(ret[1], 2))
@@ -195,4 +195,4 @@ if __name__ == "__main__":
             labels.append(measures[k][i]['label'])
             colors.append(measures[k][i]['color'])
 
-    utilities.linesPerMeasures(values, labels, titles, colors, groups, labels_per_sims, path)
+    inpout.linesPerMeasures(values, labels, titles, colors, groups, labels_per_sims, path)
