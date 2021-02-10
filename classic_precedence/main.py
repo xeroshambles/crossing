@@ -3,12 +3,6 @@ import os
 import random
 from math import sqrt
 
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
-
 from sumolib import miscutils
 import traci
 
@@ -19,7 +13,7 @@ lanes_ids = [0, 2, 4]  # lista degli id delle lanes nell'incrocio
 node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di groupsivo nell'incrocio
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 
-"""Con questo ciclo inizializzo i nomi delle lane così come sspecificate nel file intersection.net.xml"""
+"""Con questo ciclo inizializzo i nomi delle lane"""
 
 for i in node_ids:
     for lane in lanes_ids:
@@ -173,6 +167,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
             veh_current_lane = traci.vehicle.getLaneID(veh)
             # controllo se il veicolo è nella junction
             if veh_current_lane[1:3] == 'n7':
+                vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
                 vehicles[veh]['hasEntered'] = 0
                 vehicles[veh]['isCrossing'] = 1
                 leader = traci.vehicle.getLeader(veh)
@@ -207,11 +202,11 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
             # controllo se il veicolo è in una lane entrante
             if veh_current_lane[4:6] == '07':
                 vehicles[veh]['startingLane'] = veh_current_lane
-                vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
                 spawn_distance = traci.vehicle.getDistance(veh)
-                # print(f"Lane: {veh_current_lane}, Vehicle: {veh}")
                 distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
                                                   junction_shape)
+                if distance < 15:
+                    vehicles[veh]['speeds'].append(traci.vehicle.getSpeed(veh))
                 veh_length = traci.vehicle.getLength(veh)
                 check = veh_length / 2 + 0.2
                 leader = traci.vehicle.getLeader(veh)
@@ -289,6 +284,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue):
             else:
                 instant_throughput[lane].append(served[lane][i] / serving[lane][i])
         mean_served[lane] = sum(instant_throughput[lane]) / len(instant_throughput[lane])
+
     meanTP = sum([mean_served[lane] for lane in mean_served]) / len([mean_served[lane] for lane in mean_served])
 
     traci.close()

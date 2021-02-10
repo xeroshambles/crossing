@@ -5,12 +5,6 @@ from multiprocessing import Process, Queue
 import utilities
 import importlib.util
 
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
-
 from sumolib import checkBinary
 
 from reservation.traiettorie import Traiettorie
@@ -72,7 +66,7 @@ if __name__ == "__main__":
 
         if project == "reservation":
             sumoCmd.append("--step-length")
-            sumoCmd.append("0.025")
+            sumoCmd.append("0.100")
 
         schema = utilities.checkChoice(['s', 'S', 'n', 'N'],
                                        '\nDesideri visualizzare le auto con uno schema di colori significativo? '
@@ -236,5 +230,3 @@ if __name__ == "__main__":
                 col.append(measures[k][i]['color'])
 
         utilities.linesPerMeasures(values, lab, ttl, col, grp, labels_per_sims, path)
-
-        utilities.histPerMeasures(values, lab, ttl, col, grp, labels_per_sims, path)

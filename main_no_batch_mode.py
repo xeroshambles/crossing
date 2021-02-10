@@ -5,12 +5,6 @@ import importlib
 from multiprocessing import Queue
 from reservation.traiettorie import Traiettorie
 
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
-
 from sumolib import checkBinary
 
 period = 10  # tempo di valutazione del throughput del sistema incrocio
@@ -31,9 +25,8 @@ if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in serie"""
 
     project = utilities.checkChoice(["classic_tls", "classic_precedence", "reservation", "auction"],
-                                    '\nInserire il nome di un progetto (auction, classic_tls, '
-                                    'classic_precedence, '
-                                    'reservation): ', '\nUtilizzo il semaforo classico come default...',
+                                    '\nInserire il nome di un progetto (classic_tls, ' 'classic_precedence, '
+                                    'auction, reservation): ', '\nUtilizzo il semaforo classico come default...',
                                     '\nProgetto non esistente')
 
     try:
@@ -57,11 +50,12 @@ if __name__ == "__main__":
 
     if project == "reservation":
         sumoCmd.append("--step-length")
-        sumoCmd.append("0.025")
+        sumoCmd.append("0.050")
 
     if choice in ['g', 'G']:
         schema = utilities.checkChoice(['s', 'S', 'n', 'N'],
-                                       '\nDesideri visualizzare le auto con uno schema di colori significativo? (s, n): ',
+                                       '\nDesideri visualizzare le auto con uno schema di colori significativo? '
+                                       '(s, n): ',
                                        "\nUtilizzo lo schema significativo come default...",
                                        '\nInserire un carattere tra s e n!')
     else:
