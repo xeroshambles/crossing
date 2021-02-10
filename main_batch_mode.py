@@ -4,6 +4,7 @@ from math import sqrt
 from multiprocessing import Process, Queue
 import utilities
 import importlib.util
+from datetime import date
 
 from sumolib import checkBinary
 
@@ -16,13 +17,13 @@ repeatSim = 10  # numero di volte per cui la stessa simulazione deve essere ripe
 numberOfVehicles = [50, 100, 150, 200]  # lista contenente il numero di veicoli per ogni simulazione diversa
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 period = 10  # tempo di valutazione del throughput del sistema incrocio
-projects = ["classic_tls", "classic_precedence", "reservation", "auction"]  # progetti da eseguire
+projects = ["classic_tls"]  # progetti da eseguire
 
 labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard tempo in testa (s)',
-              'Massimo tempo in testa (s)', 'Tempo in coda (s)', 'Deviazione standard tempo in coda (s)',
-              'Massimo tempo in coda (s)', 'Velocità media (m/s)', 'Deviazione standard velocità (m/s)',
-              'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
-              'Massima lunghezza delle code', 'Veicoli fermi', 'Throughput medio ((% veicoli / {period} step']
+          'Massimo tempo in testa (s)', 'Tempo in coda (s)', 'Deviazione standard tempo in coda (s)',
+          'Massimo tempo in coda (s)', 'Velocità media (m/s)', 'Deviazione standard velocità (m/s)',
+          'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
+          'Massima lunghezza delle code', 'Veicoli fermi', f'Throughput medio ((% veicoli / {period} step']
 
 colors = ['#DF1515', '#1524DF', '#15DF1E', '#DFDF15']
 
@@ -35,9 +36,18 @@ vehicles = []
 for num in numberOfVehicles:
     vehicles.append(f'{num} Veicoli')
 
-
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
+
+    dir = f"outputs_batch{date.today().strftime('%d-%m-%Y')}"
+    root = os.path.abspath(os.path.split(__file__)[0])
+    path = os.path.join(root, dir)
+
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print(f"\nCreazione della cartella {path} fallita...")
 
     for project in projects:
 
@@ -68,11 +78,13 @@ if __name__ == "__main__":
             sumoCmd.append("--step-length")
             sumoCmd.append("0.100")
 
-        schema = utilities.checkChoice(['s', 'S', 'n', 'N'],
-                                       '\nDesideri visualizzare le auto con uno schema di colori significativo? '
-                                       '(s, n): ',
-                                       "\nUtilizzo lo schema significativo come default...",
-                                       '\nInserire un carattere tra s e n!', mode)
+        schema = ''
+        if choice in ['g', 'G']:
+            schema = utilities.checkChoice(['s', 'S', 'n', 'N'],
+                                           '\nDesideri visualizzare le auto con uno schema di colori significativo? '
+                                           '(s, n): ',
+                                           "\nUtilizzo lo schema significativo come default...",
+                                           '\nInserire un carattere tra s e n!', mode)
 
         diffSim = utilities.checkInput(4, f'\nInserire il numero di esecuzioni della simulazione: ',
                                        f'\nUtilizzo come default 4 run diverse...',
@@ -106,10 +118,9 @@ if __name__ == "__main__":
         measures['throughput'] = []
         measures['throughput'].append({'label': labels[13], 'color': colors[0], 'title': titles[13], 'values': []})
 
-        dir = "output_batch_" + project
-
-        root = os.path.abspath(os.path.split(__file__)[0])
+        dir = os.path.join(dir, project)
         path = os.path.join(root, dir)
+
         if not os.path.exists(path):
             try:
                 os.mkdir(path)
@@ -178,7 +189,6 @@ if __name__ == "__main__":
             meanThroughput = []
 
             for j in range(0, repeatSim):
-
                 ret = queue.get()
 
                 utilities.writeMeasuresToFile(f, f'{i}:{j}', numberOfVehicles[i], ret)
@@ -229,4 +239,4 @@ if __name__ == "__main__":
                 lab.append(measures[k][i]['label'])
                 col.append(measures[k][i]['color'])
 
-        utilities.linesPerMeasures(values, lab, ttl, col, grp, labels_per_sims, path)
+        utilities.linesPerMeasures(values, lab, ttl, col, grp, labels_per_sims, path, project)
