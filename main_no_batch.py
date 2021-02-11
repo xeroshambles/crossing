@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
-    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-Q"] if choice in ['d', 'D'] else \
+    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
         [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
     if project == "reservation":

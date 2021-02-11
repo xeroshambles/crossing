@@ -31,7 +31,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed=seed):
 
         sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
 
-    traci.start(sumoCmd, port=port, numRetries=1000)
+    traci.start(sumoCmd, port=port, numRetries=100)
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     totalTime = 0  # tempo totale di simulazione

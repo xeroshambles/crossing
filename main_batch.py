@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
-        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-Q"] if choice in ['d', 'D'] else \
+        sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
             [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
         if project == "reservation":
@@ -136,7 +136,7 @@ if __name__ == "__main__":
                                                          traiettorie_matrice, secondi_di_sicurezza, dir, j, queue,
                                                          seeds[j]))
                 elif project == "auction":
-                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, True, True, 1, dir,
+                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, True, True, -1, dir,
                                                          j, queue, seeds[j]))
                 else:
                     p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, dir, j, queue, seeds[j]))

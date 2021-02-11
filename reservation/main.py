@@ -396,7 +396,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
         sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
 
-    traci.start(sumoCmd, port=port, numRetries=1000)
+    traci.start(sumoCmd, port=port, numRetries=200)
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     step = 0.000  # tempo totale di simulazione

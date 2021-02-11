@@ -113,16 +113,13 @@ def costruzioneArray(arrayAuto_temp):
 def run(gui, celle_per_lato):
     """Main che date tutte le traiettorie possibili all'interno dell'incrocio calcola la matrice di celle"""
 
-    if gui:
-        sumoBinary = checkBinary('sumo-gui')
-    else:
-        sumoBinary = checkBinary('sumo')
-
     config_file = os.path.join(os.path.split(os.path.dirname(__file__))[0], "reservation", "intersection.sumocfg")
 
-    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
+    sumoCmd = [checkBinary('sumo-gui'), "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q", "--step-length",
+               "0.001"] if gui else [checkBinary('sumo'), "-c", config_file, "--time-to-teleport", "-1",
+                                     "--step-length", "0.001"]
 
-    traci.start(sumoCmd, numRetries=50)
+    traci.start(sumoCmd, numRetries=100)
 
     # -------- dichiarazione variabili --------
 
@@ -247,5 +244,7 @@ def run(gui, celle_per_lato):
         step += step_incr
         traci.simulationStep(step)  # faccio avanzare la simulazione
         arrayAuto = costruzioneArray(arrayAuto)  # inserisco nell'array le auto presenti nella simulazione
+
     traci.close()
+
     return lista_occupazione_celle
