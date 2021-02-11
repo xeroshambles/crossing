@@ -136,7 +136,7 @@ if __name__ == "__main__":
                                                          traiettorie_matrice, secondi_di_sicurezza, dir, j, queue,
                                                          seeds[j]))
                 elif project == "auction":
-                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, True, True, -1, dir,
+                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, True, True, 1, dir,
                                                          j, queue, seeds[j]))
                 else:
                     p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, dir, j, queue, seeds[j]))

@@ -315,7 +315,8 @@ class CompetitiveCrossingManager(CrossingManager):
                 self.winnersLanes[lane].remove(vehicle)
             if not self.winnersLanes[lane]:
                 self.winnersLanes.pop(lane)
-        self.nonStoppedVehicles.remove(vehicle)
+        if vehicle in self.nonStoppedVehicles:
+            self.nonStoppedVehicles.remove(vehicle)
         self.partecipantsRoutes.pop(vehicle)
         self.precedences.pop(vehicle)
         # print('wv', [i.getID() for i in self.getCurrentWinners()])
