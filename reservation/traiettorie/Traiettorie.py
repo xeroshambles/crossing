@@ -14,14 +14,12 @@ def generaVeicoli():
 
     r_depart = -9
     auto_ogni = 10
-    node_ids = [2, 8, 12, 6]
-    junction_id = 7
 
-    generateRoute(node_ids, junction_id)
+    generateRoutes()
 
     for i in range(0, 12):
         edges = traci.route.getEdges(f'route_{i}')
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
         r_depart += auto_ogni
         if lane == 0:
             continue

@@ -424,7 +424,6 @@ class Junction(ABC):
             preso precedentemente parte ad un'asta. L'asta non viene permessa nemmeno ai veicoli che vengono dopo
              il veicolo in clash."""
             if self.crossingManager.orderedCooperativeList:
-                print("SSSS")
                 blockingVehicles = [x for j in self.crossingManager.orderedCooperativeList for i in j for x in i]
                 # print(f'bv {self.getID()} {[x.getID() for x in blockingVehicles]}') if len(blockingVehicles) > 2:
                 # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in

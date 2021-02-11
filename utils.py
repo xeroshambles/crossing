@@ -1,10 +1,11 @@
+from config_no_batch import *
 import random
 from auction.trafficElements.vehicle import Vehicle
 
 import traci
 
 
-def getLaneFromEdges(node_ids, start, end):
+def getLaneFromEdges(start, end, node_ids=node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione"""
 
@@ -43,7 +44,7 @@ def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
     return lane_end - spawn_distance
 
 
-def generateRoute(node_ids, junction_id):
+def generateRoutes(junction_id=junction_id, node_ids=node_ids):
     """Genero tutte le route possibili per l'incrocio"""
 
     n = 0
@@ -59,7 +60,40 @@ def generateRoute(node_ids, junction_id):
             n += 1
 
 
-def generateVehicles(node_ids, junction_id, numberOfVehicles, gen_time, vehicles, seed, object=False):
+def a(x, y, z, px, py, r):
+    if r <= px:
+        return x
+
+    elif r <= (px + py):
+        return y
+
+    else:
+        return z
+
+
+def rand(x, y, z, px, py, numberOfVehicles, seed=seed):
+    random.seed(seed)
+    s = []
+    for i in range(0, numberOfVehicles):
+        r = random.randint(1, 100)
+        index = a(x, y, z, px, py, r)
+        s.append(index)
+
+    return s
+
+
+def getBalancedRoutes():
+    routes = traci.route.getIDList()
+    balancedRoutes = {'0': [], '1': [], '2': []}
+    for route in routes:
+        edges = traci.route.getEdges(route)
+        index = getLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        balancedRoutes[str(index)].append(route)
+
+    return balancedRoutes
+
+
+def generateVehicles(numberOfVehicles, gen_time, vehicles, seed, object=False):
     """Genero veicoli per ogni route possibile"""
 
     r_depart = 0
@@ -67,7 +101,10 @@ def generateVehicles(node_ids, junction_id, numberOfVehicles, gen_time, vehicles
 
     random.seed(seed)
 
-    generateRoute(node_ids, junction_id)
+    generateRoutes()
+    balancedRoutes = getBalancedRoutes()
+    sequence = rand(0, 1, 2, 33, 33, numberOfVehicles, seed)
+
 
     for i in range(0, numberOfVehicles):
         r_depart += auto_ogni
@@ -81,10 +118,10 @@ def generateVehicles(node_ids, junction_id, numberOfVehicles, gen_time, vehicles
             vehicles[idV] = Vehicle(idV, vehicle, True)
         else:
             vehicles[idV] = vehicle
-        r = random.randint(0, 11)
-        edges = traci.route.getEdges(f'route_{r}')
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
-        traci.vehicle.add(idV, f'route_{r}', depart=r_depart, departLane=lane)
+        r = random.choice(balancedRoutes[str(sequence[i])])
+        edges = traci.route.getEdges(r)
+        lane = getLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        traci.vehicle.add(idV, r, depart=r_depart, departLane=lane)
 
     return vehicles
 

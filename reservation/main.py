@@ -189,7 +189,7 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
 
         rotta = traci.vehicle.getRouteID(auto_temp)
         edges = traci.route.getEdges(rotta)
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
         # se l'auto non gira a destra
         if lane != 0:
             passaggio_cella_temp.append([auto_temp, None, None])
@@ -269,7 +269,7 @@ def percorso_libero(passaggio_temp, matrice_incrocio_temp, passaggio_cella_temp,
 
         rotta = traci.vehicle.getRouteID(x[0])
         edges = traci.route.getEdges(rotta)
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
         # se l'auto non gira a destra
         if lane != 0:
             for y in passaggio_cella_temp:
@@ -430,7 +430,7 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(node_ids, junction_id, numberOfVehicles, tempo_generazione, vehicles, seed)
+    vehicles = generateVehicles(numberOfVehicles, 1, vehicles, seed)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
@@ -589,7 +589,7 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
             for x in passaggio_cella[incrID]:
                 rotta = traci.vehicle.getRouteID(x[0])
                 edges = traci.route.getEdges(rotta)
-                lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+                lane = getLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
                 if lane != 0:
                     # se l'auto non gira a destra
                     if x[1] is None and x[2] is None:

@@ -63,7 +63,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed=seed):
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(node_ids, junction_id, numberOfVehicles, 1, vehicles, seed)
+    vehicles = generateVehicles(numberOfVehicles, 1, vehicles, seed)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
