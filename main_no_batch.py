@@ -88,7 +88,7 @@ if __name__ == "__main__":
     measures['throughput'] = []
     measures['throughput'].append({'label': labels[13], 'color': colors[0], 'title': titles[13], 'values': []})
 
-    dir = "output_" + project + '_' + date.today().strftime('%d_%m_%Y')
+    dir = "output_" + project + '_' + date.today().strftime('%d-%m-%Y')
 
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)

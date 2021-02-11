@@ -13,7 +13,7 @@ from sumolib import checkBinary
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
 
-    dir = f"outputs_batch_{date.today().strftime('%d_%m_%Y')}"
+    dir = f"outputs_batch_{date.today().strftime('%d-%m-%Y')}"
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
 
