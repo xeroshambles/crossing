@@ -15,10 +15,10 @@ for i in node_ids:
         lanes.append(f'e0{junction_id}_{"0" if i < 12 else ""}{i}_{lane}')
 
 labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard tempo in testa (s)',
-              'Massimo tempo in testa (s)', 'Tempo in coda (s)', 'Deviazione standard tempo in coda (s)',
+              'Massimo tempo in testa (s)', 'Tempo medio in coda (s)', 'Deviazione standard tempo in coda (s)',
               'Massimo tempo in coda (s)', 'Velocità media (m/s)', 'Deviazione standard velocità (m/s)',
               'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
-              'Massima lunghezza delle code', 'Veicoli fermi', 'Throughput medio ((% veicoli / {period} step']
+              'Massima lunghezza delle code', 'Veicoli fermi', f'Throughput medio (% veicoli / {period} step)']
 
 colors = ['#DF1515', '#1524DF', '#15DF1E']
 

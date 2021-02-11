@@ -113,8 +113,8 @@ if __name__ == "__main__":
         labels_per_sims.append(f'{numberOfVehicles} veicoli')
 
         if project == "reservation":
-            module.run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-                       secondi_di_sicurezza, path, i, queue)
+            module.run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
+                       path, i, queue)
 
         elif project == "auction":
             choice = inpout.checkChoice(['s', 'S', 'n', 'N'],

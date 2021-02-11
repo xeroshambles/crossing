@@ -372,8 +372,8 @@ def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
     return matrice_incrocio
 
 
-def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-        secondi_di_sicurezza, path, index, queue, seed=seed):
+def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, path, index,
+        queue, seed=seed):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     port = miscutils.getFreeSocketPort()
@@ -430,7 +430,7 @@ def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, tr
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(numberOfVehicles, 1, vehicles, seed)
+    vehicles = generateVehicles(numberOfVehicles, tempo_generazione, vehicles, seed)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)

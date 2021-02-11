@@ -5,6 +5,7 @@ from multiprocessing import Process, Queue
 from datetime import date
 import importlib.util
 import inpout
+from config_no_batch import *
 from config_batch import *
 from reservation.traiettorie import Traiettorie
 
@@ -131,15 +132,14 @@ if __name__ == "__main__":
 
             for j in range(0, repeatSim):
                 if project == "reservation":
-                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, tempo_generazione,
-                                                         celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
-                                                         dir, j, queue, seeds[j]))
+                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, celle_per_lato,
+                                                         traiettorie_matrice, secondi_di_sicurezza, dir, j, queue,
+                                                         seeds[j]))
                 elif project == "auction":
-                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, False, True,
-                                                         -1, dir, j, queue, seeds[j]))
-                else:
-                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, dir,
+                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, True, True, -1, dir,
                                                          j, queue, seeds[j]))
+                else:
+                    p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, dir, j, queue, seeds[j]))
                 p.start()
                 procs.append(p)
 
