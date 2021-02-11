@@ -5,7 +5,7 @@ lanes_ids = [0, 1, 2]  # lista degli id delle lanes nell'incrocio
 node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell'incrocio
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 seed = 9001  # seme iniziale
-tempo_generazione = 43.2  # tempo di generazione dei veicoli
+tempo_generazione = 1  # tempo di generazione dei veicoli
 output_redirection = False
 
 """Con questo ciclo inizializzo i nomi delle lane"""
