@@ -23,13 +23,15 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
         except OSError:
             print(f"\nCreazione della cartella {dir} fallita...")
 
-    origin_stdout = sys.stdout
+    if output_redirection:
 
-    origin_stderr = sys.stderr
+        origin_stdout = sys.stdout
 
-    sys.stdout = open(os.path.join(dir, f"{index}.txt"), "w")
+        origin_stderr = sys.stderr
 
-    sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
+        sys.stdout = open(os.path.join(dir, f"{index}.txt"), "w")
+
+        sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
 
     traci.start(sumoCmd, port=port, numRetries=1000)
 
@@ -228,9 +230,11 @@ def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimension
 
     traci.close()
 
-    sys.stdout = origin_stdout
+    if output_redirection:
 
-    sys.stderr = origin_stderr
+        sys.stdout = origin_stdout
+
+        sys.stderr = origin_stderr
 
     queue.put([totalTime, meanHeadTime, sqrt(varHeadTime), max(headTimes), meanTailTime, sqrt(varTailTime),
                max(tailTimes), meanSpeed, sqrt(varSpeed), meanTail, sqrt(varTail), maxTail, sum(nStoppedVehicles),

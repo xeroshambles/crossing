@@ -6,6 +6,7 @@ node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 seed = 9001  # seme iniziale
 tempo_generazione = 43.2  # tempo di generazione dei veicoli
+output_redirection = False
 
 """Con questo ciclo inizializzo i nomi delle lane"""
 
