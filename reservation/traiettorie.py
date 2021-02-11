@@ -19,7 +19,7 @@ def generaVeicoli():
 
     for i in range(0, 12):
         edges = traci.route.getEdges(f'route_{i}')
-        lane = getLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
         r_depart += auto_ogni
         if lane == 0:
             continue
@@ -118,9 +118,9 @@ def run(gui, celle_per_lato):
     else:
         sumoBinary = checkBinary('sumo')
 
-    conf = os.path.join(os.path.split(os.path.dirname(__file__))[0], "intersection.sumocfg")
+    config_file = os.path.join(os.path.split(os.path.dirname(__file__))[0], "reservation", "intersection.sumocfg")
 
-    sumoCmd = [sumoBinary, "-c", conf, "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
+    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
 
     traci.start(sumoCmd, numRetries=50)
 

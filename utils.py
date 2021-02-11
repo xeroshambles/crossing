@@ -5,7 +5,7 @@ from auction.trafficElements.vehicle import Vehicle
 import traci
 
 
-def getIndexLaneFromEdges(start, end, node_ids=node_ids):
+def getLaneIndexFromEdges(start, end, node_ids=node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione"""
 
@@ -63,7 +63,7 @@ def generateRoutes(junction_id=junction_id, node_ids=node_ids):
     routes_per_lane_start = {'0': [], '1': [], '2': []}
     for route in routes:
         edges = traci.route.getEdges(route)
-        index = getIndexLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        index = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
         routes_per_lane_start[str(index)].append(route)
 
     return routes_per_lane_start
@@ -112,7 +112,7 @@ def generateVehicles(numberOfVehicles, gen_time, vehicles, seed, object=False):
             vehicles[idV] = vehicle
         route = random.choice(routes[str(sequence[i])])
         edges = traci.route.getEdges(route)
-        lane = getIndexLaneFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
         traci.vehicle.add(idV, route, depart=depart, departLane=lane)
 
     return vehicles

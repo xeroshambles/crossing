@@ -5,7 +5,7 @@ from datetime import date
 from multiprocessing import Queue
 import inpout
 from config_no_batch import *
-from reservation.traiettorie import Traiettorie
+from reservation import traiettorie
 
 from sumolib import checkBinary
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     if project == "reservation":
         print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")
-        traiettorie_matrice = Traiettorie.run(False, celle_per_lato)
+        traiettorie_matrice = traiettorie.run(False, celle_per_lato)
 
     try:
         module = importlib.import_module(".main", package=project)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
-    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
+    sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-Q"] if choice in ['d', 'D'] else \
         [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
     if project == "reservation":
