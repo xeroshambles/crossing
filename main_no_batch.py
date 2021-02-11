@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     if project == "reservation":
         sumoCmd.append("--step-length")
-        sumoCmd.append("0.100")
+        sumoCmd.append("0.050")
 
     if choice in ['g', 'G']:
         schema = inpout.checkChoice(['s', 'S', 'n', 'N'],

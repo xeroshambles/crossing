@@ -400,7 +400,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     step = 0.000  # tempo totale di simulazione
-    step_incr = 0.100  # incremento del numero di step della simulazione
+    step_incr = 0.050  # incremento del numero di step della simulazione
     sec = 1 / step_incr
     counter_serving = {}  # dizionario contenente valori incrementali
     counter_served = {}  # dizionario contenente valori incrementali
