@@ -133,13 +133,13 @@ if __name__ == "__main__":
                 if project == "reservation":
                     p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, tempo_generazione,
                                                          celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
-                                                         dir, j, queue))
+                                                         dir, j, queue, seeds[j]))
                 elif project == "auction":
                     p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, False, True,
-                                                         -1, dir, j, queue))
+                                                         -1, dir, j, queue, seeds[j]))
                 else:
                     p = Process(target=module.run, args=(numberOfVehicles[i], schema, sumoCmd, dir,
-                                                         j, queue))
+                                                         j, queue, seeds[j]))
                 p.start()
                 procs.append(p)
 

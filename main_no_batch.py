@@ -17,9 +17,9 @@ if __name__ == "__main__":
     secondi_di_sicurezza = 0.6
 
     project = inpout.checkChoice(['classic_tls', 'classic_precedence', 'reservation', 'auction'],
-                                 '\nInserire il nome di un progetto (t = classic_tls, p = classic_precedence, '
-                                 'r = reservation, a = auction): ', '\nUtilizzo il semaforo classico come '
-                                                                    'default...', '\nProgetto non esistente')
+                                 '\nInserire il nome di un progetto (classic_tls, classic_precedence, '
+                                 'reservation, auction): ', '\nUtilizzo il semaforo classico come '
+                                                            'default...', '\nProgetto non esistente')
 
     if project == "reservation":
         print("\nCalcolo la matrice di celle a partire da tutte le traiettorie possibili...")

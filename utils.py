@@ -21,9 +21,9 @@ def getLaneFromEdges(node_ids, start, end):
         i += 1
     lane = 0
     if distance == 1:
-        lane = 4
-    if distance == 2:
         lane = 2
+    if distance == 2:
+        lane = 1
     if distance == 3:
         lane = 0
     return lane
@@ -59,11 +59,11 @@ def generateRoute(node_ids, junction_id):
             n += 1
 
 
-def generateVehicles(node_ids, junction_id, numberOfVehicles, t_gen, vehicles, seed, object=False):
+def generateVehicles(node_ids, junction_id, numberOfVehicles, gen_time, vehicles, seed, object=False):
     """Genero veicoli per ogni route possibile"""
 
     r_depart = 0
-    auto_ogni = float(t_gen) / float(numberOfVehicles)
+    auto_ogni = float(gen_time) / float(numberOfVehicles)
 
     random.seed(seed)
 

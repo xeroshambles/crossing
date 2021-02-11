@@ -55,7 +55,7 @@ class Junction(ABC):
     def laneCalc(self):
         """Funzione che determina le corsie a partire dall'insieme delle strade."""
         for i in self.edges:
-            lanes = [f'{i}_0', f'{i}_2', f'{i}_4']
+            lanes = [f'{i}_0', f'{i}_1', f'{i}_2']
             self.lanes += lanes
 
     def incomingLanesCalc(self):
@@ -122,7 +122,7 @@ class Junction(ABC):
         if abs(currentEdge[0] - currentEdge[1]) == abs(nextEdge[0] - nextEdge[1]):  # front
             return f'{route[0]}_{currentLane}', f'{route[1]}_{currentLane}'
         lane0 = f'{route[0]}_0'
-        lane4 = f'{route[0]}_4'
+        lane4 = f'{route[0]}_2'
         laneBase = ''
         laneObjective = ''
         for direction, lane in self.possibleRoutes[lane0].items():
@@ -180,20 +180,18 @@ class Junction(ABC):
             rightLane = ''
 
             frontLane = ''
-
             leftLane = ''
-
             j = 7
 
             if suffix == '0':
                 _, _, rightEdge = self.getArrivalEdgesFromEdge(e1)
-                rightLane = f'e0{j}_{"0" if rightEdge < 10 else ""}{rightEdge}_0'
-            if suffix == '2':
+                rightLane = f'e0{j}_{"0" if rightEdge < 10 else ""}{rightEdge}_{suffix}'
+            if suffix == '1':
                 _, frontEdge, _ = self.getArrivalEdgesFromEdge(e1)
-                frontLane = f'e0{j}_{"0" if frontEdge < 10 else ""}{frontEdge}_2'
-            if suffix == '4':
+                frontLane = f'e0{j}_{"0" if frontEdge < 10 else ""}{frontEdge}_{suffix}'
+            if suffix == '2':
                 leftEdge, _, _ = self.getArrivalEdgesFromEdge(e1)
-                leftLane = f'e0{j}_{"0" if leftEdge < 10 else ""}{leftEdge}_4'
+                leftLane = f'e0{j}_{"0" if leftEdge < 10 else ""}{leftEdge}_{suffix}'
 
             """Salvo le traiettorie trovate."""
             self.possibleRoutes[l] = {'front': frontLane, 'right': rightLane, 'left': leftLane}
@@ -353,8 +351,9 @@ class Junction(ABC):
             # print('veh subject', veh.getID(), veh.getCurrentRoute())
             # print(f'subject {veh.getID()} ({veh.getCurrentLane()})')
             for otherVeh in vehiclesInHead:
-                # print(f'object {otherVeh.getID()} ({otherVeh.getCurrentLane()}), condizioni: diversità {otherVeh != veh}, non presenza '
-                      # f'{otherVeh not in clashingVehicles}, clashing {self.isClashing(self.fromEdgesToLanes(veh), self.fromEdgesToLanes(otherVeh))}')
+                # print(f'object {otherVeh.getID()} ({otherVeh.getCurrentLane()}), condizioni: diversità {otherVeh !=
+                # veh}, non presenza ' f'{otherVeh not in clashingVehicles}, clashing {self.isClashing(
+                # self.fromEdgesToLanes(veh), self.fromEdgesToLanes(otherVeh))}')
                 if otherVeh != veh and otherVeh not in clashingVehicles:
                     if self.isClashing(self.fromEdgesToLanes(veh),
                                        self.fromEdgesToLanes(otherVeh)):
@@ -364,10 +363,10 @@ class Junction(ABC):
                         maxLength = self.maxDimensionCalc(otherVeh.getCurrentLane())
                         for v in reversed(traci.lane.getLastStepVehicleIDs(otherVeh.getCurrentLane())):
                             v = vehicles[v]
-                            # print(
-                            #     f'conditions on {v.getID()} ({v.getCurrentLane()}): posizione {v.checkPosition(self)}, '
-                            #     f'auction {v not in self.crossingManager.vehiclesInAuction}, veicoli riattivati {v not in self.crossingManager.nonStoppedVehicles}, '
-                            #     f'distanza {v.distanceFromEndLane() < 40}, maxLength {len(vlp) < maxLength}')
+                            # print( f'conditions on {v.getID()} ({v.getCurrentLane()}): posizione {v.checkPosition(
+                            # self)}, ' f'auction {v not in self.crossingManager.vehiclesInAuction},
+                            # veicoli riattivati {v not in self.crossingManager.nonStoppedVehicles}, ' f'distanza {
+                            # v.distanceFromEndLane() < 40}, maxLength {len(vlp) < maxLength}')
                             if v.checkPosition(self) and v not in self.crossingManager.vehiclesInAuction \
                                     and v not in self.crossingManager.nonStoppedVehicles:
                                 if v.distanceFromEndLane() < 40 and len(vlp) < maxLength:
@@ -387,17 +386,13 @@ class Junction(ABC):
         prendere parte alle aste. Tutti i veicoli dopo un veicolo che non può prendere parte ad un'asta vengono
         messi insieme ad esso nel gruppo degli sponsors."""
         if self.isCompetitive:
-            # for cl in clashingLists:
-            #     print('p c l v: ', end='')
-            #     for v in cl[0]:
-            #         print(v.getID(), v.getCurrentLane(), end=', ')
-            #     print()
             """Caso competitivo. Con questo ciclo individuiamo eventuali veicoli in clash con veicoli vincitori 
             e gli impediamo di prendere parte all'asta. L'asta non viene permessa nemmeno ai veicoli che vengono 
             dopo il veicolo in clash."""
             if self.crossingManager.currentWinners:
                 blockingVehicles = self.crossingManager.currentWinners.copy()
-                # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in blockingVehicles)
+                # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in
+                # blockingVehicles)
                 listsToBeRemoved = []
                 for cl in clashingLists:
                     vehToBeRemoved = []
@@ -425,20 +420,15 @@ class Junction(ABC):
                 for li in listsToBeRemoved:
                     clashingLists.remove(li)
         else:
-            # for cl in clashingLists:
-            #     print('p c l v: ', end='')
-            #     for v in cl[0]:
-            #         print(v.getID(), v.getCurrentLane(), end=', ')
-            #     print()
             """Caso cooperativo. Con questo ciclo individuiamo eventuali veicoli in clash con veicoli che hanno 
             preso precedentemente parte ad un'asta. L'asta non viene permessa nemmeno ai veicoli che vengono dopo
              il veicolo in clash."""
-            '''if self.crossingManager.orderedCooperativeList:
+            if self.crossingManager.orderedCooperativeList:
                 print("SSSS")
                 blockingVehicles = [x for j in self.crossingManager.orderedCooperativeList for i in j for x in i]
-                # print(f'bv {self.getID()} {[x.getID() for x in blockingVehicles]}')
-                # if len(blockingVehicles) > 2:
-                # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in blockingVehicles)
+                # print(f'bv {self.getID()} {[x.getID() for x in blockingVehicles]}') if len(blockingVehicles) > 2:
+                # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in
+                # blockingVehicles)
                 listsToBeRemoved = []
                 for cl in clashingLists:
                     vehToBeRemoved = []
@@ -463,7 +453,7 @@ class Junction(ABC):
                             break
                 for li in listsToBeRemoved:
                     clashingLists.remove(li)
-            '''
+
         # for vh in vehiclesInHead:
         #     print('veh in head', vh.getID())
         # for cl in clashingLists:
@@ -552,33 +542,33 @@ class FourWayJunction(Junction):
     def findClashingRoutesWhenGoForward(self, left, front, right, base, obj):
         """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
         all'incrocio, in particolare quelle che si hanno nell'andare diritto."""
-        clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_2',
-                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if left < 10 else ""}{left}_2')
+        clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_1',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if left < 10 else ""}{left}_1')
         self.clashingEdges[base][obj].append(clashingEdge1)
-        clashingEdge2 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_4')
+        clashingEdge2 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_2')
         self.clashingEdges[base][obj].append(clashingEdge2)
-        clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_2',
-                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
+        clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_1',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_1')
         self.clashingEdges[base][obj].append(clashingEdge3)
-        clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_4')
+        clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
         self.clashingEdges[base][obj].append(clashingEdge4)
 
     def findClashingRoutesWhenTurningLeft(self, left, front, right, base, obj):
         """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
         all'incrocio, in particolare quelle che si hanno nello svoltare a sinistra."""
-        clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_4')
-        self.clashingEdges[base][obj].append(clashingEdge1)
-        clashingEdge2 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_2',
-                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
-        self.clashingEdges[base][obj].append(clashingEdge2)
-        clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_4',
-                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if front < 10 else ""}{front}_4')
-        self.clashingEdges[base][obj].append(clashingEdge3)
-        clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+        clashingEdge1 = (f'e{"0" if right < 10 else ""}{right}_{"0" if self.nID < 10 else ""}{self.nID}_2',
                          f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_2')
+        self.clashingEdges[base][obj].append(clashingEdge1)
+        clashingEdge2 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_1',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_1')
+        self.clashingEdges[base][obj].append(clashingEdge2)
+        clashingEdge3 = (f'e{"0" if left < 10 else ""}{left}_{"0" if self.nID < 10 else ""}{self.nID}_2',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if front < 10 else ""}{front}_2')
+        self.clashingEdges[base][obj].append(clashingEdge3)
+        clashingEdge4 = (f'e{"0" if front < 10 else ""}{front}_{"0" if self.nID < 10 else ""}{self.nID}_1',
+                         f'e{"0" if self.nID < 10 else ""}{self.nID}_{base[1:3]}_1')
         self.clashingEdges[base][obj].append(clashingEdge4)
 
     def findClashingEdges(self):
@@ -595,7 +585,7 @@ class FourWayJunction(Junction):
                     continue
                 k = self.possibleRoutes[i][j]
                 left, front, right = self.getArrivalEdgesFromEdge(int(i[1:3]))
-                if i[-1] == '2':  # front
+                if i[-1] == '1':  # front
                     self.findClashingRoutesWhenGoForward(left, front, right, i, k)
-                if i[-1] == '4':  # left
+                if i[-1] == '2':  # left
                     self.findClashingRoutesWhenTurningLeft(left, front, right, i, k)

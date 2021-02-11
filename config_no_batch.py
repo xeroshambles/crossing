@@ -1,7 +1,7 @@
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 junction_id = 7  # id dell'incrocio
 lanes = []  # lista dei nomi delle lane
-lanes_ids = [0, 2, 4]  # lista degli id delle lanes nell'incrocio
+lanes_ids = [0, 1, 2]  # lista degli id delle lanes nell'incrocio
 node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell'incrocio
 period = 10  # tempo di valutazione del throughput del sistema incrocio
 seed = 9001  # seme iniziale

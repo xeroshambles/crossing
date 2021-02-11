@@ -3,58 +3,10 @@
 # - ricordarsi di modificare il tipo di junction in netedit, in unregulated o l'ultimo
 
 import os
-import sys
+from utils import *
+
 import traci
-
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
-
-from sumolib import checkBinary  # noqa
-
-
-def getLaneFromEdges(node_ids, start, end):
-    """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-        destinazione"""
-
-    distance = -1
-    i = 0
-    trovato = False
-
-    while True:
-        if node_ids[i % 4] == start:
-            trovato = True
-        if trovato:
-            distance += 1
-            if node_ids[i % 4] == end:
-                break
-        i += 1
-    lane = 0
-    if distance == 1:
-        lane = 4
-    if distance == 2:
-        lane = 2
-    if distance == 3:
-        lane = 0
-    return lane
-
-
-def generateRoute(node_ids, junction_id):
-    """Genero tutte le route possibili per l'incrocio"""
-
-    n = 0
-
-    for i in node_ids:
-        for j in node_ids:
-            if i == j:
-                continue
-            start = i
-            end = j
-            traci.route.add(f'route_{n}', [f'e{"0" if start != 12 else ""}{start}_0{junction_id}',
-                                           f'e0{junction_id}_{"0" if end != 12 else ""}{end}'])
-            n += 1
+from sumolib import checkBinary
 
 
 def generaVeicoli():
@@ -74,7 +26,7 @@ def generaVeicoli():
         if lane == 0:
             continue
         else:
-            id_veh = "veh_" + str(i)
+            id_veh = f'idV{i}'
             traci.vehicle.add(id_veh, f'route_{i}', depart=str(r_depart), departLane=lane, departSpeed="6.944444")
             traci.vehicle.setMaxSpeed(id_veh, 6.944444)
             traci.vehicle.setSpeedMode(id_veh, 0)

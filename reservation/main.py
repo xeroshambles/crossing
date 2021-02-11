@@ -373,7 +373,7 @@ def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
 
 
 def run(numberOfVehicles, schema, sumoCmd, tempo_generazione, celle_per_lato, traiettorie_matrice,
-        secondi_di_sicurezza, path, index, queue):
+        secondi_di_sicurezza, path, index, queue, seed=seed):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     port = miscutils.getFreeSocketPort()
