@@ -1,6 +1,55 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date
+import inpout
+from config import *
+
+
+def getValue(title, measure_arr):
+    """Ritorna il massimo o la media della lista di valori a seconda del titolo"""
+
+    if title[:3] == 'max':
+        return max(measure_arr)
+    else:
+        return round(sum(measure_arr) / len(measure_arr), 2)
+
+
+def clearMeasures():
+    """Pulisco il dizionario delle misure"""
+
+    labels_per_sims.clear()
+
+    for i in range(0, len(groups)):
+        count = 0
+        while count < groups[i]:
+            measures[m_names[i]][count]['values'].clear()
+            count += 1
+
+
+
+def collectMeasures(queue, repeat, numOfVehicles, f, i):
+    """Scrivo le misure delle simulazioni ripetute"""
+
+    arr = {k: [] for k in titles}
+
+    for j in range(0, repeat):
+
+        ret = queue.get()
+
+        inpout.writeMeasuresToFile(f, f'{i}:{j}', numOfVehicles, ret)
+
+        for k in range(0, len(arr)):
+            arr[titles[k]].append(ret[k])
+
+    k = 0
+
+    for i in range(0, len(groups)):
+        count = 0
+        while count < groups[i]:
+            title = measures[m_names[i]][count]['title']
+            measures[m_names[i]][count]['values'].append(getValue(title, arr[title]))
+            count += 1
+            k += 1
 
 
 def checkChoice(choices, inp, default, err, mode=''):

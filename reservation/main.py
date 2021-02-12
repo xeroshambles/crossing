@@ -3,7 +3,7 @@ import os
 import math
 from math import sqrt
 from utils import *
-from config_no_batch import *
+from config import *
 
 import traci
 from sumolib import miscutils
@@ -372,8 +372,8 @@ def pulisci_matrice(matrice_incrocio_temp, sec_sicurezza_temp):
     return matrice_incrocio
 
 
-def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, path, index,
-        queue, seed=seed):
+def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
+        path, index, queue, seed):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     port = miscutils.getFreeSocketPort()
@@ -432,10 +432,10 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(numberOfVehicles, tempo_generazione, vehicles, seed)
+    vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed)
 
     if schema in ['n', 'N']:
-        colorVehicles(numberOfVehicles)
+        colorVehicles(sum(numberOfVehicles))
 
     # istanzio le matrici [nome_incrocio, variabile]
     attesa = []  # ordine di arrivo su lista, si resetta quando le auto liberano incrocio
@@ -447,18 +447,12 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
     stop = []  # lista che indica di quanto si distanzia lo stop dal centro dell'incrocio [dx, sotto, sx, sopra]
     centerJunctID = []  # coordinate (x,y) del centro di un incrocio
     arrayAuto = []  # contiene la lista di auto presenti nella simulazione
-    tempo_coda = []  # usata per fare calcoli su output del tempo medio in coda
     limiti_celle_X = []  # utile per verificare l'appartenenza ad una cella all'interno della matrice dell'incrocio
     limiti_celle_Y = []  # utile per verificare l'appartenenza ad una cella all'interno della matrice dell'incrocio
     passaggio_cella = []  # salvo in che cella si trova l'auto in passaggio [incrID][ [ auto , cella_X , cella_Y ],... ]
     consumo = dict()  # lista di consumi rilevati per ogni auto
     rallentate = []  # lista di auto rallentate in prossimità dell'incrocio
     passaggio_precedente = []  # salvo l'ultima situazione di auto in passaggio per rilasciarle all'uscita
-
-    f_s = []
-    vm_s = []
-    cm_s = []
-    cx_s = []
 
     attesa.append([])
     lista_arrivo.append([])
@@ -478,10 +472,6 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
     limiti = limiti_celle(stopXY(shape), celle_per_lato)
     limiti_celle_X.append(limiti[0])
     limiti_celle_Y.append(limiti[1])
-    # popolo il vettore per il calcolo del tempo medio in coda
-    tempo_coda.append([])
-    for i in range(0, numberOfVehicles):
-        tempo_coda[0].insert(i, [0, 0])
     # popolo la matrice dell'incrocio
     matrice_incrocio.append([])
     for x in range(0, celle_per_lato):
@@ -503,7 +493,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
     n_step = 0
 
-    while traci.simulation.getMinExpectedNumber() > 0:
+    while traci.simulation.getMinExpectedNumber() > 0 or step <= numberOfSteps:
         incrID = 0
 
         for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione

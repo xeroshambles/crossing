@@ -2,13 +2,13 @@ import sys
 import os
 from math import sqrt
 from utils import *
-from config_no_batch import *
+from config import *
 
 import traci
 from sumolib import miscutils
 
 
-def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed=seed):
+def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     port = miscutils.getFreeSocketPort()
@@ -65,14 +65,14 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed=seed):
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(numberOfVehicles, tempo_generazione, vehicles, seed)
+    vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
-    while traci.simulation.getMinExpectedNumber() > 0:
+    while traci.simulation.getMinExpectedNumber() > 0 or totalTime <= numberOfSteps:
         traci.simulationStep()
         totalTime += 1
         vehs_loaded = traci.vehicle.getIDList()

@@ -1,5 +1,5 @@
-from config_no_batch import *
 import random
+from config import *
 from auction.trafficElements.vehicle import Vehicle
 
 import traci
@@ -69,7 +69,7 @@ def generateRoutes(junction_id=junction_id, node_ids=node_ids):
     return routes_per_lane_start
 
 
-def generateLaneSequence(px, py, numberOfVehicles, seed=seed):
+def generateLaneSequence(px, py, numberOfVehicles, seed):
     """Genero la sequenza di lane equiprobabili"""
 
     random.seed(seed)
@@ -87,18 +87,27 @@ def generateLaneSequence(px, py, numberOfVehicles, seed=seed):
     return sequence
 
 
-def generateVehicles(numberOfVehicles, gen_time, vehicles, seed, object=False):
+def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, object=False):
     """Genero veicoli per ogni route possibile"""
 
+    c = 0
+    t = 0
+
     depart = 0
-    auto_every = float(gen_time) / float(numberOfVehicles)
+    auto_every = (numberOfSteps / len(numberOfVehicles)) / numberOfVehicles[c]
 
     random.seed(seed)
 
     routes = generateRoutes()
-    sequence = generateLaneSequence(33, 33, numberOfVehicles, seed)
+    sequence = generateLaneSequence(33, 33, sum(numberOfVehicles), seed)
 
-    for i in range(0, numberOfVehicles):
+    for i in range(0, sum(numberOfVehicles)):
+        if t < numberOfVehicles[c]:
+            t += 1
+        else:
+            t = 0
+            c += 1
+            auto_every = (numberOfSteps / len(numberOfVehicles)) / numberOfVehicles[c]
         depart += auto_every
         if object:
             idV = f'idV{i}'
