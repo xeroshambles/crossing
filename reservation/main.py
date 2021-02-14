@@ -385,6 +385,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
             os.mkdir(dir)
         except OSError:
             print(f"\nCreazione della cartella {dir} fallita...")
+            sys.exit(-1)
 
     if output_redirection:
 
@@ -432,7 +433,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed)
+    vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids)
 
     if schema in ['n', 'N']:
         colorVehicles(sum(numberOfVehicles))
@@ -493,7 +494,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
     n_step = 0
 
-    while traci.simulation.getMinExpectedNumber() > 0 or step <= numberOfSteps:
+    while traci.simulation.getMinExpectedNumber() > 0:
         incrID = 0
 
         for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione

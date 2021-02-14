@@ -1,17 +1,17 @@
 import random
-from config import *
 from auction.trafficElements.vehicle import Vehicle
 
 import traci
 
 
-def getLaneIndexFromEdges(start, end, node_ids=node_ids):
+def getLaneIndexFromEdges(start, end, node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione"""
 
     distance = -1
     i = 0
     trovato = False
+
     while True:
         if node_ids[i % 4] == start:
             trovato = True
@@ -20,13 +20,16 @@ def getLaneIndexFromEdges(start, end, node_ids=node_ids):
             if node_ids[i % 4] == end:
                 break
         i += 1
+
     lane = 0
+
     if distance == 1:
         lane = 2
     if distance == 2:
         lane = 1
     if distance == 3:
         lane = 0
+
     return lane
 
 
@@ -35,16 +38,19 @@ def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
 
     min_x = shape[0][0]
     max_x = shape[0][0]
+
     for point in shape:
         if point[0] < min_x:
             min_x = point[0]
         if point[0] > max_x:
             max_x = point[0]
+
     lane_end = lane_length - (max_x - min_x) / 2
+
     return lane_end - spawn_distance
 
 
-def generateRoutes(junction_id=junction_id, node_ids=node_ids):
+def generateRoutes(junction_id, node_ids):
     """Genero tutte le route possibili per l'incrocio"""
 
     n = 0
@@ -61,9 +67,10 @@ def generateRoutes(junction_id=junction_id, node_ids=node_ids):
 
     routes = traci.route.getIDList()
     routes_per_lane_start = {'0': [], '1': [], '2': []}
+
     for route in routes:
         edges = traci.route.getEdges(route)
-        index = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        index = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         routes_per_lane_start[str(index)].append(route)
 
     return routes_per_lane_start
@@ -87,7 +94,7 @@ def generateLaneSequence(px, py, numberOfVehicles, seed):
     return sequence
 
 
-def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, object=False):
+def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, object=False):
     """Genero veicoli per ogni route possibile"""
 
     c = 0
@@ -98,7 +105,7 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, object=Fal
 
     random.seed(seed)
 
-    routes = generateRoutes()
+    routes = generateRoutes(junction_id, node_ids)
     sequence = generateLaneSequence(33, 33, sum(numberOfVehicles), seed)
 
     for i in range(0, sum(numberOfVehicles)):
@@ -121,7 +128,7 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, object=Fal
             vehicles[idV] = vehicle
         route = random.choice(routes[str(sequence[i])])
         edges = traci.route.getEdges(route)
-        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         traci.vehicle.add(idV, route, depart=depart, departLane=lane)
 
     return vehicles

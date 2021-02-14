@@ -25,25 +25,31 @@ if __name__ == "__main__":
     print("\nCalcolo per la reservation la matrice di celle a partire da tutte le traiettorie possibili...")
     traiettorie_matrice = traiettorie.run(False, celle_per_lato)
 
-    for project in projects:
+    projs = checkChoice(projects,
+                        '\nQuale progetto vuoi avviare? (classic_tls, classic_precedence, reservation, '
+                        'auction): ', "\nUtilizzo il semaforo classico come default...",
+                        '\nInserire un nome di progetto valido!',
+                        mode, arr=True)
+
+    for project in projs:
 
         try:
             module = importlib.import_module(".main", package=project)
         except Exception:
             print("\nImpossibile trovare il progetto...")
-            sys.exit(0)
+            sys.exit(-1)
 
-        print(f"\nEseguo progetto {project}...")
+        print(f"\nEseguo il progetto {project}...")
 
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
 
-        choice = inpout.checkChoice(['d', 'D', 'g', 'G'],
-                                    '\nVuoi una visualizzazione grafica o raccogliere dati? (g = grafica, '
-                                    'd = dati): ',
-                                    "\nUtilizzo la modalità dati come default...",
-                                    '\nInserire un carattere tra d e g!',
-                                    mode)
+        choice = checkChoice(['d', 'D', 'g', 'G'],
+                             '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
+                             'd = dati): ',
+                             "\nUtilizzo la modalità dati come default...",
+                             '\nInserire un carattere tra d e g!',
+                             mode)
 
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
@@ -57,16 +63,16 @@ if __name__ == "__main__":
 
         schema = ''
         if choice in ['g', 'G']:
-            schema = inpout.checkChoice(['s', 'S', 'n', 'N'],
-                                        '\nDesideri visualizzare le auto con uno schema di colori significativo? '
-                                        '(s, n): ',
-                                        "\nUtilizzo lo schema significativo come default...",
-                                        '\nInserire un carattere tra s e n!', mode)
+            schema = checkChoice(['s', 'S', 'n', 'N'],
+                                 '\nDesideri visualizzare le auto con uno schema di colori significativo? '
+                                 '(s, n): ',
+                                 "\nUtilizzo lo schema significativo come default...",
+                                 '\nInserire un carattere tra s e n!', mode)
 
-        diff = inpout.checkInput(diffSim, f'\nInserire il numero di esecuzioni della simulazione: ',
-                                 f'\nUtilizzo come default 4 run diverse...',
-                                 '\nInserire un numero di simulazioni positivo!', mode,
-                                 f'\nEseguo {diffSim} simulazioni differenti...', diffSim)
+        diff = checkInput(diffSim, f'\nInserire il numero di simulazioni diverse: ',
+                          f'\nUtilizzo come default 4 run diverse...',
+                          '\nInserire un numero di simulazioni positivo!', mode,
+                          f'\nEseguo {diffSim} simulazioni differenti...', diffSim)
 
         dir = os.path.join(path, project)
 
@@ -75,38 +81,35 @@ if __name__ == "__main__":
                 os.mkdir(dir)
             except OSError:
                 print(f"\nCreazione della cartella {dir} fallita...")
+                sys.exit(-1)
 
         for i in range(0, diff):
 
             output_file = os.path.join(dir, f'{i}.txt')
             f = open(output_file, "w")
 
-            repeat = inpout.checkInput(repeatSim, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
-                                       f'\nUtilizzo come default 10 stesse run...',
-                                       '\nInserire un numero di simulazioni positivo!', mode,
-                                       f'\nEseguo {repeatSim} simulazioni identiche in parallelo...', repeatSim)
-
-            # numberOfVehicles = inpout.checkInput(numberOfVehicles[i], f'\nInserire il numero di veicoli nella
-            # simulazione '
-            #                                                        f'{i}: ', f'\nUtilizzo come default 50 veicoli...',
-            #                                   '\nInserire un numero di veicoli positivo!', mode,
-            #                                   f'\nUtilizzo {numberOfVehicles[i]} veicoli...',
-            #                                   numberOfVehicles[i])
-
-            labels_per_sims.append(f'{numberOfVehicles[i]} veicoli')
+            repeat = checkInput(repeatSim, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
+                                f'\nUtilizzo come default 10 stesse run...',
+                                '\nInserire un numero di simulazioni positivo!', mode,
+                                f'\nEseguo {repeatSim} simulazioni identiche in parallelo...', repeatSim,
+                                repeatSim)
 
             procs = []
             queue = Queue()
 
             for j in range(0, repeat):
 
-                args = {'classic_tls': (numberOfSteps, numberOfVehicles[i], schema, sumoDict['classic_tls'], dir, j, queue, seeds[j]),
-                        'classic_precedence': (numberOfSteps, numberOfVehicles[i], schema, sumoDict['classic_precedence'], dir, j,
-                                               queue, seeds[j]),
-                        'reservation': (numberOfSteps, numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
-                                        traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
-                        'auction': (numberOfSteps, numberOfVehicles[i], schema, sumoDict['auction'], True, True, -1, dir, j, queue,
-                                    seeds[j])}
+                args = {'classic_tls': (
+                    numberOfSteps, numberOfVehicles[i], schema, sumoDict['classic_tls'], dir, j, queue, seeds[j]),
+                    'classic_precedence': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['classic_precedence'], dir, j,
+                        queue, seeds[j]),
+                    'reservation': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
+                        traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
+                    'auction': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['auction'], True, True, -1, dir, j, queue,
+                        seeds[j])}
 
                 p = Process(target=module.run, args=args[project])
                 p.start()
@@ -115,18 +118,13 @@ if __name__ == "__main__":
             for p in procs:
                 p.join()
 
-            collectMeasures(queue, repeat, sum(numberOfVehicles[i]), f, i)
+            collectMeasures(queue, repeat, sum(numberOfVehicles[i]), line_measures, config_measures, groups, titles,
+                            head_titles, labels, numberOfVehicles, project, f, i)
 
             f.close()
 
-        values = []
-        cols = []
+        linesPerMeasures(line_measures, groups, dir, project)
 
-        for k in measures:
-            for i in range(0, len(measures[k])):
-                values.append(measures[k][i]['values'])
-                cols.append(measures[k][i]['color'])
+        clearMeasures(line_measures, groups, head_titles)
 
-        inpout.linesPerMeasures(values, labels, m_names, cols, groups, labels_per_sims, dir, project)
-
-        clearMeasures()
+    linesPerConfig(config_measures, labels, titles, colors, projects, numberOfVehicles, path)

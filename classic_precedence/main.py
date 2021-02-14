@@ -20,6 +20,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
             os.mkdir(dir)
         except OSError:
             print(f"\nCreazione della cartella {dir} fallita...")
+            sys.exit(-1)
 
     if output_redirection:
 
@@ -65,14 +66,14 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed)
+    vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
-    while traci.simulation.getMinExpectedNumber() > 0 or totalTime <= numberOfSteps:
+    while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         totalTime += 1
         vehs_loaded = traci.vehicle.getIDList()

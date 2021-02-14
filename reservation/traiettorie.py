@@ -4,6 +4,7 @@
 
 import os
 from utils import *
+from config import *
 
 import traci
 from sumolib import checkBinary
@@ -15,11 +16,11 @@ def generaVeicoli():
     r_depart = -9
     auto_ogni = 10
 
-    generateRoutes()
+    generateRoutes(junction_id, node_ids)
 
     for i in range(0, 12):
         edges = traci.route.getEdges(f'route_{i}')
-        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         r_depart += auto_ogni
         if lane == 0:
             continue
