@@ -65,8 +65,8 @@ for title in head_titles:
 config_measures = {}
 
 for vehs in numberOfVehicles:
-    hist_measures[str(vehs)] = {}
+    config_measures[str(vehs)] = {}
     for i in range(0, len(labels)):
-        hist_measures[str(vehs)][labels[i]] = []
+        config_measures[str(vehs)][labels[i]] = []
         for j in range(0, len(projects)):
-            hist_measures[str(vehs)][labels[i]].append({'project': projects[j], 'color': colors[j], 'values': []})
+            config_measures[str(vehs)][labels[i]].append({'project': projects[j], 'color': colors[j], 'values': []})
