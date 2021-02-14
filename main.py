@@ -88,6 +88,8 @@ if __name__ == "__main__":
             output_file = os.path.join(dir, f'{i}.txt')
             f = open(output_file, "w")
 
+            print(f'\nUtilizzo un set di {numberOfVehicles[i]} veicoli in {numberOfSteps} steps...')
+
             repeat = checkInput(repeatSim, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
                                 f'\nUtilizzo come default 10 stesse run...',
                                 '\nInserire un numero di simulazioni positivo!', mode,

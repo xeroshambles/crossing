@@ -1,12 +1,13 @@
 # Batch
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
-numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
+numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200],
+                    [50, 100, 150, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 numberOfSteps = 200  # numero di step entro cui generare i veicoli
-seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987] # semi iniziali
+seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
-projects = ["classic_tls", "classic_precedence", "reservation", "auction"]  # progetti da eseguire
+projects = ["reservation", "classic_tls", "classic_precedence", "auction"]  # progetti da eseguire
 diffSim = len(projects)  # numero di simulazioni diverse che devono essere eseguite
 
 # Main

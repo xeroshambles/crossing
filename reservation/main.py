@@ -582,7 +582,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
             for x in passaggio_cella[incrID]:
                 rotta = traci.vehicle.getRouteID(x[0])
                 edges = traci.route.getEdges(rotta)
-                lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+                lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
                 if lane != 0:
                     # se l'auto non gira a destra
                     if x[1] is None and x[2] is None:
