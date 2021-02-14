@@ -189,7 +189,7 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
 
         rotta = traci.vehicle.getRouteID(auto_temp)
         edges = traci.route.getEdges(rotta)
-        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         # se l'auto non gira a destra
         if lane != 0:
             passaggio_cella_temp.append([auto_temp, None, None])
@@ -269,7 +269,7 @@ def percorso_libero(passaggio_temp, matrice_incrocio_temp, passaggio_cella_temp,
 
         rotta = traci.vehicle.getRouteID(x[0])
         edges = traci.route.getEdges(rotta)
-        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         # se l'auto non gira a destra
         if lane != 0:
             for y in passaggio_cella_temp:
