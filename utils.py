@@ -132,7 +132,7 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
         lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         traci.vehicle.add(idV, route, depart=depart, departLane=lane)
         if wallet:
-            traci.vehicle.setParameter(idV, "wallet", 50)
+            traci.vehicle.setParameter(idV, "wallet", str(50))
 
     return vehicles
 
