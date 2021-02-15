@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 from datetime import date
 
 
-def getValue(title, measure_arr):
+def getValue(title, arr_measure):
     """Ritorna il massimo o la media della lista di valori a seconda del titolo"""
 
     if title[:3] == 'max':
-        return max(measure_arr)
+        return max(arr_measure)
     else:
-        return round(sum(measure_arr) / len(measure_arr), 2)
+        return round(sum(arr_measure) / len(arr_measure), 2)
 
 
 def clearMeasures(measures, groups, head_titles):
@@ -49,24 +49,24 @@ def writeMeasuresToFile(f, i, numberOfVehicles, ret):
     f.write(f'\nTHROUGHPUT MEDIO: {round(ret[13], 2)}\n\n')
 
 
-def collectMeasures(queue, repeat, numOfVehicles, line_measures, config_measures, groups, titles, head_titles,
+def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measures, groups, titles, head_titles,
                     labels, nums, project, f, i):
     """Scrivo le misure delle simulazioni ripetute"""
 
-    arr = {k: [] for k in titles}
+    arr_titles = {k: [] for k in titles}
 
-    arr2 = {str(i): str(nums[i]) for i in range(0, len(nums))}
+    arr_nums = {str(i): str(nums[i]) for i in range(0, len(nums))}
 
     for j in range(0, repeat):
 
         ret = queue.get()
 
-        for k in range(0, len(arr)):
-            arr[titles[k]].append(ret[k])
+        for k in range(0, len(arr_titles)):
+            arr_titles[titles[k]].append(ret[k])
 
-            for p in range(0, len(config_measures[arr2[str(i)]][labels[k]])):
-                if config_measures[arr2[str(i)]][labels[k]][p]['project'] == project:
-                    config_measures[arr2[str(i)]][labels[k]][p]['values'].append(ret[k])
+            for p in range(0, len(single_measures[arr_nums[str(i)]][labels[k]])):
+                if single_measures[arr_nums[str(i)]][labels[k]][p]['project'] == project:
+                    single_measures[arr_nums[str(i)]][labels[k]][p]['values'].append(ret[k])
 
         writeMeasuresToFile(f, f'{i}:{j}', numOfVehicles, ret)
 
@@ -75,8 +75,8 @@ def collectMeasures(queue, repeat, numOfVehicles, line_measures, config_measures
     for i in range(0, len(groups)):
         count = 0
         while count < groups[i]:
-            title = line_measures[head_titles[i]][count]['title']
-            line_measures[head_titles[i]][count]['values'].append(getValue(title, arr[title]))
+            title = group_measures[head_titles[i]][count]['title']
+            group_measures[head_titles[i]][count]['values'].append(getValue(title, arr_titles[title]))
             count += 1
             k += 1
 
@@ -147,7 +147,7 @@ def autolabel(values, r, offset, ax):
         i += 1
 
 
-def linesPerMeasures(line_measures, groups, dir, project=''):
+def linesPerGroups(group_measures, groups, dir, project=''):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
     sims = []
@@ -156,15 +156,15 @@ def linesPerMeasures(line_measures, groups, dir, project=''):
     titles = []
     colors = []
 
-    for k in line_measures:
+    for k in group_measures:
         if k == 'sims':
-            sims = line_measures['sims']
+            sims = group_measures['sims']
             continue
         titles.append(k)
-        for i in range(0, len(line_measures[k])):
-            values.append(line_measures[k][i]['values'])
-            labels.append(line_measures[k][i]['label'])
-            colors.append(line_measures[k][i]['color'])
+        for i in range(0, len(group_measures[k])):
+            values.append(group_measures[k][i]['values'])
+            labels.append(group_measures[k][i]['label'])
+            colors.append(group_measures[k][i]['color'])
 
     j = 0
 
@@ -186,7 +186,7 @@ def linesPerMeasures(line_measures, groups, dir, project=''):
         plt.close(fig)
 
 
-def linesPerConfig(config_measures, labels, titles, colors, projects, numOfVehicles, dir):
+def linesPerMeasure(single_measures, labels, titles, colors, projects, numOfVehicles, dir):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
     values = []
@@ -195,11 +195,11 @@ def linesPerConfig(config_measures, labels, titles, colors, projects, numOfVehic
     i = 0
 
     for lab in labels:
-        for k in config_measures:
+        for k in single_measures:
             for z in range(0, len(projects)):
                 values.append([])
-                if len(config_measures[k][lab][z]['values']) > 0:
-                    values[z].append(getValue(titles[i], config_measures[k][lab][z]['values']))
+                if len(single_measures[k][lab][z]['values']) > 0:
+                    values[z].append(getValue(titles[i], single_measures[k][lab][z]['values']))
         r = np.arange(len(vehs))
         fig, ax = plt.subplots()
         for j in range(0, len(projects)):

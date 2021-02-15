@@ -109,6 +109,9 @@ if __name__ == "__main__":
                     'reservation': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
                         traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
+                    'reservation_with_auction': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
+                        traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
                     'auction': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['auction'], True, True, -1, dir, j, queue,
                         seeds[j])}
@@ -120,13 +123,13 @@ if __name__ == "__main__":
             for p in procs:
                 p.join()
 
-            collectMeasures(queue, repeat, sum(numberOfVehicles[i]), line_measures, config_measures, groups, titles,
+            collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures, single_measures, groups, titles,
                             head_titles, labels, numberOfVehicles, project, f, i)
 
             f.close()
 
-        linesPerMeasures(line_measures, groups, dir, project)
+        linesPerGroups(group_measures, groups, dir, project)
 
-        clearMeasures(line_measures, groups, head_titles)
+        clearMeasures(group_measures, groups, head_titles)
 
-    linesPerConfig(config_measures, labels, titles, colors, projects, numberOfVehicles, path)
+    linesPerMeasure(single_measures, labels, titles, colors, projects, numberOfVehicles, path)

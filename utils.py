@@ -94,7 +94,8 @@ def generateLaneSequence(px, py, numberOfVehicles, seed):
     return sequence
 
 
-def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, object=False):
+def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, object=False,
+                     wallet=False):
     """Genero veicoli per ogni route possibile"""
 
     c = 0
@@ -130,6 +131,8 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
         edges = traci.route.getEdges(route)
         lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         traci.vehicle.add(idV, route, depart=depart, departLane=lane)
+        if wallet:
+            traci.vehicle.setParameter(idV, "wallet", 50)
 
     return vehicles
 

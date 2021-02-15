@@ -1,13 +1,12 @@
 # Batch
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
-numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200],
-                    [50, 100, 150, 200]]
+numberOfVehicles = [[50, 50, 50, 50]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 numberOfSteps = 400  # numero di step entro cui generare tutti i veicoli della simulazione
-seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
+seeds = [9001]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
-projects = ["reservation", "classic_tls", "classic_precedence", "auction"]  # progetti da eseguire
+projects = ["reservation_with_auction"]  # progetti da eseguire
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
 # Main
@@ -47,27 +46,27 @@ groups = [1, 3, 3, 2, 3, 1, 1]
 
 labels_per_sims = []
 
-line_measures = {}
+group_measures = {}
 
-line_measures['sims'] = [str(vehs) for vehs in numberOfVehicles]
+group_measures['sims'] = [str(vehs) for vehs in numberOfVehicles]
 
 i = 0
 j = 0
 
 for title in head_titles:
     k = 0
-    line_measures[title] = []
+    group_measures[title] = []
     while k < groups[i]:
-        line_measures[title].append({'label': labels[j], 'color': colors[k], 'title': titles[j], 'values': []})
+        group_measures[title].append({'label': labels[j], 'color': colors[k], 'title': titles[j], 'values': []})
         j += 1
         k += 1
     i += 1
 
-config_measures = {}
+single_measures = {}
 
 for vehs in numberOfVehicles:
-    config_measures[str(vehs)] = {}
+    single_measures[str(vehs)] = {}
     for i in range(0, len(labels)):
-        config_measures[str(vehs)][labels[i]] = []
+        single_measures[str(vehs)][labels[i]] = []
         for j in range(0, len(projects)):
-            config_measures[str(vehs)][labels[i]].append({'project': projects[j], 'color': colors[j], 'values': []})
+            single_measures[str(vehs)][labels[i]].append({'project': projects[j], 'color': colors[j], 'values': []})
