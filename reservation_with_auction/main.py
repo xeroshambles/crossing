@@ -181,8 +181,8 @@ def payBid(v, bid):
 def createAuction(vehicles, step, auctions):
     print(f'auto: {vehicles}\n')
     auction = {'vehicles': vehicles, 'timestamp' : step}
-    print(f'auction["vehicles"]: {auction["vehicles"]}\n')
-    print(f'[v for (k, v) in auctions if k == "vehicles""]: {[v for (k, v) in auctions if k == "vehicles"]}\n')
+    #print(f'auction["vehicles"]: {auction["vehicles"]}\n')
+    #print(f'[v for (k, v) in auctions if k == "vehicles""]: {[v for (k, v) in auctions if k == "vehicles"]}\n')
     if auction['vehicles'] in [v for (k, v) in auctions if k == 'vehicles']:
         return True, None
     auctions.append(auction)
@@ -247,7 +247,7 @@ def findClashingEdges(starting_lane):
     """Funzione che avvia la ricerca delle traiettorie incidentali nell'incrocio."""
     # inizializzo le liste dei possibili clash
     # print(f'possible routes are: {self.possibleRoutes}')
-    print(f"STARTINBG: {starting_lane}")
+    #print(f"STARTINBG: {starting_lane}")
     clashingEdges = []
     left, front, right = getArrivalEdgesFromEdge(int(starting_lane[1:3]))
     if starting_lane[-1] == '1':  # front
@@ -267,8 +267,8 @@ def playAuction(auction, vehicles):
         if b[1] >= max[1]:
             max = b
     winner = max
-    print(f'VEH OBJS: {vehicles}\n')
-    print(f'WINNER: {vehicles[f"{winner[0]}"]}')
+    #print(f'VEH OBJS: {vehicles}\n')
+    #print(f'WINNER: {vehicles[f"{winner[0]}"]}')
     winner_starting_lane = vehicles[f"{winner[0]}"]['startingLane']
     ce = findClashingEdges(winner_starting_lane)
     winners = [winner]
@@ -282,6 +282,8 @@ def playAuction(auction, vehicles):
     # ogni winner paga la bid
     for w in winners:
         payBid(w[0], w[1])
+
+    print(f'auction: {auction}, winners: {[w[0] for w in winners]}, losers: {losers}\n')
     return [w[0] for w in winners], losers
 
 
@@ -295,12 +297,18 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
                                              traiettorie_matrice_temp,
                                      estremi_incrocio, sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp)
 
+    auto.append(auto_temp)
+    print(f"auto prima: {auto}\n")
+
+    auto = [v for v in auto if not (traci.vehicle.getLaneID(v)[1] == 'n' or traci.vehicle.getLaneID(v)[1:3] == '07')]
+    print(f"lane 0: {traci.vehicle.getLaneID(auto[0])}\n")
+    print(f"auto dopo: {auto}\n")
     # c' è almeno un conflitto
-    if not libero:
+    if not libero and len(auto) > 1:
         #Se non esiste gia una auction con lo stesso ID
         #Creo una nuova auction
-        print(f'AUTO_TEMP: {auto_temp}\n')
-        auto.append(auto_temp)
+        #print(f'AUTO_TEMP: {auto_temp}\n')
+
         created, auction = createAuction(auto, step, auctions)
         if created is not None:
             print(f'auction: {auction}\n')
@@ -380,10 +388,10 @@ def set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, matrice_veicoli_te
                             ((celle[0] + index_y) < len(matrice_incrocio_temp)) and \
                             ((celle[1] + index_x) < len(matrice_incrocio_temp)):
                         matrice_incrocio_temp[celle[0] + index_y][celle[1] + index_x].append(round(timestep, 4))
-                        print(f'SOSIKOQSJOJSOJOS(AUTO TEMP): {auto_temp}')
+                        #print(f'SOSIKOQSJOJSOJOS(AUTO TEMP): {auto_temp}')
                         if auto_temp not in matrice_veicoli_temp[celle[0] + index_y][celle[1] + index_x]:
                             matrice_veicoli_temp[celle[0] + index_y][celle[1] + index_x].append(auto_temp)
-                            print(f'matrice_veicoli_temp: {matrice_veicoli_temp}\n')
+                            #print(f'matrice_veicoli_temp: {matrice_veicoli_temp}\n')
 
     return matrice_incrocio_temp, matrice_veicoli_temp
 
@@ -418,7 +426,7 @@ def get_from_matrice_incrocio(auto_temp, matrice_incrocio_temp, matrice_veicoli_
                             # dal valore selezionato
                             if t - sec_sicurezza <= timestep <= t + sec_sicurezza:
                                 libero = False
-                                print(f'matrice_veicoli_temp: {matrice_veicoli_temp}\n')
+                                #print(f'matrice_veicoli_temp: {matrice_veicoli_temp}\n')
                                 for v in matrice_veicoli_temp[celle[0] + index_y][celle[1] + index_x]:
                                     if v not in auto:
                                         auto.append(v)
@@ -464,15 +472,18 @@ def percorso_libero(passaggio_temp, matrice_incrocio_temp, passaggio_cella_temp,
                     else:
                         # se ho None allora l'auto non è ancora entrata nell'incrocio e non la tolgo
                         if y[1] is not None and y[2] is not None:
-                            passaggio_nuovo.pop(passaggio_nuovo.index(x))
-                            passaggio_cella_nuovo.pop(passaggio_cella_nuovo.index(y))
+                            if x in passaggio_nuovo:
+                                passaggio_nuovo.pop(passaggio_nuovo.index(x))
+                            if y in passaggio_cella_nuovo:
+                                passaggio_cella_nuovo.pop(passaggio_cella_nuovo.index(y))
         # se gira a destra guardo se cambia strada e la tolgo dal vettore passaggio
         else:
             road = prossimaStrada(x)
             if traci.vehicle.getRoadID(x[0]) == road:
-                passaggio_nuovo.pop(passaggio_nuovo.index(x))
-                # faccio riaccelerare l'auto
-                traci.vehicle.setSpeed(x[0], traci.vehicle.getMaxSpeed(x[0]) * 4)
+                if x in passaggio_nuovo:
+                    passaggio_nuovo.pop(passaggio_nuovo.index(x))
+                    # faccio riaccelerare l'auto
+                    traci.vehicle.setSpeed(x[0], traci.vehicle.getMaxSpeed(x[0]) * 4)
 
     info = [passaggio_nuovo, matrice_incrocio_temp, passaggio_cella_nuovo]
     return info
@@ -513,7 +524,7 @@ def prossimaStrada(passaggio_temp):
     return pross_road
 
 
-def costruzioneArray(arrayAuto_temp):
+def costruzioneArray(arrayAuto_temp, matrice_veicoli=None):
     """Costruzione dell'array composto dal nome delle auto presenti nella simulazione"""
 
     loadedIDList = traci.simulation.getDepartedIDList()  # carica nell'array le auto partite
@@ -527,17 +538,34 @@ def costruzioneArray(arrayAuto_temp):
         if id_auto in arrayAuto_temp:
             arrayAuto_temp.pop(arrayAuto_temp.index(id_auto))
 
-    return arrayAuto_temp
+    if matrice_veicoli is not None:
+        #print(f"PRIMA: {matrice_veicoli}\n")
+        for x in range(0, len(matrice_veicoli)):
+            for y in range(0, len(matrice_veicoli[x])):
+                for el in matrice_veicoli[x][y]:
+                    for v in el:
+                        if v not in arrayAuto_temp:
+                            print(f"veh: {v}\n")
+                            print(f"arr: {arrayAuto_temp}\n")
+                            print(f"arrived: {v not in arrayAuto_temp}\n")
+                            el.pop(el.index(v))
+
+        #print(f"DOPO: {matrice_veicoli}\n")
+        return arrayAuto_temp, matrice_veicoli
+    else:
+        return arrayAuto_temp
 
 
 def pulisci_matrice(matrice_incrocio_temp, matrice_veicoli_temp, sec_sicurezza_temp):
     "Ogni 10 step pulisco la matrice da valori vecchi"
     #print(f"sec_sicurezza_temp: {sec_sicurezza_temp}\n")
-    print(f"matrice_incrocio_temp: {matrice_incrocio_temp}\n")
+    #print(f"matrice_incrocio_temp: {matrice_incrocio_temp}\n")
     matrice_incrocio = []
+    matrice_veicoli = []
     for incr in matrice_incrocio_temp:
         index_incr = matrice_incrocio_temp.index(incr)
         matrice_incrocio.append(incr)
+        #matrice_veicoli.append(incr)
         for y in matrice_incrocio_temp[index_incr]:
             index_y = matrice_incrocio_temp[index_incr].index(y)
             for x in matrice_incrocio_temp[index_incr][index_y]:
@@ -548,7 +576,10 @@ def pulisci_matrice(matrice_incrocio_temp, matrice_veicoli_temp, sec_sicurezza_t
                     #print(f'OP: ({traci.simulation.getTime()} - {sec_sicurezza_temp} - 1)\n')
                     if float(val) < (traci.simulation.getTime() - sec_sicurezza_temp - 1):
                         matrice_incrocio[index_incr][index_y][index_x].pop(index_val)
-                        #matrice_veicoli_temp[index_incr][index_y][index_x].pop(index_val)
+                        #if matrice_veicoli_temp[index_incr][index_y][index_x]:
+                            #print(f"matrice_veicoli_temp[index_incr][index_y][index_x]: {matrice_veicoli_temp[index_incr][index_y][index_x]}\n")
+                            #print(f"index_val: {index_val}\n")
+                            #matrice_veicoli_temp[index_incr][index_y][index_x].pop(index_val)
 
     return matrice_incrocio, matrice_veicoli_temp
 
@@ -617,7 +648,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
     simulazione"""
 
     vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, False, True)
-    print(f'VEHS INIZIALI: {vehicles}\n')
+    #print(f'VEHS INIZIALI: {vehicles}\n')
     if schema in ['n', 'N']:
         colorVehicles(sum(numberOfVehicles))
 
@@ -830,7 +861,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
         # faccio avanzare la simulazione
         traci.simulationStep(step)
         # inserisco nell'array le auto presenti nella simulazione
-        arrayAuto = costruzioneArray(arrayAuto)
+        arrayAuto, matrice_veicoli = costruzioneArray(arrayAuto, matrice_veicoli)
 
         if n_step % sec == 0:
             vehs_loaded = traci.vehicle.getIDList()
