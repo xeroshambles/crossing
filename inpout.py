@@ -92,7 +92,7 @@ def checkChoice(choices, inp, default, err, mode='', arr=False):
                 choice = choices
             else:
                 choice = choices[0]
-            print(default)
+                print(default)
             break
         else:
             choice = input(inp)
@@ -200,7 +200,7 @@ def linesPerConfig(config_measures, labels, titles, colors, projects, numOfVehic
                 values.append([])
                 if len(config_measures[k][lab][z]['values']) > 0:
                     values[z].append(getValue(titles[i], config_measures[k][lab][z]['values']))
-        r = np.arange(len(projects))
+        r = np.arange(len(vehs))
         fig, ax = plt.subplots()
         for j in range(0, len(projects)):
             ax.plot(r, values[j], color=colors[j], label=projects[j], lw=2, marker='s')

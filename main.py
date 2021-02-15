@@ -72,7 +72,7 @@ if __name__ == "__main__":
         diff = checkInput(diffSim, f'\nInserire il numero di simulazioni diverse: ',
                           f'\nUtilizzo come default 4 run diverse...',
                           '\nInserire un numero di simulazioni positivo!', mode,
-                          f'\nEseguo {diffSim} simulazioni differenti...', diffSim, diffSim)
+                          f'\nEseguo {diffSim} simulazioni differenti...', diffSim)
 
         dir = os.path.join(path, project)
 

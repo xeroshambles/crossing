@@ -4,11 +4,11 @@ mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale 
 numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200],
                     [50, 100, 150, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
-numberOfSteps = 200  # numero di step entro cui generare i veicoli
-seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali
+numberOfSteps = 400  # numero di step entro cui generare tutti i veicoli della simulazione
+seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 projects = ["reservation", "classic_tls", "classic_precedence", "auction"]  # progetti da eseguire
-diffSim = len(projects)  # numero di simulazioni diverse che devono essere eseguite
+diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
 # Main
 
@@ -33,7 +33,7 @@ labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard t
           'Massimo tempo in testa (s)', 'Tempo medio in coda (s)', 'Deviazione standard tempo in coda (s)',
           'Massimo tempo in coda (s)', 'Velocità media (m/s)', 'Deviazione standard velocità (m/s)',
           'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
-          'Massima lunghezza delle code', 'Veicoli fermi', f'Throughput medio (% veicoli / {period} step)']
+          'Massima lunghezza delle code', 'Veicoli fermi', f'Throughput medio (% veicoli passati / {period} step)']
 
 colors = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33']
 
