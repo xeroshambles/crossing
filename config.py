@@ -1,7 +1,7 @@
 # Batch
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
-numberOfVehicles = [[50, 50, 50, 50]]
+numberOfVehicles = [[100, 100, 100, 100]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 numberOfSteps = 400  # numero di step entro cui generare tutti i veicoli della simulazione
 seeds = [9001]  # semi iniziali delle simulazioni

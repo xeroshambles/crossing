@@ -179,7 +179,7 @@ def payBid(v, bid):
 
 
 def createAuction(vehicles, step, auctions):
-    print(f'auto: {vehicles}\n')
+    #print(f'auto: {vehicles}\n')
     auction = {'vehicles': vehicles, 'timestamp' : step}
     #print(f'auction["vehicles"]: {auction["vehicles"]}\n')
     #print(f'[v for (k, v) in auctions if k == "vehicles""]: {[v for (k, v) in auctions if k == "vehicles"]}\n')
@@ -259,7 +259,7 @@ def findClashingEdges(starting_lane):
 def playAuction(auction, vehicles):
     bids = []
     vehs = auction['vehicles']
-    print(f'vehicles:{vehs}\n')
+    #print(f'vehicles:{vehs}\n')
     for v in vehs:
         bids.append((v, makeBid(v)))
     max = (0, 0)
@@ -298,11 +298,31 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
                                      estremi_incrocio, sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp)
 
     auto.append(auto_temp)
-    print(f"auto prima: {auto}\n")
+    #print(f"auto prima: {auto}\n")
 
     auto = [v for v in auto if not (traci.vehicle.getLaneID(v)[1] == 'n' or traci.vehicle.getLaneID(v)[1:3] == '07')]
-    print(f"lane 0: {traci.vehicle.getLaneID(auto[0])}\n")
-    print(f"auto dopo: {auto}\n")
+    if auto:
+        for a in auto:
+            for v in auto:
+                #stesso edge di ingresso ma lane diverse
+                edge_a_entrante = vehicles[str(a)]['startingLane'][1:3]
+                edge_v_entrante = vehicles[str(v)]['startingLane'][1:3]
+                index_a_entrante = vehicles[str(a)]['startingLane'][-1]
+                index_v_entrante = vehicles[str(v)]['startingLane'][-1]
+                if edge_a_entrante == edge_v_entrante and index_a_entrante != index_v_entrante:
+                    print(f"UGUALI ENTRANTI, v1: {a}, v2: {v}, step: {step}\n")
+                    auto.remove(v)
+                #stesso edge di uscita ma lane diverse
+                edges_a = traci.vehicle.getRoute(str(a))
+                edges_v = traci.vehicle.getRoute(str(v))
+                index_a = getLaneIndexFromEdges(int(edges_a[0][1:3]), int(edges_a[1][4:6]), node_ids)
+                index_v = getLaneIndexFromEdges(int(edges_v[0][1:3]), int(edges_v[1][4:6]), node_ids)
+                print(f"a: {a}, v: {v}, edges_a: {edges_a}, edges_v: {edges_v}, index_a: {index_a}, index_v: {index_v}\n")
+                if edges_a[1] == edges_v[1] and index_a != index_v:
+                    print(f"UGUALI USCENTI, v1: {a}, v2: {v}, step: {step}\n")
+                    auto.remove(v)
+    #print(f"lane 0: {traci.vehicle.getLaneID(auto[0])}\n")
+    #print(f"auto dopo: {auto}\n")
     # c' è almeno un conflitto
     if not libero and len(auto) > 1:
         #Se non esiste gia una auction con lo stesso ID
@@ -310,8 +330,6 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
         #print(f'AUTO_TEMP: {auto_temp}\n')
 
         created, auction = createAuction(auto, step, auctions)
-        if created is not None:
-            print(f'auction: {auction}\n')
         if not created:
             # definisco i winners e i losers
             winners, losers = playAuction(auction, vehicles)
@@ -545,9 +563,9 @@ def costruzioneArray(arrayAuto_temp, matrice_veicoli=None):
                 for el in matrice_veicoli[x][y]:
                     for v in el:
                         if v not in arrayAuto_temp:
-                            print(f"veh: {v}\n")
-                            print(f"arr: {arrayAuto_temp}\n")
-                            print(f"arrived: {v not in arrayAuto_temp}\n")
+                            #print(f"veh: {v}\n")
+                            #print(f"arr: {arrayAuto_temp}\n")
+                            #print(f"arrived: {v not in arrayAuto_temp}\n")
                             el.pop(el.index(v))
 
         #print(f"DOPO: {matrice_veicoli}\n")
