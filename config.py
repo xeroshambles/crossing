@@ -2,15 +2,15 @@
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
 # Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
-numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
+numberOfVehicles = [[50, 50, 50, 50]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
-seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
+seeds = [9001]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction"]
-projects = ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction"]  # progetti da eseguire
+projects = ["reservation_with_auction"]  # progetti da eseguire
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
 # Variabili di configurazione per ogni simulazione
@@ -65,6 +65,8 @@ for project in projects:
         projects_labels.append("Prenotazione")
     if project == "precedence_with_auction":
         projects_labels.append("Precedenza + asta")
+    if project == "reservation_with_auction":
+        projects_labels.append("Prenotazione + asta")
 
 x_labels = [sum(vehicles) / len(vehicles) for vehicles in numberOfVehicles]
 
