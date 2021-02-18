@@ -612,7 +612,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
     n_step = 0
 
-    while traci.simulation.getMinExpectedNumber() > 0 and step < numberOfSteps:
+    while traci.simulation.getMinExpectedNumber() > 0 and step <= numberOfSteps:
         incrID = 0
 
         for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione
