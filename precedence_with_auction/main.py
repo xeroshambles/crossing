@@ -3,14 +3,13 @@ import os
 from math import sqrt
 from utils import *
 from config import *
-from auction.trafficElements.junction import FourWayJunction
+from precedence_with_auction.trafficElements.junction import FourWayJunction
 
 import traci
 from sumolib import miscutils
 
 
-def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, index,
-        queue, seed):
+def run(numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, index, queue, seed):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     port = miscutils.getFreeSocketPort()
@@ -39,11 +38,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
     """Inizializzazione di alcune variabili"""
 
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
+    departed = 0  # numero di veicoli partiti nella simulazione e considerati nel calcolo delle misure
     totalTime = 0  # tempo totale di simulazione
-    counter_serving = {}  # dizionario contenente valori incrementali
-    counter_served = {}  # dizionario contenente valori incrementali
-    serving = {}  # dizionario dei throughput misurati per ogni lane entrante per ogni step
-    served = {}  # dizionario dei throughput misurati per ogni lane uscente per ogni step
     headTimes = []  # lista dei tempi passati in testa per ogni veicolo
     varHeadTime = 0  # varianza rispetto al tempo passato in testa
     tailTimes = []  # lista dei tempi in coda per ogni veicolo
@@ -61,16 +57,12 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
         # calcolo la lunghezza delle code e il throughput solo per le lane entranti
         if lane[4:6] == '07':
             tails_per_lane[lane] = []
-            serving[lane] = []
-            served[lane] = []
-            counter_serving[lane] = 0
-            counter_served[lane] = 0
 
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    vehicles = generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, True)
+    vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids, True)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
@@ -83,9 +75,10 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
-    while traci.simulation.getMinExpectedNumber() > 0:
+    while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         traci.simulationStep()
         totalTime += 1
+        departed += traci.simulation.getDepartedNumber()
 
         """Ciclo principale dell'applicazione"""
 
@@ -117,27 +110,18 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
         vehs_loaded = traci.vehicle.getIDList()
         for lane in tails_per_lane:
             tails_per_lane[lane].append(0)
-            if totalTime % period == 0:
-                serving[lane].append(counter_serving[lane])
-                served[lane].append(counter_served[lane])
-                counter_serving[lane] -= counter_served[lane]
-                counter_served[lane] = 0
         # loop per tutti i veicoli
         for veh in vehs_loaded:
             veh_current_lane = traci.vehicle.getLaneID(veh)
             # controllo se il veicolo è nella junction
             if veh_current_lane[1:3] == 'n7':
                 vehicles[veh].measures['speeds'].append(traci.vehicle.getSpeed(veh))
-                vehicles[veh].measures['hasEntered'] = 0
-                vehicles[veh].measures['isCrossing'] = 1
                 if schema in ['s', 'S']:
                     traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
             # controllo se il veicolo è in una lane uscente
             if veh_current_lane[1:3] == '07':
-                vehicles[veh].measures['isCrossing'] = 0
-                if vehicles[veh].measures['hasCrossed'] == 0:
-                    counter_served[vehicles[veh].measures['startingLane']] += 1
-                    vehicles[veh].measures['hasCrossed'] = 1
+                if vehicles[veh].measures['hasPassed'] == 0:
+                    vehicles[veh].measures['hasPassed'] = 1
                 if schema in ['s', 'S']:
                     traci.vehicle.setColor(veh, (0, 255, 0))  # verde
             # controllo se il veicolo è in una lane entrante
@@ -151,9 +135,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
                 veh_length = traci.vehicle.getLength(veh)
                 check = veh_length / 2 + 0.2
                 leader = traci.vehicle.getLeader(veh)
-                if vehicles[veh].measures['hasEntered'] == 0:
-                    counter_serving[veh_current_lane] += 1
-                    vehicles[veh].measures['hasEntered'] = 1
                 if traci.vehicle.getSpeed(veh) <= 1:
                     # verifico se il veicolo si è fermato al di fuori del punto di spawn
                     if spawn_distance > 0:
@@ -161,13 +142,13 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
                         tails_per_lane[veh_current_lane][totalTime - 1] += 1
                     # verifico se il veicolo è in testa
                     if check >= distance and ((leader and leader[1] > 0.5) or not leader):
-                        vehicles[veh].measures['headStopTime'] += 1
+                        vehicles[veh].measures['headTime'] += 1
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (0, 0, 255))  # blu
                         continue
                     # verifico se il veicolo è in coda
                     if leader and leader[1] <= 0.5 and vehicles[leader[0]].measures['startingLane'] == veh_current_lane:
-                        vehicles[veh].measures['followerStopTime'] += 1
+                        vehicles[veh].measures['tailTime'] += 1
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
                         continue
@@ -175,18 +156,18 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
                     if schema in ['s', 'S']:
                         traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
 
-    if totalTime % period != 0:
-        for lane in tails_per_lane:
-            serving[lane].append(counter_serving[lane])
-            served[lane].append(counter_served[lane])
-
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
+    passed = 0
+
     for veh in vehicles:
-        headTimes.append(vehicles[veh].measures['headStopTime'])
-        tailTimes.append(vehicles[veh].measures['followerStopTime'])
-        meanSpeeds.append(sum(vehicles[veh].measures['speeds']) / len(vehicles[veh].measures['speeds']))
-        nStoppedVehicles.append(vehicles[veh].measures['hasStopped'])
+        if int(veh[-1]) < departed:
+            headTimes.append(vehicles[veh].measures['headTime'])
+            tailTimes.append(vehicles[veh].measures['tailTime'])
+            if len(vehicles[veh].measures['speeds']) > 0:
+                meanSpeeds.append(sum(vehicles[veh].measures['speeds']) / len(vehicles[veh].measures['speeds']))
+            nStoppedVehicles.append(vehicles[veh].measures['hasStopped'])
+            passed += vehicles[veh].measures['hasPassed']
 
     meanHeadTime = sum(headTimes) / len(headTimes)
     for headTime in headTimes:
@@ -214,20 +195,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
         varTail += (tail - meanTail) ** 2
     varTail /= len(meanTailLength)
 
-    instant_throughput = {}
-    for lane in serving:
-        instant_throughput[lane] = []
-
-    mean_served = {}
-    for lane in serving:
-        for i in range(0, len(serving[lane])):
-            if serving[lane][i] == 0:
-                instant_throughput[lane].append(1)
-            else:
-                instant_throughput[lane].append(served[lane][i] / serving[lane][i])
-        mean_served[lane] = sum(instant_throughput[lane]) / len(instant_throughput[lane])
-
-    meanTP = sum([mean_served[lane] for lane in mean_served]) / len([mean_served[lane] for lane in mean_served])
+    throughput = passed / departed
 
     traci.close()
 
@@ -239,4 +207,4 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
 
     queue.put([totalTime, meanHeadTime, sqrt(varHeadTime), max(headTimes), meanTailTime, sqrt(varTailTime),
                max(tailTimes), meanSpeed, sqrt(varSpeed), meanTail, sqrt(varTail), maxTail, sum(nStoppedVehicles),
-               meanTP])
+               throughput])

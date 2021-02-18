@@ -1,5 +1,5 @@
 import random
-from auction.trafficElements.vehicle import Vehicle
+from precedence_with_auction.trafficElements.vehicle import Vehicle
 
 import traci
 
@@ -121,8 +121,8 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
             idV = f'idV{i}'
         else:
             idV = str(i)
-        vehicle = {'id': idV, 'headStopTime': 0, 'followerStopTime': 0, 'speeds': [], 'hasStopped': 0, 'hasEntered': 0,
-                   'isCrossing': 0, 'hasCrossed': 0, 'startingLane': ''}
+        vehicle = {'id': idV, 'headTime': 0, 'tailTime': 0, 'speeds': [], 'hasStopped': 0, 'hasPassed': 0,
+                   'startingLane': ''}
         if object:
             vehicles[idV] = Vehicle(idV, vehicle, True)
         else:

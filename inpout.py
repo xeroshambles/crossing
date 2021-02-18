@@ -109,17 +109,17 @@ def checkChoice(choices, inp, default, err, mode='', arr=False):
     return choice
 
 
-def checkInput(val, min_inp, default, err, mode='', ret='', value=0, max_inp=10000):
+def checkInput(val, inp, default, err, mode='', auto_ret='', auto_value=0, min_inp=0, max_inp=10000):
     """Funzione che verifica se l'input dell'utente è corretto"""
 
     if mode == 'auto':
-        print(ret)
-        return value
+        print(auto_ret)
+        return auto_value
 
     i = 0
 
     while i <= 0:
-        t = input(min_inp)
+        t = input(inp)
         if t == '':
             i = val
             print(default)
@@ -130,7 +130,7 @@ def checkInput(val, min_inp, default, err, mode='', ret='', value=0, max_inp=100
             i = 0
             print(err)
             continue
-        if i <= 0 or i >= max_inp:
+        if i <= min_inp or i >= max_inp:
             print(err)
 
     return i
@@ -147,7 +147,7 @@ def autolabel(values, r, offset, ax):
         i += 1
 
 
-def linesPerGroups(group_measures, groups, dir, project=''):
+def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
     sims = []
@@ -174,23 +174,23 @@ def linesPerGroups(group_measures, groups, dir, project=''):
         fig, ax = plt.subplots()
         while count > 0:
             ax.plot(r, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
-            autolabel(values[j], r, 0, ax)
+            # autolabel(values[j], r, 0, ax)
             j += 1
             count -= 1
-        plt.ylabel("Valori")
         ax.set_xticks(r)
-        ax.set_title(project)
-        ax.set_xticklabels(sims)
+        ax.set_title(project_label)
+        ax.set_xticklabels([f'{round(sum(eval(sim)) / stepsSpawn, 1)} veicoli / s' for sim in sims])
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(dir + "/" + titles[i] + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')
         plt.close(fig)
 
 
-def linesPerMeasure(single_measures, labels, titles, colors, projects, numOfVehicles, dir):
+def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
+                    dir):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
     values = []
-    vehs = [str(i) for i in numOfVehicles]
+    vehs = [str(i) for i in numberOfVehicles]
 
     i = 0
 
@@ -203,12 +203,11 @@ def linesPerMeasure(single_measures, labels, titles, colors, projects, numOfVehi
         r = np.arange(len(vehs))
         fig, ax = plt.subplots()
         for j in range(0, len(projects)):
-            ax.plot(r, values[j], color=colors[j], label=projects[j], lw=2, marker='s')
-            autolabel(values[j], r, 0, ax)
-        plt.ylabel("Valori")
+            ax.plot(r, values[j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
+            # autolabel(values[j], r, 0, ax)
         ax.set_xticks(r)
         ax.set_title(lab)
-        ax.set_xticklabels(vehs)
+        ax.set_xticklabels([f'{round(sum(eval(veh)) / stepsSpawn, 1)} veicoli / s' for veh in vehs])
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(dir + "/" + titles[i] + "_" + date.today().strftime("%d-%m-%Y") + '.png',
                     bbox_inches='tight')
