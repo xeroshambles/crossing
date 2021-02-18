@@ -52,7 +52,7 @@ head_titles = ['total_time', 'head_time', 'tail_time', 'speed', 'tail_length', '
 
 titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', 'mean_tail_time', 'st_dev_tail_time',
           'max_tail_time', 'mean_speed', 'st_dev_mean_speed', 'mean_tail_length', 'st_dev_tail_length',
-          'max_tail_length', 'stopped_vehicles', 'mean_throughput']
+          'max_tail_length', 'stopped_vehicles', 'throughput']
 
 projects_labels = []
 
