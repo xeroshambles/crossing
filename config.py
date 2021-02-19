@@ -13,6 +13,10 @@ repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve ess
 projects = ["reservation_with_auction"]  # progetti da eseguire
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
+def_data = ['d', 'D', 'g', 'G']
+
+def_graphics = ['g', 'G', 'd', 'D']
+
 # Variabili di configurazione per ogni simulazione
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione

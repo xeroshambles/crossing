@@ -3,58 +3,11 @@
 # - ricordarsi di modificare il tipo di junction in netedit, in unregulated o l'ultimo
 
 import os
-import sys
+from utils import *
+from config import *
+
 import traci
-
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("Dichiarare la variabile d'ambiente 'SUMO_HOME'")
-
-from sumolib import checkBinary  # noqa
-
-
-def getLaneFromEdges(node_ids, start, end):
-    """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-        destinazione"""
-
-    distance = -1
-    i = 0
-    trovato = False
-
-    while True:
-        if node_ids[i % 4] == start:
-            trovato = True
-        if trovato:
-            distance += 1
-            if node_ids[i % 4] == end:
-                break
-        i += 1
-    lane = 0
-    if distance == 1:
-        lane = 4
-    if distance == 2:
-        lane = 2
-    if distance == 3:
-        lane = 0
-    return lane
-
-
-def generateRoute(node_ids, junction_id):
-    """Genero tutte le route possibili per l'incrocio"""
-
-    n = 0
-
-    for i in node_ids:
-        for j in node_ids:
-            if i == j:
-                continue
-            start = i
-            end = j
-            traci.route.add(f'route_{n}', [f'e{"0" if start != 12 else ""}{start}_0{junction_id}',
-                                           f'e0{junction_id}_{"0" if end != 12 else ""}{end}'])
-            n += 1
+from sumolib import checkBinary
 
 
 def generaVeicoli():
@@ -62,19 +15,17 @@ def generaVeicoli():
 
     r_depart = -9
     auto_ogni = 10
-    node_ids = [2, 8, 12, 6]
-    junction_id = 7
 
-    generateRoute(node_ids, junction_id)
+    generateRoutes(junction_id, node_ids)
 
     for i in range(0, 12):
         edges = traci.route.getEdges(f'route_{i}')
-        lane = getLaneFromEdges(node_ids, int(edges[0][1:3]), int(edges[1][4:6]))
+        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         r_depart += auto_ogni
         if lane == 0:
             continue
         else:
-            id_veh = "veh_" + str(i)
+            id_veh = f'idV{i}'
             traci.vehicle.add(id_veh, f'route_{i}', depart=str(r_depart), departLane=lane, departSpeed="6.944444")
             traci.vehicle.setMaxSpeed(id_veh, 6.944444)
             traci.vehicle.setSpeedMode(id_veh, 0)
@@ -163,16 +114,13 @@ def costruzioneArray(arrayAuto_temp):
 def run(gui, celle_per_lato):
     """Main che date tutte le traiettorie possibili all'interno dell'incrocio calcola la matrice di celle"""
 
-    if gui:
-        sumoBinary = checkBinary('sumo-gui')
-    else:
-        sumoBinary = checkBinary('sumo')
+    config_file = os.path.join(os.path.split(os.path.dirname(__file__))[0], "reservation", "intersection.sumocfg")
 
-    conf = os.path.join(os.path.split(os.path.dirname(__file__))[0], "intersection.sumocfg")
+    sumoCmd = [checkBinary('sumo-gui'), "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q", "--step-length",
+               "0.001"] if gui else [checkBinary('sumo'), "-c", config_file, "--time-to-teleport", "-1",
+                                     "--step-length", "0.001"]
 
-    sumoCmd = [sumoBinary, "-c", conf, "--time-to-teleport", "-1", "-Q", "--step-length", "0.001"]
-
-    traci.start(sumoCmd, numRetries=50)
+    traci.start(sumoCmd, numRetries=100)
 
     # -------- dichiarazione variabili --------
 
@@ -297,5 +245,7 @@ def run(gui, celle_per_lato):
         step += step_incr
         traci.simulationStep(step)  # faccio avanzare la simulazione
         arrayAuto = costruzioneArray(arrayAuto)  # inserisco nell'array le auto presenti nella simulazione
+
     traci.close()
+
     return lista_occupazione_celle
