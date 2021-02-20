@@ -241,20 +241,38 @@ def findClashingEdges(starting_lane):
         clashingEdges = findClashingRoutesWhenTurningLeft(left, front, right, starting_lane, clashingEdges)
     return clashingEdges
 
+def distanceFromStopLessThan(m, veh, stop_temp):
+    pos = traci.vehicle.getPosition(veh)
+    if (stop_temp[3] - m <= pos[0] <= stop_temp[1] + m) and \
+                            (stop_temp[2] - m <= pos[1] <= stop_temp[0] + m):
+        return True
+    return False
+
+def hasCrossed(veh):
+    currentLane = traci.vehicle.getLaneID(veh)
+    if currentLane[1:3] == f"0{junction_id}":
+        return True
+    return False
 
 def findAuctionPlayers(v, lista_arrivo, stop_temp, matrice_incrocio_dummy, estremi_incrocio, x_auto_in_celle_temp,
-                       y_auto_in_celle_temp, traiettorie_matrice_temp, vehicles, passaggio_temp):
+                       y_auto_in_celle_temp, traiettorie_matrice_temp, vehicles, passaggio_temp, arrayAuto):
 
     clashingEdges = findClashingEdges(traci.vehicle.getLaneID(v))
     clashingVehicles = []
+    arrivedIDList = traci.simulation.getArrivedIDList()
+
     for l in lista_arrivo:
         for veh in l:
-            pos = traci.vehicle.getPosition(veh)
-            if (stop_temp[3] - 50 <= pos[0] <= stop_temp[1] + 50) and \
-                    (stop_temp[2] - 50 <= pos[1] <= stop_temp[0] + 50):
-                route = traci.vehicle.getRoute(veh)
-                if route in clashingEdges:
-                    clashingVehicles.append(veh)
+            #print(f'veh: {veh}, arrivato??: {veh not in arrayAuto}\n')
+            #il veicolo e ancora dentro alla simulazione
+            if veh in arrayAuto:
+
+
+                if len(stop_temp) > 3:
+                    if distanceFromStopLessThan(13.5, veh, stop_temp) and not hasCrossed(veh):
+                        route = traci.vehicle.getRoute(veh)
+                        if route in clashingEdges:
+                            clashingVehicles.append(veh)
 
     for route in traiettorie_matrice_temp:
         if route[0] == traci.vehicle.getRoute(v):
@@ -309,68 +327,172 @@ def findAuctionPlayers(v, lista_arrivo, stop_temp, matrice_incrocio_dummy, estre
 
 
 def createAuction(auctions, players):
-    auctions.append({'players': players, 'winners': [], 'losers': [], 'bids': [-1 for p in players]})
-    return auctions
+    auctions['pending'].append({'players': players, 'winners': [], 'losers': [], 'bids': [-1 for p in players], 'winners_to_be_served' : [], 'losers_to_be_served' : []})
+    i = auctions['pending'].index({'players': players, 'winners': [], 'losers': [], 'bids': [-1 for p in players], 'winners_to_be_served' : [], 'losers_to_be_served' : []})
+    return auctions, i
 
 
-def makeBid(vehicle):
+def makeBid(vehicle, min_bid=10):
     """Funzione che permette a un veicolo di effettuare una bid"""
 
     wallet = int(traci.vehicle.getParameter(vehicle, "wallet"))
-    bid = random.randint(0, wallet)
+    if wallet >= min_bid:
+        bid = random.randint(min_bid, wallet)
+    else:
+        bid = min_bid
     traci.vehicle.setParameter(vehicle, "wallet", str(wallet - bid))
     return bid
 
+def allBidsGathered(auction):
+
+    for bid in auction['bids']:
+        if bid < 0:
+            return False
+    return True
+
+def refillWallet(auction, targets):
+    for t in targets:
+        i = auction['players'].index(t)
+        bid = auction['bids'][i]
+        wallet = int(traci.vehicle.getParameter(t, "wallet"))
+        traci.vehicle.setParameter(t, "wallet", str(wallet + bid))
+
+def evaluate(auction, vehicles):
+    winners, losers = [[], []]
+    bids = auction['bids']
+    # decide winner checking bids
+    w = [0, None]
+    players = auction['players'][:]
+    for b in bids:
+        if b >= w[0]:
+            i = bids.index(b)
+            id = players[i]
+            w = [b, i, id]
+    winners.append(w[2])
+    players.remove(w[2])
+    # sometimes auction outcomes can be dependent -> more winners
+    #w_edges = traci.vehicle.getRoute(w[2])
+    w_clashing_edges = findClashingEdges(vehicles[w[2]]['startingLane'])
+    for p in players:
+        edges = traci.vehicle.getRoute(p)
+        if edges in w_clashing_edges:
+            losers.append(p)
+    winners = winners + [p for p in players if p not in losers]
+
+    return winners, losers
+
+def allowCrossing(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incrocio_temp, passaggio_cella_temp,
+               traiettorie_matrice_temp, estremi_incrocio, sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp):
+
+    # disattivo la safe speed del veicolo
+    traci.vehicle.setSpeedMode(auto_temp, 30)
+    passaggio_temp.append([auto_temp, traci.vehicle.getRoadID(auto_temp), traci.vehicle.getAngle(auto_temp)])
+    # tolgo l'auto dalla lista d'attesa e la sottoscrivo nella matrice
+    if auto_temp in attesa_temp:
+        attesa_temp.pop(attesa_temp.index(auto_temp))
+    matrice_incrocio_temp = set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp,
+                                                    estremi_incrocio, x_auto_in_celle_temp, y_auto_in_celle_temp)
+
+    rotta = traci.vehicle.getRouteID(auto_temp)
+    edges = traci.route.getEdges(rotta)
+    lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
+    # se l'auto non gira a destra
+    if lane != 0:
+        passaggio_cella_temp.append([auto_temp, None, None])
+    # se l'auto gira a destra la faccio rallentare fino a dimezzarne la velocità
+    else:
+        traci.vehicle.setSpeed(auto_temp, traci.vehicle.getMaxSpeed(auto_temp) / float(2))
+
+    ritorno = [passaggio_temp, attesa_temp, ferme_temp, matrice_incrocio_temp, passaggio_cella_temp]
+
+    return ritorno
 
 def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incrocio_temp, passaggio_cella_temp,
                traiettorie_matrice_temp, estremi_incrocio, sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp,
-               lista_arrivo, stop_temp, matrice_incrocio_dummy, step, vehicles, auctions):
+               lista_arrivo, stop_temp, matrice_incrocio_dummy, step, vehicles, auctions, arrayAuto):
     """Gestisco l'arrivo dell'auto in prossimità dello stop"""
 
     libero, clashingVehicles = get_from_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp,
                                                          estremi_incrocio,
                                                          sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp)
 
-    if not libero:
+    # trovo i potenziali player di un eventuale asta, se len(players) > 0 -> occorre gestire un asta
+    players = findAuctionPlayers(auto_temp, lista_arrivo, stop_temp, matrice_incrocio_dummy, estremi_incrocio,
+                                 x_auto_in_celle_temp, y_auto_in_celle_temp, traiettorie_matrice_temp, vehicles,
+                                 passaggio_temp, arrayAuto)
+    # questi vettori servono per avere le informazioni aggiornate di tutti i winners e players che devono ancora essere serviti ad ogni step
+    winner_vehs_to_be_served = []
+    for l in [a['winners_to_be_served'] for a in auctions['pending']]:
+        winner_vehs_to_be_served = winner_vehs_to_be_served + l
+    print(f"winner_to_be_served: {winner_vehs_to_be_served}\n")
+    loser_vehs_to_be_served = []
+    for l in [a['losers_to_be_served'] for a in auctions['pending']]:
+        loser_vehs_to_be_served = loser_vehs_to_be_served + l
+    print(f"loser_to_be_served: {loser_vehs_to_be_served}\n")
+
+    if not libero: #PASSAGGIO GIA PRENOTATO, FERMO L AUTO
         # faccio fermare l'auto
         ferme_temp.append(auto_temp)
         traci.vehicle.setSpeed(auto_temp, 0.0)
-    # l'auto può passare, la segno nella matrice e nei vettori
-    else:
+        # l'auto può passare, la segno nella matrice e nei vettori
         # trovo se c'è qualche veicolo che è in conflitto
-        if auto_temp not in [x[0] for x in passaggio_temp]:
-            players = findAuctionPlayers(auto_temp, lista_arrivo, stop_temp, matrice_incrocio_dummy, estremi_incrocio,
-                                         x_auto_in_celle_temp, y_auto_in_celle_temp, traiettorie_matrice_temp, vehicles,
-                                         passaggio_temp)
-            print(f"AUTO TEMP: {auto_temp}, PLAYERS: {players}, STEP: {step}\n")
-            # faccio l'asta se non esiste già
-            if players and (players.append(auto_temp) not in [a['players'] for a in auctions]):
-                auctions = createAuction(auctions, players)
-            for a in auctions:
-                if auto_temp in a['players']:
-                    index = a['players'].index(auto_temp)
-                    if a['bids'][index] < 0:
-                        a['bids'][index] = makeBid(auto_temp)
-            print(f"AUCTIONS: {auctions}")  # BISOGNA REFILLARE IL WALLET DI CHI HA PERSO
-        # disattivo la safe speed del veicolo
-        traci.vehicle.setSpeedMode(auto_temp, 30)
-        passaggio_temp.append([auto_temp, traci.vehicle.getRoadID(auto_temp), traci.vehicle.getAngle(auto_temp)])
-        # tolgo l'auto dalla lista d'attesa e la sottoscrivo nella matrice
-        attesa_temp.pop(attesa_temp.index(auto_temp))
-        matrice_incrocio_temp = set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp,
-                                                        estremi_incrocio, x_auto_in_celle_temp, y_auto_in_celle_temp)
+        ritorno = [passaggio_temp, attesa_temp, ferme_temp, matrice_incrocio_temp, passaggio_cella_temp]
 
-        rotta = traci.vehicle.getRouteID(auto_temp)
-        edges = traci.route.getEdges(rotta)
-        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
-        # se l'auto non gira a destra
-        if lane != 0:
-            passaggio_cella_temp.append([auto_temp, None, None])
-        # se l'auto gira a destra la faccio rallentare fino a dimezzarne la velocità
-        else:
-            traci.vehicle.setSpeed(auto_temp, traci.vehicle.getMaxSpeed(auto_temp) / float(2))
+    # c e un potenziale conflitto con auto_temp oppure auto_temp è un winner o loser da servire
+    elif players or (auto_temp in winner_vehs_to_be_served) or (auto_temp in loser_vehs_to_be_served):
+        # l asta e nuova, la creo
+        if players.append(auto_temp) not in [a['players'] for a in auctions['pending']]:
+            auctions, i = createAuction(auctions, players)
+            # faccio biddare il veicolo in ogni asta in cui e presente se non ha gia biddato
+            # la bid e detratta dal wallet di ciascun player
+            auction = auctions['pending'][i]
+            for p in auction['players']:
+                i = auction['players'].index(p)
+                if auction['bids'][i] < 0:
+                    auction['bids'][i] = makeBid(p)
 
-    ritorno = [passaggio_temp, attesa_temp, ferme_temp, matrice_incrocio_temp, passaggio_cella_temp]
+
+            # se tutti hanno biddato per quella auction
+            # l asta si risolve: cio determina i winner e losers da servire
+            if allBidsGathered(auction):
+                # decido vincitori e perdenti
+                winners, losers = evaluate(auction, vehicles)
+                auction['winners'] = winners
+                auction['losers'] = losers
+                # restituisco le bid ai perdenti
+                refillWallet(auction, losers)
+                # segno i winner e losers da servire
+                auction['winners_to_be_served'] = winners[:]
+                auction['losers_to_be_served'] = losers[:]
+
+        print(f"PENDING: {auctions['pending']},\nCLOSED: {auctions['closed']}")  # BISOGNA REFILLARE IL WALLET DI CHI HA PERSO
+
+        # controllo se auto_temp deve essere servito rispetto alle aste ancora aperte
+        for a in auctions['pending']:
+            if auto_temp in a['winners_to_be_served']:
+                ritorno = allowCrossing(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incrocio_temp, passaggio_cella_temp,
+                   traiettorie_matrice_temp, estremi_incrocio, sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp)
+                a['winners_to_be_served'].remove(auto_temp)
+
+            if auto_temp in a['losers_to_be_served']:
+                # faccio fermare l'auto
+                ferme_temp.append(auto_temp)
+                traci.vehicle.setSpeed(auto_temp, 0.0)
+                ritorno = [passaggio_temp, attesa_temp, ferme_temp, matrice_incrocio_temp, passaggio_cella_temp]
+                a['losers_to_be_served'].remove(auto_temp)
+
+        # controllo se si sono concluse nuove aste a seguito del servizio di auto_temp
+        for a in auctions['pending']:
+            if not a['winners_to_be_served'] and not a['losers_to_be_served']: #chiudo l asta
+                auctions['pending'].remove(a)
+                auctions['closed'].append(a)
+
+
+    else: # NON OCCORRE FARE UN ASTA, RALLENTO IL VEICOLO E SEGNO IL PASSAGGIO
+        ritorno = allowCrossing(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incrocio_temp,
+                           passaggio_cella_temp,
+                           traiettorie_matrice_temp, estremi_incrocio, sec_sicurezza, x_auto_in_celle_temp,
+                           y_auto_in_celle_temp)
     return ritorno
 
 
@@ -626,7 +748,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
     passaggio_cella = []  # salvo in che cella si trova l'auto in passaggio [incrID][ [ auto , cella_X , cella_Y ],... ]
     rallentate = []  # lista di auto rallentate in prossimità dell'incrocio
     passaggio_precedente = []  # salvo l'ultima situazione di auto in passaggio per rilasciarle all'uscita
-    auctions = []
+    auctions = {"pending": [], "closed" : []}
 
     attesa.append([])
     lista_arrivo.append([])
@@ -712,7 +834,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
                                                   matrice_incrocio[incrID], passaggio_cella[incrID],
                                                   traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
                                                   x_auto_in_celle, y_auto_in_celle, lista_arrivo, stop_temp,
-                                                  matrice_incrocio_dummy, step, vehicles, auctions)
+                                                  matrice_incrocio_dummy, step, vehicles, auctions, arrayAuto)
                                 passaggio[incrID] = info[0]
                                 attesa[incrID] = info[1]
                                 ferme[incrID] = info[2]
@@ -745,7 +867,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
                                                       matrice_incrocio[incrID], passaggio_cella[incrID],
                                                       traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
                                                       x_auto_in_celle, y_auto_in_celle, lista_arrivo, stop_temp,
-                                                      matrice_incrocio_dummy, step, vehicles, auctions)
+                                                      matrice_incrocio_dummy, step, vehicles, auctions, arrayAuto)
                                     passaggio[incrID] = info[0]
                                     attesa[incrID] = info[1]
                                     ferme[incrID] = info[2]
