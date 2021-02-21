@@ -1,4 +1,4 @@
-# Variabili di configurazione per la modalità batch
+# Variabili di configurazione comuni
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
 # Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
@@ -9,17 +9,21 @@ numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
 seeds = [9001]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
-# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction"]
-projects = ["reservation_with_auction"]  # progetti da eseguire
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
-def_data = ['d', 'D', 'g', 'G']
-
-def_graphics = ['g', 'G', 'd', 'D']
-
-# Variabili di configurazione per ogni simulazione
-
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
+output_redirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
+tempo_generazione = 50  # tempo di generazione dei veicoli
+celle_per_lato = 20  # numero di celle per lato nel caso della reservation
+secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
+simulationMode = True  # asta competitiva (True) o cooperativa (False)
+instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
+dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
+
+# Variabili di configurazione per ogni simulazione (incrocio singolo)
+
+# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]
+projects = ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -28,27 +32,11 @@ lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
 lanes_ids = [0, 1, 2]  # lista degli id delle lanes nell'incrocio
 node_ids = [2, 8, 12, 6]  # lista degli id dei nodi di partenza e di arrivo nell'incrocio
 
-# Variabili di configurazione per reservation e reservation_with_auction
-
-tempo_generazione = 50  # tempo di generazione dei veicoli
-celle_per_lato = 20  # numero di celle per lato nel caso della reservation
-secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
-
-# Variabili di configurazione per precedence_with_auction
-
-simulationMode = True  # asta competitiva (True) o cooperativa (False)
-instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
-dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
-
-output_redirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
-
-# Variabili globali per raccogliere le misure delle simulazioni ed effettuare i grafici finali
-
 labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard tempo in testa (s)',
           'Massimo tempo in testa (s)', 'Tempo medio in coda (s)', 'Deviazione standard tempo in coda (s)',
           'Massimo tempo in coda (s)', 'Velocità media (m/s)', 'Deviazione standard velocità (m/s)',
           'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
-          'Massima lunghezza delle code', 'Veicoli fermi', f'Throughput medio']
+          'Massima lunghezza delle code', 'Veicoli fermi', 'Throughput medio']
 
 colors = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33']
 
@@ -102,3 +90,11 @@ for vehs in numberOfVehicles:
         single_measures[str(vehs)][labels[i]] = []
         for j in range(0, len(projects)):
             single_measures[str(vehs)][labels[i]].append({'project': projects[j], 'color': colors[j], 'values': []})
+
+# Variabili di configurazione per ogni simulazione (più incroci)
+
+projects_multi = ["multi_auction_classic_tls"]
+two_way_junctions_ids = [1, 5, 21, 25]  # id degli incroci a 2 vie
+three_way_junctions_ids = [2, 3, 4, 6, 10, 11, 15, 16, 20, 22, 23, 24]  # id degli incroci a 3 vie
+four_way_junctions_ids = [7, 8, 9, 12, 13, 14, 17, 18, 19]  # id degli incroci a 4 vie
+routeMode = True  # generazione delle route dei veicoli in modo statico (True) o dinamico (False)
