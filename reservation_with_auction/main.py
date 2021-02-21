@@ -259,7 +259,6 @@ def findAuctionPlayers(v, lista_arrivo, stop_temp, matrice_incrocio_dummy, estre
 
     clashingEdges = findClashingEdges(traci.vehicle.getLaneID(v))
     clashingVehicles = []
-    arrivedIDList = traci.simulation.getArrivedIDList()
 
     for l in lista_arrivo:
         for veh in l:
@@ -318,17 +317,25 @@ def findAuctionPlayers(v, lista_arrivo, stop_temp, matrice_incrocio_dummy, estre
         #     # print(f"UGUALI ENTRATA E USCITA, auto_temp: {a}, v: {v}, step: {step}\n")
         #     # print(f"Sto rimuovendo {veh} perchè uguale entrante e uscente con {v}\n")
         #     clashingVehicles.remove(veh)
-
-    for veh in clashingVehicles:
-        if veh in [x[0] for x in passaggio_temp]:
-            clashingVehicles.remove(veh)
-
+    if clashingVehicles:
+        #print(f"----------------------------------------\n")
+        #print(f"For V: {v}\n")
+        #print(f"clashingVehicles BEFORE: {clashingVehicles}\n")
+        #print(f"passaggio_temp: {passaggio_temp}\n")
+        cl_dummy = clashingVehicles[:]
+        for veh in cl_dummy:
+            #print(f"    considering veh: {veh}, removed: {veh in [x[0] for x in passaggio_temp]}\n")
+            if veh in [x[0] for x in passaggio_temp]:
+                clashingVehicles.remove(veh)
+        #print(f"clashingVehicles AFTER: {clashingVehicles}\n")
+        s = 5
     return clashingVehicles
 
 
-def createAuction(auctions, players):
-    auctions['pending'].append({'players': players, 'winners': [], 'losers': [], 'bids': [-1 for p in players], 'winners_to_be_served' : [], 'losers_to_be_served' : []})
-    i = auctions['pending'].index({'players': players, 'winners': [], 'losers': [], 'bids': [-1 for p in players], 'winners_to_be_served' : [], 'losers_to_be_served' : []})
+def createAuction(auctions, players, step):
+    a = {'players': players, 'winners': [], 'losers': [], 'bids': [-1 for p in players], 'winners_to_be_served' : [], 'losers_to_be_served' : [], "creation_time" : step}
+    auctions['pending'].append(a)
+    i = auctions['pending'].index(a)
     return auctions, i
 
 
@@ -424,11 +431,11 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
     winner_vehs_to_be_served = []
     for l in [a['winners_to_be_served'] for a in auctions['pending']]:
         winner_vehs_to_be_served = winner_vehs_to_be_served + l
-    print(f"winner_to_be_served: {winner_vehs_to_be_served}\n")
+    #print(f"winner_to_be_served: {winner_vehs_to_be_served}\n")
     loser_vehs_to_be_served = []
     for l in [a['losers_to_be_served'] for a in auctions['pending']]:
         loser_vehs_to_be_served = loser_vehs_to_be_served + l
-    print(f"loser_to_be_served: {loser_vehs_to_be_served}\n")
+    #print(f"loser_to_be_served: {loser_vehs_to_be_served}\n")
 
     if not libero: #PASSAGGIO GIA PRENOTATO, FERMO L AUTO
         # faccio fermare l'auto
@@ -442,7 +449,7 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
     elif players or (auto_temp in winner_vehs_to_be_served) or (auto_temp in loser_vehs_to_be_served):
         # l asta e nuova, la creo
         if players.append(auto_temp) not in [a['players'] for a in auctions['pending']]:
-            auctions, i = createAuction(auctions, players)
+            auctions, i = createAuction(auctions, players, step)
             # faccio biddare il veicolo in ogni asta in cui e presente se non ha gia biddato
             # la bid e detratta dal wallet di ciascun player
             auction = auctions['pending'][i]
@@ -461,7 +468,7 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
                 auction['losers'] = losers
                 # restituisco le bid ai perdenti
                 refillWallet(auction, losers)
-                # segno i winner e losers da servire
+                # segno i winner e losers da servire (far passare o fermare a seconda del caso)
                 auction['winners_to_be_served'] = winners[:]
                 auction['losers_to_be_served'] = losers[:]
 
