@@ -179,7 +179,7 @@ def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
             count -= 1
         ax.set_xticks(r)
         ax.set_title(project_label)
-        ax.set_xticklabels([f'{round(sum(eval(sim)) / stepsSpawn, 1)} veicoli / s' for sim in sims])
+        ax.set_xticklabels([f'{round(sum(eval(sim)) / stepsSpawn)} veicoli / s' for sim in sims])
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(dir + "/" + titles[i] + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')
         plt.close(fig)
@@ -207,7 +207,7 @@ def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_
             # autolabel(values[j], r, 0, ax)
         ax.set_xticks(r)
         ax.set_title(lab)
-        ax.set_xticklabels([f'{round(sum(eval(veh)) / stepsSpawn, 1)} veicoli / s' for veh in vehs])
+        ax.set_xticklabels([f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(dir + "/" + titles[i] + "_" + date.today().strftime("%d-%m-%Y") + '.png',
                     bbox_inches='tight')

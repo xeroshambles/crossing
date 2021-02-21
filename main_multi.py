@@ -22,18 +22,16 @@ if __name__ == "__main__":
             print(f"\nCreazione della cartella {path} fallita...")
             sys.exit(-1)
 
-    print("\nCalcolo per la reservation la matrice di celle a partire da tutte le traiettorie possibili...")
-    traiettorie_matrice = traiettorie.run(False, celle_per_lato)
+    # print("\nCalcolo per la reservation la matrice di celle a partire da tutte le traiettorie possibili...")
+    # traiettorie_matrice = traiettorie.run(False, celle_per_lato)
 
-    projs = checkChoice(projects,
+    projs = checkChoice(projects_multi,
                         '\nQuale progetto vuoi avviare? (classic_tls, classic_precedence, reservation, '
                         'precedence_with_auction): ', "\nUtilizzo il semaforo classico come default...",
                         '\nInserire un nome di progetto valido!',
                         mode, arr=True)
 
     for project in projs:
-
-        project_label = projects_labels[projects.index(project)]
 
         try:
             module = importlib.import_module(".main", package=project)
@@ -46,7 +44,7 @@ if __name__ == "__main__":
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
 
-        choice = checkChoice(['d', 'D', 'g', 'G'],
+        choice = checkChoice(['g', 'G', 'd', 'D'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
                              'd = dati): ',
                              "\nUtilizzo la modalità dati come default...",
@@ -58,10 +56,7 @@ if __name__ == "__main__":
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
             [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
-        sumoDict = {'classic_tls': sumoCmd,
-                    'classic_precedence': sumoCmd,
-                    'reservation': sumoCmd + ["--step-length", "0.050"],
-                    'precedence_with_auction': sumoCmd}
+        sumoDict = {'multi_auction_classic_tls': sumoCmd + ["--step-length", "0.500"]}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -104,19 +99,8 @@ if __name__ == "__main__":
             for j in range(0, repeat):
 
                 args = {
-                    'classic_tls': (
-                        numberOfVehicles[i], schema, sumoDict['classic_tls'], dir, j, queue, seeds[j]),
-                    'classic_precedence': (
-                        numberOfVehicles[i], schema, sumoDict['classic_precedence'], dir, j, queue, seeds[j]),
-                    'reservation': (
-                        numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
-                        traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
-                    'reservation_with_auction': (
-                        numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
-                        traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
-                    'precedence_with_auction': (
-                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction'], simulationMode,
-                        instantPay, dimensionOfGroups, dir, j, queue, seeds[j])
+                    'multi_auction_classic_tls': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_tls'], seeds[j])
                 }
 
                 p = Process(target=module.run, args=args[project])
@@ -126,14 +110,4 @@ if __name__ == "__main__":
             for p in procs:
                 p.join()
 
-            collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures, single_measures, groups, titles,
-                            head_titles, labels, numberOfVehicles, project, f, i)
-
             f.close()
-
-        linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label)
-
-        clearMeasures(group_measures, groups, head_titles)
-
-    linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
-                    path)
