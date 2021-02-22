@@ -8,7 +8,7 @@ from reservation import traiettorie
 
 from sumolib import checkBinary
 
-def trainFromCollectedMeasures():
+'''def trainFromCollectedMeasures():
     mes = evaluateMeasures()
     evaluation = {k: "" for k in mes}
     for main_step in mes:
@@ -17,6 +17,33 @@ def trainFromCollectedMeasures():
         best_val = max(th['mean_values'])
         i = th['mean_values'].index(best_val)
         evaluation[main_step] = th['projects'][i]
+    return evaluation
+'''
+def trainFromCollectedMeasures(intermediate_measures, main_steps):
+
+    #mes = evaluateMeasures()
+    evaluation = {i: "" for i in range(0, main_steps)}
+
+    temp = {x: [-1 for t in range(0, main_steps)] for x in intermediate_measures}
+
+    for p in intermediate_measures:
+
+        for s in range(0, main_steps):
+            sum = 0
+            for repeat in intermediate_measures[p]:
+                sum += repeat[s]
+            if len(intermediate_measures[p]) > 0:
+                mean = sum / len(intermediate_measures[p])
+                temp[p][s] = mean
+            else:
+                temp[p][s] = 0
+    index = 0
+    for s in range(0, main_steps):
+
+        best = max([temp[x][s] for x in temp])
+        p = [temp[x][s] for x in temp].index(best)
+        evaluation[s] = projects[p]
+        index += 1
     return evaluation
 
 def evaluateMeasures():
@@ -54,6 +81,7 @@ if __name__ == "__main__":
     dir = f"outputs_{date.today().strftime('%d-%m-%Y')}"
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
+    intermediate_measures = {}
 
     if not os.path.exists(path):
         try:
@@ -72,7 +100,7 @@ if __name__ == "__main__":
                         mode, arr=True)
 
     for project in projs:
-
+        intermediate_measures[project] = []
         project_label = projects_labels[projects.index(project)]
 
         try:
@@ -85,7 +113,7 @@ if __name__ == "__main__":
 
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
-
+        '''
         #default dati
         choice = checkChoice(['d', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
@@ -93,8 +121,8 @@ if __name__ == "__main__":
                              "\nUtilizzo la modalità dati come default...",
                              '\nInserire un carattere tra d e g!',
                              mode)
+        '''
 
-        """
         #default grafica
         choice = checkChoice(['g', 'G', 'd', 'D'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
@@ -102,7 +130,7 @@ if __name__ == "__main__":
                              "\nUtilizzo la modalità dati come default...",
                              '\nInserire un carattere tra d e g!',
                              mode)
-        """
+
 
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
@@ -177,8 +205,8 @@ if __name__ == "__main__":
             for p in procs:
                 p.join()
 
-            collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures, single_measures, groups, titles,
-                            head_titles, labels, numberOfVehicles, project, f, i)
+            intermediate_measures = collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures, single_measures, groups, titles,
+                            head_titles, labels, numberOfVehicles, project, f, i, intermediate_measures, adaptive=True)
 
             f.close()
 
@@ -189,7 +217,8 @@ if __name__ == "__main__":
     linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
                     path)
 
-    train = trainFromCollectedMeasures()
+    train = trainFromCollectedMeasures(intermediate_measures, 4)
     print(f"train: {train}\n")
+    print(f"intermediate_measures: {intermediate_measures}\n")
 
 

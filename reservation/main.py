@@ -418,6 +418,10 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
     tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
     junction_shape = traci.junction.getShape("n" + str(junction_id))
 
+    mean_th_per_num = [-1 for el in numberOfVehicles]
+    main_step = 0
+    intermediate_departed = 0
+
     for lane in lanes:
         # calcolo la lunghezza delle code e il throughput solo per le lane entranti
         if lane[4:6] == '07':
@@ -628,6 +632,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
         # faccio avanzare la simulazione
         traci.simulationStep(totalTime)
         departed += traci.simulation.getDepartedNumber()
+        intermediate_departed += traci.simulation.getDepartedNumber()
         # inserisco nell'array le auto presenti nella simulazione
         arrayAuto = costruzioneArray(arrayAuto)
 
@@ -702,6 +707,11 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
 
+            """Salvo i risultati intermedi se si conclude un main step"""
+
+            mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(n_step, stepsSpawn, numberOfVehicles,
+                                                                                main_step, vehicles,
+                                                                                intermediate_departed, mean_th_per_num)
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
     passed = 0
@@ -755,6 +765,6 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
         sys.stderr = origin_stderr
 
-    queue.put([int(step), meanHeadTime, sqrt(varHeadTime), max(headTimes), meanTailTime, sqrt(varTailTime),
+    queue.put([int(totalTime), meanHeadTime, sqrt(varHeadTime), max(headTimes), meanTailTime, sqrt(varTailTime),
                max(tailTimes), meanSpeed, sqrt(varSpeed), meanTail, sqrt(varTail), maxTail, sum(nStoppedVehicles),
-               throughput])
+               throughput, mean_th_per_num])

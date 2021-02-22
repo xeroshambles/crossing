@@ -3,6 +3,41 @@ from precedence_with_auction.trafficElements.vehicle import Vehicle
 
 import traci
 
+def checkIfMainStep(total_time, n_steps, n_vehs, step, vehicles, departed, mean_th_per_num):
+
+    check, temp = saveIntermediateResults(total_time, n_steps, n_vehs, step, vehicles, departed)
+    if check:
+        mean_th_per_num[step] = temp
+        step += 1
+        departed = 0
+
+    return mean_th_per_num, step, departed
+
+def saveIntermediateResults(total_time, n_steps, n_vehs, step, vehicles, departed):
+    mean_th = -1
+    #for i in range(0, len(n_vehs)):
+    #    n_vehs[i] = int(n_vehs[i])
+    mod = total_time % (n_steps / len(n_vehs))
+    if mod == 0 and total_time <= n_steps:
+        passed = 0
+        floor = sum(n_vehs[0: step])
+        ceil = floor + n_vehs[step]
+        ids = [k for k in vehicles]
+        #print(f"ids[0:50]: {ids[0:50]}\n")
+        ids_c = ids[floor: ceil]
+        #print(f"ids_c: {ids_c}\n")
+        #print(f"vehicles_len: {len(vehicles)}, floor: {floor}, ceil: {ceil}\n")
+        dummy = {k : vehicles[k] for k in vehicles if k in ids_c}
+        #print(f"dummy_len: {len(dummy)}\n")
+        for veh in dummy:
+            if int(veh) < departed:
+                passed += vehicles[veh]['hasPassed']
+        mean_th = passed / departed
+
+    if mean_th == -1:
+        return False, mean_th
+    else:
+        return True, mean_th
 
 def getLaneIndexFromEdges(start, end, node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di

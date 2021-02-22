@@ -50,16 +50,18 @@ def writeMeasuresToFile(f, i, numberOfVehicles, ret):
 
 
 def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measures, groups, titles, head_titles,
-                    labels, nums, project, f, i):
+                    labels, nums, project, f, i, intermediate_measures=None, adaptive=False):
     """Scrivo le misure delle simulazioni ripetute"""
-
     arr_titles = {k: [] for k in titles}
 
     arr_nums = {str(i): str(nums[i]) for i in range(0, len(nums))}
-
     for j in range(0, repeat):
 
         ret = queue.get()
+
+        if adaptive and len(ret) > len(arr_titles):
+            print(f"valori intermedi sim {i}:{j} : {ret[-1]}\n")
+            intermediate_measures[project].append(ret[-1])
 
         for k in range(0, len(arr_titles)):
             arr_titles[titles[k]].append(ret[k])
@@ -79,6 +81,8 @@ def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measure
             group_measures[head_titles[i]][count]['values'].append(getValue(title, arr_titles[title]))
             count += 1
             k += 1
+    if intermediate_measures:
+        return intermediate_measures
 
 
 def writeMeasuresToFileMulti(f, i, ret):

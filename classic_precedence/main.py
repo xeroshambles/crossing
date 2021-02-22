@@ -50,6 +50,10 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
     tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
     junction_shape = traci.junction.getShape("n" + str(junction_id))
 
+    mean_th_per_num = [-1 for el in numberOfVehicles]
+    main_step = 0
+    intermediate_departed = 0
+
     for lane in lanes:
         # calcolo la lunghezza delle code e il throughput solo per le lane entranti
         if lane[4:6] == '07':
@@ -70,6 +74,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
         traci.simulationStep()
         totalTime += 1
         departed += traci.simulation.getDepartedNumber()
+        intermediate_departed += traci.simulation.getDepartedNumber()
         vehs_loaded = traci.vehicle.getIDList()
         for lane in tails_per_lane:
             tails_per_lane[lane].append(0)
@@ -138,6 +143,11 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
                     if schema in ['s', 'S']:
                         traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
 
+        """Salvo i risultati intermedi se si conclude un main step"""
+
+        mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
+                                                                            main_step, vehicles,
+                                                                            intermediate_departed, mean_th_per_num)
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
     passed = 0
@@ -193,4 +203,4 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
 
     queue.put([totalTime, meanHeadTime, sqrt(varHeadTime), max(headTimes), meanTailTime, sqrt(varTailTime),
                max(tailTimes), meanSpeed, sqrt(varSpeed), meanTail, sqrt(varTail), maxTail, sum(nStoppedVehicles),
-               throughput])
+               throughput, mean_th_per_num])
