@@ -402,7 +402,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     departed = 0  # numero di veicoli partiti nella simulazione e considerati nel calcolo delle misure
-    step = 0.000  # tempo totale di simulazione
+    totalTime = 0.000  # tempo totale di simulazione
     step_incr = 0.050  # incremento del numero di step della simulazione
     sec = 1 / step_incr
     headTimes = []  # lista dei tempi passati in testa per ogni veicolo
@@ -488,7 +488,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
     n_step = 0
 
-    while traci.simulation.getMinExpectedNumber() > 0 and step <= numberOfSteps:
+    while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         incrID = 0
 
         for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione
@@ -612,7 +612,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
                             matrice_incrocio[incrID] = info[3]
                             passaggio_cella[incrID] = info[4]
         # riaccelero i veicoli all'uscita dall'incrocio
-        if int(step / step_incr) % 10 == 0:
+        if int(totalTime / step_incr) % 10 == 0:
             for auto_uscita in passaggio_precedente[incrID]:
                 if auto_uscita not in passaggio[incrID]:
                     traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
@@ -620,13 +620,13 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
                     traci.vehicle.setSpeedMode(auto_uscita[0], 7)
             passaggio_precedente[incrID] = passaggio[incrID][:]
         # ogni 10 step pulisco la matrice da valori troppo vecchi
-        if int(step / step_incr) % 10 == 0:
+        if int(totalTime / step_incr) % 10 == 0:
             matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
 
-        step += step_incr
+        totalTime += step_incr
         n_step += 1
         # faccio avanzare la simulazione
-        traci.simulationStep(step)
+        traci.simulationStep(totalTime)
         departed += traci.simulation.getDepartedNumber()
         # inserisco nell'array le auto presenti nella simulazione
         arrayAuto = costruzioneArray(arrayAuto)
@@ -725,10 +725,14 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
         varTailTime += (tailTime - meanTailTime) ** 2
     varTailTime /= len(tailTimes)
 
-    meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
-    for speed in meanSpeeds:
-        varSpeed += (speed - meanSpeed) ** 2
-    varSpeed /= len(meanSpeeds)
+    if len(meanSpeeds) > 0:
+        meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
+        for speed in meanSpeeds:
+            varSpeed += (speed - meanSpeed) ** 2
+        varSpeed /= len(meanSpeeds)
+    else:
+        meanSpeed = 0
+        varSpeed = 0
 
     for lane in tails_per_lane:
         meanTailLength.append(sum(tails_per_lane[lane]) / len(tails_per_lane[lane]))

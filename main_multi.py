@@ -11,7 +11,7 @@ from sumolib import checkBinary
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
 
-    dir = f"outputs_{date.today().strftime('%d-%m-%Y')}"
+    dir = f"outputs_multi_{date.today().strftime('%d-%m-%Y')}"
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
 
@@ -100,7 +100,8 @@ if __name__ == "__main__":
 
                 args = {
                     'multi_auction_classic_tls': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_tls'], seeds[j])
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_tls'], dir, j,
+                        queue)
                 }
 
                 p = Process(target=module.run, args=args[project])
@@ -110,4 +111,10 @@ if __name__ == "__main__":
             for p in procs:
                 p.join()
 
+            collectMeasuresMulti(queue, repeat, single_measures_multi, titles_multi, labels_multi, numberOfVehicles,
+                                 project, f, i)
+
             f.close()
+
+    linesPerMeasure(single_measures_multi, labels_multi, titles_multi, colors_multi, projects_multi,
+                    projects_labels_multi, numberOfVehicles, stepsSpawn, path)

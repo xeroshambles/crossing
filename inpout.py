@@ -81,6 +81,52 @@ def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measure
             k += 1
 
 
+def writeMeasuresToFileMulti(f, i, ret):
+    """Salvo su file le misure effettuate"""
+
+    f.write('----------------------------------------------------\n')
+    f.write(f'\nSIMULAZIONE NUMERO {i}\n')
+    f.write('\n----------------------------------------------------\n')
+    f.write(f'\nNUMERO DI VEICOLI: {ret[0]}\n')
+
+    f.write(f'\nTEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(ret[1], 2)} step\n')
+    f.write(
+        f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(ret[2], 2)} step\n')
+    f.write(f'\nTEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {round(ret[3], 2)} step\n')
+    f.write(f'\nTEMPO MEDIO PASSATO IN CODA: {round(ret[4], 2)} step\n')
+    f.write(
+        f'\nDEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(ret[5], 2)} step\n')
+    f.write(f'\nTEMPO MASSIMO PASSATO IN CODA: {round(ret[6], 2)} step\n')
+    f.write(f'\nVELOCITA MEDIA DEI VEICOLI: {round(ret[7], 2)} m/s\n')
+    f.write(f'\nDEVIAZIONE STANDARD VELOCITA MEDIA DEI VEICOLI: {round(ret[8], 2)} m/s\n')
+    f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(ret[9], 2)} auto\n')
+    f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE: {round(ret[10], 2)} m/s\n')
+    f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(ret[11], 2)} auto\n')
+    f.write(f'\nTHROUGHPUT MEDIO: {round(ret[12], 2)}\n\n')
+
+
+def collectMeasuresMulti(queue, repeat, single_measures, titles, labels, nums, project,
+                         f, i):
+    """Scrivo le misure delle simulazioni ripetute"""
+
+    arr_titles = {k: [] for k in titles}
+
+    arr_nums = {str(i): str(nums[i]) for i in range(0, len(nums))}
+
+    for j in range(0, repeat):
+
+        ret = queue.get()
+
+        for k in range(0, len(arr_titles)):
+            arr_titles[titles[k]].append(ret[k])
+
+            for p in range(0, len(single_measures[arr_nums[str(i)]][labels[k]])):
+                if single_measures[arr_nums[str(i)]][labels[k]][p]['project'] == project:
+                    single_measures[arr_nums[str(i)]][labels[k]][p]['values'].append(ret[k])
+
+        writeMeasuresToFileMulti(f, f'{i}:{j}', ret)
+
+
 def checkChoice(choices, inp, default, err, mode='', arr=False):
     "Funzione che verifica se le impostazioni del progetto sono corrette"
 

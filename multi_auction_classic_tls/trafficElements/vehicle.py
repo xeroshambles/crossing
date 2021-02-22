@@ -9,7 +9,7 @@ import traci
 
 class Vehicle:
 
-    def __init__(self, ID, measures, iP=False, bB=False):
+    def __init__(self, ID, iP=False, bB=False):
         self.idVehicle = ID
         self.numericID = int(ID[3:])
         self.isOnAStop = False
@@ -53,7 +53,13 @@ class Vehicle:
         self.passedMainGroupTimes = []
         self.passedSponsorGroupTimes = []
 
-        self.measures = measures
+        self.index = 0
+        self.headTimes = [0]
+        self.tailTimes = [0]
+        self.speeds = [[]]
+        self.isEntered = 0
+        self.startingLane = ''
+
 
     def makeBid(self):
         """Funzione utilizzata per effettuare le offerte per le aste. Attualmente impiegata solo dalla versione delle
@@ -258,6 +264,10 @@ class Vehicle:
             # da una nuova corsia obiettivo ad un veicolo che ha completato il suo percorso
             dest = traci.vehicle.getRoute(self.getID())[-1]
             if dest == traci.vehicle.getLaneID(self.getID())[:len(dest)]:
+                self.index += 1
+                self.headTimes.append(0)
+                self.tailTimes.append(0)
+                self.speeds.append([])
                 j = re.search('e(.*)_(.*)', dest).group(1)
                 target = self.generateRoute(int(j), staticRoutes)
                 traci.vehicle.changeTarget(self.getID(), target)

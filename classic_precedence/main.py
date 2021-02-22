@@ -66,7 +66,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
-    while traci.simulation.getMinExpectedNumber() > 0 and totalTime <= numberOfSteps:
+    while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         traci.simulationStep()
         totalTime += 1
         departed += traci.simulation.getDepartedNumber()
@@ -161,10 +161,14 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
         varTailTime += (tailTime - meanTailTime) ** 2
     varTailTime /= len(tailTimes)
 
-    meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
-    for speed in meanSpeeds:
-        varSpeed += (speed - meanSpeed) ** 2
-    varSpeed /= len(meanSpeeds)
+    if len(meanSpeeds) > 0:
+        meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
+        for speed in meanSpeeds:
+            varSpeed += (speed - meanSpeed) ** 2
+        varSpeed /= len(meanSpeeds)
+    else:
+        meanSpeed = 0
+        varSpeed = 0
 
     for lane in tails_per_lane:
         meanTailLength.append(sum(tails_per_lane[lane]) / len(tails_per_lane[lane]))
