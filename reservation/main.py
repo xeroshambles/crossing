@@ -709,7 +709,7 @@ def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, 
 
             """Salvo i risultati intermedi se si conclude un main step"""
 
-            mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(n_step, stepsSpawn, numberOfVehicles,
+            mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(round(totalTime), stepsSpawn, numberOfVehicles,
                                                                                 main_step, vehicles,
                                                                                 intermediate_departed, mean_th_per_num)
     """Salvo tutti i risultati della simulazione e li ritorno"""

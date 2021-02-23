@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
-        '''
+
         #default dati
         choice = checkChoice(['d', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
@@ -121,8 +121,8 @@ if __name__ == "__main__":
                              "\nUtilizzo la modalità dati come default...",
                              '\nInserire un carattere tra d e g!',
                              mode)
-        '''
 
+        '''
         #default grafica
         choice = checkChoice(['g', 'G', 'd', 'D'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                              "\nUtilizzo la modalità dati come default...",
                              '\nInserire un carattere tra d e g!',
                              mode)
-
+        '''
 
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
