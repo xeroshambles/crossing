@@ -49,34 +49,40 @@ def evaluateMeasures():
     return mes
 '''
 
-def trainFromCollectedMeasures(intermediate_measures, main_steps):
+def trainFromCollectedMeasures(intermediate_group_measures, configs):
     """ Permette di calcolare le misure medie di througput e di valutarle decidendo quale approccio sia migliore in ogni macro fase"""
-    evaluation = {i: "" for i in range(0, main_steps)}
 
-    temp = {x: [-1 for t in range(0, main_steps)] for x in intermediate_measures}
+    evaluations = {str(config): {} for config in configs}
+    for config in configs:
+        n_main_steps = len(config)
+        intermediate_measures = intermediate_group_measures[str(config)]
+        evaluation = {i: "" for i in range(0, n_main_steps)}
 
-    for p in intermediate_measures:
+        temp = {x: [-1 for t in range(0, n_main_steps)] for x in intermediate_measures}
 
-        for s in range(0, main_steps):
-            sum = 0
-            for repeat in intermediate_measures[p]:
-                sum += repeat[s]
-            if len(intermediate_measures[p]) > 0:
-                mean = sum / len(intermediate_measures[p])
-                temp[p][s] = mean
+        for p in intermediate_measures:
+
+            for s in range(0, n_main_steps):
+                sum = 0
+                for repeat in intermediate_measures[p]:
+                    sum += repeat[s]
+                if len(intermediate_measures[p]) > 0:
+                    mean = sum / len(intermediate_measures[p])
+                    temp[p][s] = mean
+                else:
+                    temp[p][s] = 0
+        index = 0
+        for s in range(0, n_main_steps):
+
+            best = max([temp[x][s] for x in temp])
+            p = [temp[x][s] for x in temp].index(best)
+            if [temp[x][s] == 0 for x in temp] and s > 0:
+                evaluation[s] = evaluation[s - 1]
             else:
-                temp[p][s] = 0
-    index = 0
-    for s in range(0, main_steps):
-
-        best = max([temp[x][s] for x in temp])
-        p = [temp[x][s] for x in temp].index(best)
-        if [temp[x][s] == 0 for x in temp] and s > 0:
-            evaluation[s] = evaluation[s - 1]
-        else:
-            evaluation[s] = projects[p]
-        index += 1
-    return evaluation
+                evaluation[s] = projects[p]
+            index += 1
+        evaluations[str(config)] = evaluation
+    return evaluations
 
 
 if __name__ == "__main__":
@@ -85,7 +91,7 @@ if __name__ == "__main__":
     dir = f"outputs_{date.today().strftime('%d-%m-%Y')}"
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
-    intermediate_measures = {}
+    intermediate_group_measures = {}
 
     if not os.path.exists(path):
         try:
@@ -104,7 +110,6 @@ if __name__ == "__main__":
                         mode, arr=True)
 
     for project in projs:
-        intermediate_measures[project] = []
         project_label = projects_labels[projects.index(project)]
 
         try:
@@ -169,6 +174,9 @@ if __name__ == "__main__":
                 sys.exit(-1)
 
         for i in range(0, diff):
+            if str(numberOfVehicles[i]) not in intermediate_group_measures.keys():
+                intermediate_group_measures[str(numberOfVehicles[i])] = {}
+            intermediate_group_measures[str(numberOfVehicles[i])][project] = []
 
             output_file = os.path.join(dir, f'{i}.txt')
             f = open(output_file, "w")
@@ -209,8 +217,10 @@ if __name__ == "__main__":
             for p in procs:
                 p.join()
 
-            intermediate_measures = collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures, single_measures, groups, titles,
-                            head_titles, labels, numberOfVehicles, project, f, i, intermediate_measures, adaptive=True)
+            intermediate_group_measures = collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures,
+                                                    single_measures, groups, titles,
+                                                    head_titles, labels, numberOfVehicles,
+                                                    project, f, i, intermediate_group_measures, adaptive=True)
 
             f.close()
 
@@ -221,8 +231,8 @@ if __name__ == "__main__":
     linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
                     path)
 
-    train = trainFromCollectedMeasures(intermediate_measures, 4)
+    train = trainFromCollectedMeasures(intermediate_group_measures, numberOfVehicles)
     print(f"train: {train}\n")
-    print(f"intermediate_measures: {intermediate_measures}\n")
+    print(f"intermediate_measures: {intermediate_group_measures}\n")
 
 
