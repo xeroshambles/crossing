@@ -19,9 +19,38 @@ from sumolib import checkBinary
         evaluation[main_step] = th['projects'][i]
     return evaluation
 '''
-def trainFromCollectedMeasures(intermediate_measures, main_steps):
+'''
+def evaluateMeasures():
+    mes = {}
+    #print(f"group: {group_measures}\n")
+    print(f"single: {single_measures}\n")
+    for k in single_measures: # V SIMULAZIONE
+        mes[k] = []
+        for j in single_measures[k]: # V MISURA
 
-    #mes = evaluateMeasures()
+            #print(f"    {j}\n")
+            #print(f"single_measures[k]['Throughput medio']: {single_measures[k]['Throughput medio']}")
+            #for q in single_measures[k][j]: # V PROGETTO
+                #vals_per_repeat = q['values']
+                #print(f"        {q}\n")
+                #print(f"        val medio: {sum(vals_per_repeat) / len(vals_per_repeat)}\n")
+            mes[k].append({"measure": j,
+                        "projects" : [q['project'] for q in single_measures[k][j]],
+                        "values" : [q['values'] for q in single_measures[k][j]],
+                        "mean_values": [sum(q['values'])/len(q['values']) for q in single_measures[k][j]]})
+
+        ''''''th_values = single_measures[k]['Throughput medio']
+        for el in th_values:
+            vals = el['values']
+            print(f"        calcolo media di throuput di {el['project']}....\n")
+            print(f"        val medio: {sum(vals) / len(vals)}\n")''''''
+
+        print(f"mes{k}: {mes}")
+    return mes
+'''
+
+def trainFromCollectedMeasures(intermediate_measures, main_steps):
+    """ Permette di calcolare le misure medie di througput e di valutarle decidendo quale approccio sia migliore in ogni macro fase"""
     evaluation = {i: "" for i in range(0, main_steps)}
 
     temp = {x: [-1 for t in range(0, main_steps)] for x in intermediate_measures}
@@ -42,37 +71,12 @@ def trainFromCollectedMeasures(intermediate_measures, main_steps):
 
         best = max([temp[x][s] for x in temp])
         p = [temp[x][s] for x in temp].index(best)
-        evaluation[s] = projects[p]
+        if [temp[x][s] == 0 for x in temp] and s > 0:
+            evaluation[s] = evaluation[s - 1]
+        else:
+            evaluation[s] = projects[p]
         index += 1
     return evaluation
-
-def evaluateMeasures():
-    mes = {}
-    #print(f"group: {group_measures}\n")
-    print(f"single: {single_measures}\n")
-    for k in single_measures: # V SIMULAZIONE
-        mes[k] = []
-        for j in single_measures[k]: # V MISURA
-
-            #print(f"    {j}\n")
-            #print(f"single_measures[k]['Throughput medio']: {single_measures[k]['Throughput medio']}")
-            #for q in single_measures[k][j]: # V PROGETTO
-                #vals_per_repeat = q['values']
-                #print(f"        {q}\n")
-                #print(f"        val medio: {sum(vals_per_repeat) / len(vals_per_repeat)}\n")
-            mes[k].append({"measure": j,
-                        "projects" : [q['project'] for q in single_measures[k][j]],
-                        "values" : [q['values'] for q in single_measures[k][j]],
-                        "mean_values": [sum(q['values'])/len(q['values']) for q in single_measures[k][j]]})
-
-        '''th_values = single_measures[k]['Throughput medio']
-        for el in th_values:
-            vals = el['values']
-            print(f"        calcolo media di throuput di {el['project']}....\n")
-            print(f"        val medio: {sum(vals) / len(vals)}\n")'''
-
-        print(f"mes{k}: {mes}")
-    return mes
 
 
 if __name__ == "__main__":
