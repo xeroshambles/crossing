@@ -21,6 +21,7 @@ class Junction(ABC):
         self.lanes = []
         self.incomingLanes = []
         self.outgoingLanes = []
+        self.crossingLanes = []
         self.mapNESO = {}  # mappo le strade che arrivano sulle direzioni cardinali: N, E, S, O (senso orario)
         self.possibleRoutes = {}
         self.clashingEdges = {}
@@ -74,6 +75,11 @@ class Junction(ABC):
         """Funzione utilizzata per calcolare l'insieme delle corsie uscenti dall'incrocio"""
         self.outgoingLanes = [i for i in self.lanes if int(i[1:3]) == self.nID]
 
+    def crossingLanesCalc(self):
+        """Funzione utilizzata per calcolare l'insieme delle corsie entranti nell'incrocio"""
+        for i in range(0, len(self.lanes)):
+            self.crossingLanes += [f":n{self.nID}_{i}_0", f":n{self.nID}_{i}_1"]
+
     def getIncomingLanes(self):
         """Ritorna l'insieme delle corsie entranti nell'incrocio."""
         return self.incomingLanes.copy()
@@ -81,6 +87,10 @@ class Junction(ABC):
     def getOutgoingLanes(self):
         """Ritorna l'insieme delle corsie uscenti dall'incrocio."""
         return self.outgoingLanes.copy()
+
+    def getCrossingLanes(self):
+        """Ritorna l'insieme delle corsie uscenti dall'incrocio."""
+        return self.crossingLanes.copy()
 
     def getCrossingManager(self):
         """Restituisce il crossing manager associato all'incrocio."""
@@ -448,13 +458,17 @@ class Junction(ABC):
                 vehiclesAtJunction += reversed(traci.lane.getLastStepVehicleIDs(lane))
         return vehiclesAtJunction
 
-    def getActualVehicles(self):
+    def getActualVehicles(self, departed_vehicles):
         """Funzione che ritorna tutti i veicoli che sono nell'incrocio"""
+
+        bs = f"{'0' if self.nID < 9 else ''}"
 
         vehicles = []
 
-        for lane in self.lanes:
-            vehicles += traci.lane.getLastStepVehicleIDs(lane)
+        for veh in departed_vehicles:
+            veh_lane = traci.vehicle.getLaneID(veh)
+            if veh_lane in self.lanes or ('n' + str(self.nID) in veh_lane):
+                vehicles.append(veh)
 
         return vehicles
 
@@ -468,6 +482,7 @@ class ThreeWayJunction(Junction):
         self.laneCalc()
         self.incomingLanesCalc()
         self.outgoingLanesCalc()
+        self.crossingLanesCalc()
         self.laneNESOMapping()
         self.findPossibleRoutes()
         self.findClashingEdges()
@@ -974,6 +989,7 @@ class FourWayJunction(Junction):
         self.laneCalc()
         self.incomingLanesCalc()
         self.outgoingLanesCalc()
+        self.crossingLanesCalc()
         self.laneNESOMapping()
         self.findPossibleRoutes()
         self.findClashingEdges()

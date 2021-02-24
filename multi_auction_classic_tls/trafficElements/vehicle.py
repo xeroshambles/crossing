@@ -9,7 +9,7 @@ import traci
 
 class Vehicle:
 
-    def __init__(self, ID, iP=False, bB=False):
+    def __init__(self, ID, seed, iP=False, bB=False):
         self.idVehicle = ID
         self.numericID = int(ID[3:])
         self.isOnAStop = False
@@ -53,12 +53,16 @@ class Vehicle:
         self.passedMainGroupTimes = []
         self.passedSponsorGroupTimes = []
 
+        self.seed = seed
         self.index = 0
+        self.travelTimes = [0]
         self.headTimes = [0]
         self.tailTimes = [0]
         self.speeds = [[]]
         self.isEntered = 0
         self.startingLane = ''
+
+        random.seed(self.numericID + self.seed)
 
 
     def makeBid(self):
@@ -265,6 +269,7 @@ class Vehicle:
             dest = traci.vehicle.getRoute(self.getID())[-1]
             if dest == traci.vehicle.getLaneID(self.getID())[:len(dest)]:
                 self.index += 1
+                self.travelTimes.append(0)
                 self.headTimes.append(0)
                 self.tailTimes.append(0)
                 self.speeds.append([])
@@ -336,12 +341,11 @@ class Vehicle:
 
     def generatorOfStaticRoute(self):
         """Funzione utilizzabile per ottenere il prossimo incrocio obiettivo nel caso statico"""
-        random.seed(self.numericID)
         # restringendo il set di incroci che possono essere obiettivo di un veicolo posso concentrare il traffico
         # al centro della rete aumentando le congestioni
-        choicesList = [3, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 19, 23]
+        choicesList = [i for i in range(1, 26)]
         for i in range(100000000):
-            yield random.choice(choicesList)
+            yield choice(choicesList)
 
     def getNextRoute_Static(self):
         """Funzione che ottiene il nuovo incrocio obiettivo, curandosi di controllare che non sia uguale al

@@ -2,11 +2,12 @@ import sys
 import os
 import importlib.util
 from multiprocessing import Process, Queue
-from inpout import *
-from config import *
+from inpout_multi import *
+from config_multi import *
 from reservation import traiettorie
 
 from sumolib import checkBinary
+
 
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
@@ -32,6 +33,8 @@ if __name__ == "__main__":
                         mode, arr=True)
 
     for project in projs:
+
+        project_label = projects_labels_multi[projects_multi.index(project)]
 
         try:
             module = importlib.import_module(".main", package=project)
@@ -97,11 +100,10 @@ if __name__ == "__main__":
             queue = Queue()
 
             for j in range(0, repeat):
-
                 args = {
                     'multi_auction_classic_tls': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_tls'], dir, j,
-                        queue)
+                        queue, seeds[j])
                 }
 
                 p = Process(target=module.run, args=args[project])
@@ -111,10 +113,14 @@ if __name__ == "__main__":
             for p in procs:
                 p.join()
 
-            collectMeasuresMulti(queue, repeat, single_measures_multi, titles_multi, labels_multi, numberOfVehicles,
-                                 project, f, i)
+            collectMeasures(queue, repeat, group_measures_multi, single_measures_multi, groups_multi, titles_multi,
+                            head_titles_multi, labels_multi, numberOfVehicles, project, f, i)
 
             f.close()
+
+        linesPerGroups(group_measures_multi, groups_multi, stepsSpawn, dir, project_label)
+
+        clearMeasures(group_measures_multi, groups_multi, head_titles_multi)
 
     linesPerMeasure(single_measures_multi, labels_multi, titles_multi, colors_multi, projects_multi,
                     projects_labels_multi, numberOfVehicles, stepsSpawn, path)
