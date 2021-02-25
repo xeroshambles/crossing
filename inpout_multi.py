@@ -70,7 +70,7 @@ def collectMeasures(queue, repeat, group_measures, single_measures, groups, titl
 
             arr_titles[titles[k]].append(ret[k])
 
-            if k <= 14:
+            if k <= len(arr_titles) - 5:
 
                 for p in range(0, len(single_measures[arr_nums[str(i)]][labels[k]])):
                     if single_measures[arr_nums[str(i)]][labels[k]][p]['project'] == project:

@@ -2,17 +2,17 @@
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
 # Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
-numberOfVehicles = [[50, 50, 50, 50]]
+numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
-seeds = [9001]  # semi iniziali delle simulazioni
+seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
-output_redirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
+output_redirection = True  # variabile che redireziona l'output su file (True) o su terminale (False)
 tempo_generazione = 50  # tempo di generazione dei veicoli
 celle_per_lato = 20  # numero di celle per lato nel caso della reservation
 secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
@@ -22,7 +22,7 @@ dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per
 
 # Variabili di configurazione per ogni simulazione (più incroci)
 
-projects_multi = ["multi_auction_classic_tls"]
+projects_multi = ["multi_classic_tls", "multi_auction_classic_tls"]
 two_way_junctions_ids = [1, 5, 21, 25]  # id degli incroci a 2 vie
 three_way_junctions_ids = [2, 3, 4, 6, 10, 11, 15, 16, 20, 22, 23, 24]  # id degli incroci a 3 vie
 four_way_junctions_ids = [7, 8, 9, 12, 13, 14, 17, 18, 19]  # id degli incroci a 4 vie
@@ -55,6 +55,8 @@ groups_multi = [3, 3, 3, 2, 3, 1, 3, 1]
 projects_labels_multi = []
 
 for project in projects_multi:
+    if project == "multi_classic_tls":
+        projects_labels_multi.append("Solo semafori")
     if project == "multi_auction_classic_tls":
         projects_labels_multi.append("Asta interna, semafori esterni")
 

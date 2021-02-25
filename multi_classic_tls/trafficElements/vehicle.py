@@ -59,6 +59,7 @@ class Vehicle:
         self.headTimes = [0]
         self.tailTimes = [0]
         self.speeds = [[]]
+        self.isEntered = 0
         self.startingLane = ''
 
         random.seed(self.numericID + self.seed)
