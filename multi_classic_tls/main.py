@@ -123,41 +123,10 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
             vehs_in_junction = junction.getActualVehicles(departed_vehicles)
             for lane in junction.tails_per_lane:
                 junction.tails_per_lane[lane].append(0)
-            # loop per tutti i veicoli che sono nelle lane dell'incrocio
+            # loop per tutti i veicoli
             for veh in vehs_in_junction:
                 veh_current_lane = traci.vehicle.getLaneID(veh)
-                # controllo se il veicolo è in una lane uscente
-                if veh_current_lane in junction.outgoingLanes:
-                    if veh in junction.vehiclesEntering:
-                        vehicles[veh].startingLane = ''
-                        junction.vehiclesEntering.remove(veh)
-                        junction.arrived += 1
-                # controllo se il veicolo è nella junction
-                if veh_current_lane in junction.crossingLanes:
-                    lane = traci.vehicle.getLaneID(veh)
-                    leader = traci.vehicle.getLeader(veh)
-                    leader_lane = ''
-                    if leader:
-                        leader_lane = traci.vehicle.getLaneID(leader[0])
-                    vehicles[veh].speeds[vehicles[veh].index].append(traci.vehicle.getSpeed(veh))
-                    if traci.vehicle.getSpeed(veh) <= 1:
-                        # verifico se il veicolo è in testa
-                        if (leader and leader_lane != lane) or not leader:
-                            junction.tails_per_lane[vehicles[veh].startingLane][totalTime - 1] += 1
-                            vehicles[veh].headTimes[vehicles[veh].index] += 1
-                            if schema in ['s', 'S']:
-                                traci.vehicle.setColor(veh, (0, 0, 255))  # blu
-                            continue
-                        # verifico se il veicolo è in coda
-                        if leader and leader[1] <= 0.5 and leader_lane == lane:
-                            junction.tails_per_lane[vehicles[veh].startingLane][totalTime - 1] += 1
-                            vehicles[veh].tailTimes[vehicles[veh].index] += 1
-                            if schema in ['s', 'S']:
-                                traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
-                            continue
-                    else:
-                        if schema in ['s', 'S']:
-                            traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
+
                 # controllo se il veicolo è in una lane entrante
                 if veh_current_lane in junction.incomingLanes:
                     vehicles[veh].startingLane = veh_current_lane
@@ -174,14 +143,14 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                     leader = traci.vehicle.getLeader(veh)
                     if traci.vehicle.getSpeed(veh) <= 1:
                         # verifico se il veicolo è in testa
-                        if check >= distance and ((leader and leader[1] > 0.5) or not leader):
+                        if check >= distance and ((leader and leader[1] < 0) or not leader):
                             junction.tails_per_lane[veh_current_lane][totalTime - 1] += 1
                             vehicles[veh].headTimes[vehicles[veh].index] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))  # blu
                             continue
                         # verifico se il veicolo è in coda
-                        if leader and leader[1] <= 0.5:
+                        if leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane:
                             junction.tails_per_lane[veh_current_lane][totalTime - 1] += 1
                             vehicles[veh].tailTimes[vehicles[veh].index] += 1
                             if schema in ['s', 'S']:
@@ -190,6 +159,41 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                     else:
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
+
+                # controllo se il veicolo è all'interno della junction
+                if veh_current_lane in junction.crossingLanes:
+                    leader = traci.vehicle.getLeader(veh)
+                    leader_lane = ''
+                    if leader:
+                        leader_lane = traci.vehicle.getLaneID(leader[0])
+                    vehicles[veh].speeds[vehicles[veh].index].append(traci.vehicle.getSpeed(veh))
+                    if traci.vehicle.getSpeed(veh) <= 1:
+                        # verifico se il veicolo è in testa
+                        if (leader and leader_lane != veh_current_lane) or not leader:
+                            junction.tails_per_lane[vehicles[veh].startingLane][totalTime - 1] += 1
+                            vehicles[veh].headTimes[vehicles[veh].index] += 1
+                            if schema in ['s', 'S']:
+                                traci.vehicle.setColor(veh, (0, 0, 255))  # blu
+                            continue
+                        # verifico se il veicolo è in coda
+                        if leader and leader[1] <= 0.5 and leader_lane == veh_current_lane:
+                            junction.tails_per_lane[vehicles[veh].startingLane][totalTime - 1] += 1
+                            vehicles[veh].tailTimes[vehicles[veh].index] += 1
+                            if schema in ['s', 'S']:
+                                traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
+                            continue
+                    else:
+                        if schema in ['s', 'S']:
+                            traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
+
+                # controllo se il veicolo è in una lane uscente
+                if veh_current_lane in junction.outgoingLanes:
+                    if veh in junction.vehiclesEntering:
+                        vehicles[veh].startingLane = ''
+                        junction.vehiclesEntering.remove(veh)
+                        junction.arrived += 1
+
+
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
