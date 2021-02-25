@@ -47,7 +47,7 @@ if __name__ == "__main__":
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
 
-        choice = checkChoice(['g', 'D', 'g', 'G'],
+        choice = checkChoice(['d', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
                              'd = dati): ',
                              "\nUtilizzo la modalità dati come default...",
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
         sumoDict = {'multi_classic_tls': sumoCmd,
-                    'multi_auction_classic_tls': sumoCmd + ["--step-length", "0.250"]}
+                    'multi_auction_classic_tls': sumoCmd}
 
         schema = ''
         if choice in ['g', 'G']:
