@@ -164,6 +164,7 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
         edges = traci.route.getEdges(route)
         lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
         traci.vehicle.add(idV, route, depart=depart, departLane=lane)
+        traci.vehicle.setMaxSpeed(idV, 9.72)
         if wallet:
             traci.vehicle.setParameter(idV, "wallet", str(50))
 

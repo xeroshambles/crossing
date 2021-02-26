@@ -4,7 +4,7 @@ import importlib.util
 from multiprocessing import Process, Queue
 from inpout_multi import *
 from config_multi import *
-from reservation import traiettorie
+from multi_reservation_classic_tls import traiettorie
 
 from sumolib import checkBinary
 
@@ -23,8 +23,8 @@ if __name__ == "__main__":
             print(f"\nCreazione della cartella {path} fallita...")
             sys.exit(-1)
 
-    # print("\nCalcolo per la reservation la matrice di celle a partire da tutte le traiettorie possibili...")
-    # traiettorie_matrice = traiettorie.run(False, celle_per_lato)
+    print("\nCalcolo per la reservation la matrice di celle a partire da tutte le traiettorie possibili...")
+    traiettorie_matrice = traiettorie.run(False, celle_per_lato)
 
     projs = checkChoice(projects_multi,
                         '\nQuale progetto vuoi avviare? (classic_tls, classic_precedence, reservation, '
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
 
-        choice = checkChoice(['d', 'D', 'g', 'G'],
+        choice = checkChoice(['g', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
                              'd = dati): ',
                              "\nUtilizzo la modalità dati come default...",
@@ -60,7 +60,9 @@ if __name__ == "__main__":
             [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
         sumoDict = {'multi_classic_tls': sumoCmd,
-                    'multi_auction_classic_tls': sumoCmd}
+                    'multi_precedence_classic_tls': sumoCmd,
+                    'multi_auction_classic_tls': sumoCmd,
+                    'multi_reservation_classic_tls': sumoCmd + ['--step-length', '0.050']}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -105,9 +107,15 @@ if __name__ == "__main__":
                     'multi_classic_tls': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls'], dir, j,
                         queue, seeds[j]),
+                    'multi_precedence_classic_tls': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls'], dir, j,
+                        queue, seeds[j]),
                     'multi_auction_classic_tls': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_tls'], dir, j,
-                        queue, seeds[j])
+                        queue, seeds[j]),
+                    'multi_reservation_classic_tls': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation_classic_tls'],
+                        celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j])
                 }
 
                 p = Process(target=module.run, args=args[project])

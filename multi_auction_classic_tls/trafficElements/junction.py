@@ -34,8 +34,8 @@ class Junction(ABC):
         else:
             self.crossingManager = CooperativeCrossingManager(self)
 
-        self.departed = 0
-        self.arrived = 0
+        self.departed = []
+        self.arrived = []
         self.junction_shape = traci.junction.getShape("n" + str(self.nID))
         self.vehiclesEntering = []
 

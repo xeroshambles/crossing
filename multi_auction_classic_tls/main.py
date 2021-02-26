@@ -33,6 +33,7 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, routeMode, insta
         traci.route.add(f'route_{i}', route.edges)
         vehicles[idV].setEdgeObjective(base_route[1])
         traci.vehicle.add(idV, f'route_{i}', depart=depart)
+        traci.vehicle.setMaxSpeed(idV, 9.72)
 
 
 def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
@@ -118,6 +119,9 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
         for junction in junctions:
 
+            junction.departed.append(0)
+            junction.arrived.append(0)
+
             # se l'incrocio è a quattro vie gestisco le aste
 
             if junction.nID in four_way_junctions_ids:
@@ -159,7 +163,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                     vehicles[veh].startingLane = veh_current_lane
                     if veh not in junction.vehiclesEntering:
                         junction.vehiclesEntering.append(veh)
-                        junction.departed += 1
+                        junction.departed[totalTime - 1] += 1
                     spawn_distance = traci.vehicle.getDistance(veh)
                     distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
                                                       junction.junction_shape)
@@ -218,7 +222,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                     if veh in junction.vehiclesEntering:
                         vehicles[veh].startingLane = ''
                         junction.vehiclesEntering.remove(veh)
-                        junction.arrived += 1
+                        junction.arrived[totalTime - 1] += 1
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
