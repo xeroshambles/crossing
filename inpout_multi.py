@@ -1,7 +1,40 @@
+import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date
 from config_multi import *
+
+
+def redirect_output(path, index, mode):
+    """Funzione che redireziona l'output della simulazione"""
+
+    if output_redirection:
+
+        origin_stdout = sys.stdout
+
+        origin_stderr = sys.stderr
+
+        if mode:
+
+            dir = os.path.join(path, 'terminals')
+
+            if not os.path.exists(dir):
+                try:
+                    os.mkdir(dir)
+                except OSError:
+                    print(f"\nCreazione della cartella {dir} fallita...")
+                    sys.exit(-1)
+
+            sys.stdout = open(os.path.join(dir, f"{index}.txt"), "w")
+
+            sys.stderr = open(os.path.join(dir, f"{index}.txt"), "w")
+
+        else:
+
+            sys.stdout = origin_stdout
+
+            sys.stderr = origin_stderr
 
 
 def getValue(title, arr_measure):

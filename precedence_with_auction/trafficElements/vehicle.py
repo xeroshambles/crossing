@@ -9,7 +9,7 @@ import traci
 
 class Vehicle:
 
-    def __init__(self, ID, measures, iP=False, bB=False):
+    def __init__(self, ID, iP=False, bB=False):
         self.idVehicle = ID
         self.numericID = int(ID[3:])
         self.isOnAStop = False
@@ -53,7 +53,12 @@ class Vehicle:
         self.passedMainGroupTimes = []
         self.passedSponsorGroupTimes = []
 
-        self.measures = measures
+        self.headTime = 0
+        self.tailTime = 0
+        self.speeds = []
+        self.hasStopped = 0
+        self.hasPassed = 0
+        self.startingLane = ''
 
     def makeBid(self):
         """Funzione utilizzata per effettuare le offerte per le aste. Attualmente impiegata solo dalla versione delle

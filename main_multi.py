@@ -1,5 +1,3 @@
-import sys
-import os
 import importlib.util
 from multiprocessing import Process, Queue
 from inpout_multi import *
@@ -61,7 +59,7 @@ if __name__ == "__main__":
 
         sumoDict = {'multi_classic_tls': sumoCmd,
                     'multi_precedence_classic_tls': sumoCmd,
-                    'multi_auction_classic_tls': sumoCmd,
+                    'multi_auction_classic_tls': sumoCmd + ['--step-length', '0.250'],
                     'multi_reservation_classic_tls': sumoCmd + ['--step-length', '0.050']}
 
         schema = ''
