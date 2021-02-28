@@ -7,8 +7,8 @@ import traci
 from sumolib import miscutils
 
 
-def run(numberOfVehicles, schema, sumoCmd, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, path, index,
-        queue, seed):
+def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
+        celle_per_lato, traiettorie_matrice, secondi_di_sicurezza):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     port = miscutils.getFreeSocketPort()

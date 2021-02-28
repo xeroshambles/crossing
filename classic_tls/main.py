@@ -6,6 +6,26 @@ import traci
 from sumolib import miscutils
 
 
+
+def intermediateRun(numberOfVehicles, schema,
+                    totalTime, departed, intermediate_departed, vehicles, tails_per_lane, main_step, mean_th_per_num):
+
+    traci.simulationStep()
+    totalTime += 1
+    departed += traci.simulation.getDepartedNumber()
+    intermediate_departed += traci.simulation.getDepartedNumber()
+
+    vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, totalTime, schema)
+
+    """Salvo i risultati intermedi se si conclude un main step"""
+
+    mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
+                                                                        main_step, vehicles,
+                                                                        intermediate_departed, mean_th_per_num)
+
+    return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane
+
+
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 

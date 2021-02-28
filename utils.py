@@ -11,12 +11,19 @@ def checkIfMainStep(total_time, n_steps, n_vehs, step, vehicles, departed, mean_
 
     check, temp = saveIntermediateResults(total_time, n_steps, n_vehs, step, vehicles, departed)
     if check:
-        mean_th_per_num[step] = temp
-        step += 1
-        departed = 0
+            mean_th_per_num[step] = temp
+            if step < (len(n_vehs) - 1):
+                step += 1
+            departed = 0
 
     return mean_th_per_num, step, departed
 
+def mainStep(total_time, n_steps, n_vehs):
+    mod = total_time % (n_steps / len(n_vehs))
+    if mod == 0 and total_time <= n_steps:
+        return True
+    else:
+        return False
 
 def saveIntermediateResults(total_time, n_steps, n_vehs, step, vehicles, departed):
 

@@ -59,6 +59,8 @@ for project in projects:
         projects_labels.append("Precedenza + asta")
     if project == "reservation_with_auction":
         projects_labels.append("Prenotazione + asta")
+    if project == "adaptive":
+        projects_labels.append("Adattativo")
 
 x_labels = [sum(vehicles) / len(vehicles) for vehicles in numberOfVehicles]
 
