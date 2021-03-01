@@ -1,5 +1,5 @@
 import math
-from utils import getLaneIndexFromEdges
+from utils_multi import getLaneIndexFromEdges
 
 import traci
 
@@ -165,7 +165,7 @@ def celle_occupate_data_ang(ang, x_auto_in_celle_temp, y_auto_in_celle_temp):
 
 def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incrocio_temp, passaggio_cella_temp,
                traiettorie_matrice_temp, estremi_incrocio, sec_sicurezza, x_auto_in_celle_temp, y_auto_in_celle_temp,
-               junction):
+               node_ids):
     """Gestisco l'arrivo dell'auto in prossimità dello stop"""
 
     if not get_from_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp, estremi_incrocio,
@@ -185,7 +185,7 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
 
         rotta = traci.vehicle.getRouteID(auto_temp)
         edges = traci.route.getEdges(rotta)
-        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), junction.node_ids)
+        lane = getLaneIndexFromEdges(edges, node_ids)
         # se l'auto non gira a destra
         if lane != 0:
             passaggio_cella_temp.append([auto_temp, None, None])
@@ -255,7 +255,7 @@ def get_from_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matr
 
 def percorso_libero(passaggio_temp, matrice_incrocio_temp, passaggio_cella_temp, limiti_celle_X_temp,
                     limiti_celle_Y_temp,
-                    estremi_incrocio, junction):
+                    estremi_incrocio, node_ids):
     """Controllo se è cambiata la situazione all'interno dell'incrocio"""
 
     passaggio_nuovo = passaggio_temp[:]
@@ -265,7 +265,7 @@ def percorso_libero(passaggio_temp, matrice_incrocio_temp, passaggio_cella_temp,
 
         rotta = traci.vehicle.getRouteID(x[0])
         edges = traci.route.getEdges(rotta)
-        lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), junction.node_ids)
+        lane = getLaneIndexFromEdges(edges, node_ids)
         # se l'auto non gira a destra
         if lane != 0:
             for y in passaggio_cella_temp:

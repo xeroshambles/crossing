@@ -22,7 +22,9 @@ dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per
 
 # Variabili di configurazione per ogni simulazione (più incroci)
 
-projects_multi = ["multi_classic_tls"]
+# Progetti: ["multi_classic_tls", "multi_precedence_classic_tls", "multi_reservation_classic_tls",
+# "multi_auction_classic_tls"]
+projects_multi = ["multi_reservation_classic_tls"]
 two_way_junctions_ids = [1, 5, 21, 25]  # id degli incroci a 2 vie
 three_way_junctions_ids = [2, 3, 4, 6, 10, 11, 15, 16, 20, 22, 23, 24]  # id degli incroci a 3 vie
 four_way_junctions_ids = [7, 8, 9, 12, 13, 14, 17, 18, 19]  # id degli incroci a 4 vie

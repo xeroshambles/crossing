@@ -38,6 +38,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
+    n_step = 0
+
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         traci.simulationStep()
         totalTime += step_incr
@@ -45,10 +47,38 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 
-        # controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route
-        for i in range(0, sum(numberOfVehicles)):
-            vehicles[f'idV{i}'].travelTimes[vehicles[f'idV{i}'].index] += 1
-            vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)
+        vehicles = checkRoute(vehicles, numberOfVehicles)
+
+        """Ciclo principale dell'applicazione"""
+
+        """Prime operazioni sugli incroci"""
+
+        for junction in junctions:
+
+            if junction.nID in four_way_junctions_ids:
+
+                vehAtJunction = junction.getVehiclesAtJunction()
+                crossingManager = junction.getCrossingManager()
+                crossingManager.updateCrossingStatus(vehicles)
+
+                """Flusso principale"""
+
+                for idVeh in vehAtJunction:
+                    if idVeh in vehicles:
+                        objVeh = vehicles[idVeh]
+
+                        if objVeh.distanceFromEndLane() < 50:
+                            if objVeh not in crossingManager.getCurrentPartecipants():
+                                crossingManager.updateVehicleStatus(objVeh)
+                            # se non è gia in una auction, non e stoppato
+                            if objVeh.distanceFromEndLane() < 15:
+                                if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
+                                        crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
+                                        and objVeh not in crossingManager.nonStoppedVehicles:
+                                    junction.createAuction(objVeh, vehicles)
+
+                if len(vehAtJunction) > 0:
+                    crossingManager.allowCrossing()
 
         if n_step % sec == 0:
             vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, int(n_step / sec), schema)

@@ -7,8 +7,8 @@ import traci
 from sumolib import miscutils
 
 
-def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
-        celle_per_lato, traiettorie_matrice, secondi_di_sicurezza):
+def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, celle_per_lato, traiettorie_matrice,
+        secondi_di_sicurezza):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 
     port = miscutils.getFreeSocketPort()
@@ -109,9 +109,9 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
             except ValueError:
                 auto_in_lista = False
             pos = traci.vehicle.getPosition(auto)
+            stop_temp = stop[incrID]
             # se l'auto non è in lista allora guardo se sta entrando nelle vicinanze dell'incrocio
             if not auto_in_lista:
-                stop_temp = stop[incrID]
 
                 if (stop_temp[3] - 50 <= pos[0] <= stop_temp[1] + 50) and \
                         (stop_temp[2] - 50 <= pos[1] <= stop_temp[0] + 50):

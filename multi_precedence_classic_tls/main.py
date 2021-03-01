@@ -41,10 +41,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 
-        # controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route
-        for i in range(0, sum(numberOfVehicles)):
-            vehicles[f'idV{i}'].travelTimes[vehicles[f'idV{i}'].index] += 1
-            vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)
+        vehicles = checkRoute(vehicles, numberOfVehicles)
 
         vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, totalTime, schema)
 

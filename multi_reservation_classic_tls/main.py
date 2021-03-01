@@ -21,7 +21,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
     departed = 0  # numero di veicoli partiti entro la fine della simulazione
     departed_vehicles = []  # lista dei veicoli partiti entro la fine della simulazione
-    step = 0  # tempo totale di simulazione
+    totalTime = 0  # tempo totale di simulazione
     step_incr = 0.050  # incremento del numero di step della simulazione
     sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
 
@@ -103,14 +103,11 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
     n_step = 0
 
-    while traci.simulation.getMinExpectedNumber() > 0 and step < numberOfSteps:
+    while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 
-        # controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route
-        for i in range(0, sum(numberOfVehicles)):
-            vehicles[f'idV{i}'].travelTimes[vehicles[f'idV{i}'].index] += 1
-            vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)
+        vehicles = checkRoute(vehicles, numberOfVehicles)
 
         for junction in junctIDList:  # scorro la lista incroci
             incrID = junctIDList.index(junction)
@@ -125,9 +122,9 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                     auto_in_lista = False
 
                 pos = traci.vehicle.getPosition(auto)
+                stop_temp = stop[incrID]
                 # se l'auto non è in lista allora guardo se sta entrando nelle vicinanze dell'incrocio
                 if not auto_in_lista:
-                    stop_temp = stop[incrID]
 
                     if (stop_temp[3] - 50 <= pos[0] <= stop_temp[1] + 50) and \
                             (stop_temp[2] - 50 <= pos[1] <= stop_temp[0] + 50):
@@ -158,7 +155,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                                     info = arrivoAuto(auto, passaggio[incrID], ferme[incrID], attesa[incrID],
                                                           matrice_incrocio[incrID], passaggio_cella[incrID],
                                                           traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
-                                                          x_auto_in_celle, y_auto_in_celle)
+                                                          x_auto_in_celle, y_auto_in_celle, junction.node_ids)
                                     passaggio[incrID] = info[0]
                                     attesa[incrID] = info[1]
                                     ferme[incrID] = info[2]
@@ -191,7 +188,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                                         info = arrivoAuto(auto, passaggio[incrID], ferme[incrID], attesa[incrID],
                                                               matrice_incrocio[incrID], passaggio_cella[incrID],
                                                               traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
-                                                              x_auto_in_celle, y_auto_in_celle)
+                                                              x_auto_in_celle, y_auto_in_celle, junction.node_ids)
                                         passaggio[incrID] = info[0]
                                         attesa[incrID] = info[1]
                                         ferme[incrID] = info[2]
@@ -203,7 +200,9 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                 # se l'auto è appena entrata nell'area dell'incrocio salvo la cella in cui si trova
                 for x in passaggio_cella[incrID]:
                     rotta = traci.vehicle.getRouteID(x[0])
-                    if rotta != "route_2" and rotta != "route_4" and rotta != "route_6" and rotta != "route_11":
+                    edges = traci.route.getEdges(rotta)
+                    lane = getLaneIndexFromEdges(edges, junction.node_ids)
+                    if lane != 0:
                         # se l'auto non gira a destra
                         if x[1] is None and x[2] is None:
                             pos = traci.vehicle.getPosition(x[0])
@@ -213,7 +212,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                                                                                           limiti_celle_Y[incrID])
 
                 info = percorso_libero(passaggio[incrID], matrice_incrocio[incrID], passaggio_cella[incrID],
-                                    limiti_celle_X[incrID], limiti_celle_Y[incrID], stop[incrID])
+                                    limiti_celle_X[incrID], limiti_celle_Y[incrID], stop[incrID], junction.node_ids)
                 passaggio[incrID] = info[0]
                 matrice_incrocio[incrID] = info[1]
                 passaggio_cella[incrID] = info[2]
@@ -237,24 +236,24 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                                 ferme[incrID] = info[2]
                                 matrice_incrocio[incrID] = info[3]
                                 passaggio_cella[incrID] = info[4]
-        # riaccelero i veicoli all'uscita dall'incrocio
-        if int(step / step_incr) % 10 == 0:
-            for auto_uscita in passaggio_precedente[incrID]:
-                if auto_uscita not in passaggio[incrID]:
-                    traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
-                    traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
-                    traci.vehicle.setSpeedMode(auto_uscita[0], 7)
-            passaggio_precedente[incrID] = passaggio[incrID][:]
+            # riaccelero i veicoli all'uscita dall'incrocio
+            if int(totalTime / step_incr) % 10 == 0:
+                for auto_uscita in passaggio_precedente[incrID]:
+                    if auto_uscita not in passaggio[incrID]:
+                        traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
+                        traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
+                        traci.vehicle.setSpeedMode(auto_uscita[0], 7)
+                passaggio_precedente[incrID] = passaggio[incrID][:]
         # ogni 10 step pulisco la matrice da valori troppo vecchi
-        if int(step / step_incr) % 10 == 0:
+        if int(totalTime / step_incr) % 10 == 0:
             matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
 
         # inserisco nell'array le auto presenti nella simulazione
         arrayAuto = costruzioneArray(arrayAuto)
 
-        step += step_incr
+        totalTime += step_incr
         # faccio avanzare la simulazione
-        traci.simulationStep(step)
+        traci.simulationStep(totalTime)
 
         n_step += 1
 

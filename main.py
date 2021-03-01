@@ -107,14 +107,11 @@ if __name__ == "__main__":
                     'classic_precedence': (
                         numberOfVehicles[i], schema, sumoDict['classic_precedence'], dir, j, queue, seeds[j]),
                     'reservation': (
-                        numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
-                        traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
-                    'reservation_with_auction': (
-                        numberOfVehicles[i], schema, sumoDict['reservation'], celle_per_lato,
-                        traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j]),
+                        numberOfVehicles[i], schema, sumoDict['reservation'], dir, j, queue, seeds[j], celle_per_lato,
+                        traiettorie_matrice, secondi_di_sicurezza),
                     'precedence_with_auction': (
-                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction'], simulationMode,
-                        instantPay, dimensionOfGroups, dir, j, queue, seeds[j])
+                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction'], dir, j, queue, seeds[j],
+                        simulationMode, instantPay, dimensionOfGroups)
                 }
 
                 p = Process(target=module.run, args=args[project])

@@ -76,13 +76,22 @@ def createJunctions(vehicles):
     return junctions
 
 
-def getLaneIndexFromEdges(start, end, node_ids):
+def getLaneIndexFromEdges(edges, node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-    destinazione"""
+    destinazione correnti"""
 
     distance = -1
     i = 0
     trovato = False
+
+    start = 0
+    end = 0
+
+    for j in range(0, len(edges)):
+        if int(edges[j][1:3]) in node_ids:
+            start = int(edges[j][1:3])
+            end = int(edges[j + 1][4:6])
+            break
 
     while True:
         if node_ids[i % 4] == start:
@@ -120,6 +129,16 @@ def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
     lane_end = lane_length - (max_x - min_x) / 2
 
     return lane_end - spawn_distance
+
+
+def checkRoute(vehicles, numberOfVehicles):
+    """Controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route"""
+
+    for i in range(0, sum(numberOfVehicles)):
+        vehicles[f'idV{i}'].travelTimes[vehicles[f'idV{i}'].index] += 1
+        vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)
+
+    return vehicles
 
 
 def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
