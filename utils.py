@@ -25,6 +25,7 @@ def mainStep(total_time, n_steps, n_vehs):
     else:
         return False
 
+
 def saveIntermediateResults(total_time, n_steps, n_vehs, step, vehicles, departed):
 
     mean_th = -1
@@ -150,6 +151,8 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
 
     routes = generateRoutes(junction_id, node_ids)
     sequence = generateLaneSequence(33, 33, sum(numberOfVehicles), seed)
+
+    print(routes)
 
     for i in range(0, sum(numberOfVehicles)):
         if t < numberOfVehicles[c]:

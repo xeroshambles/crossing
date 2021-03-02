@@ -59,7 +59,7 @@ if __name__ == "__main__":
         sumoDict = {'classic_tls': sumoCmd,
                     'classic_precedence': sumoCmd,
                     'reservation': sumoCmd + ["--step-length", "0.050"],
-                    'precedence_with_auction': sumoCmd + ["--step-length", "0.250"]}
+                    'precedence_with_auction': sumoCmd + ["--step-length", "0.050"]}
 
         schema = ''
         if choice in ['g', 'G']:

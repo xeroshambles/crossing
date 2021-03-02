@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
         sumoDict = {'multi_classic_precedence_classic_tls': sumoCmd,
                     'multi_classic_precedence': sumoCmd,
-                    'multi_auction_classic_precedence': sumoCmd + ['--step-length', '0.250'],
+                    'multi_auction_classic_precedence': sumoCmd + ['--step-length', '0.050'],
                     'multi_reservation_classic_precedence': sumoCmd + ['--step-length', '0.050']}
 
         schema = ''
