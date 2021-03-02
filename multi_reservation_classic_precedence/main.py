@@ -1,6 +1,6 @@
 from utils_multi import *
 from inpout_multi import redirect_output
-from multi_reservation_classic_tls.utils import *
+from multi_reservation_classic_precedence.utils import *
 
 import traci
 from sumolib import miscutils

@@ -1,9 +1,9 @@
 from math import sqrt
 from config_multi import *
 
-from multi_auction_classic_tls.trafficElements.vehicle import Vehicle
-from multi_auction_classic_tls.trafficElements.junction import ThreeWayJunction
-from multi_auction_classic_tls.trafficElements.junction import FourWayJunction
+from multi_auction_classic_precedence.trafficElements.vehicle import Vehicle
+from multi_auction_classic_precedence.trafficElements.junction import ThreeWayJunction
+from multi_auction_classic_precedence.trafficElements.junction import FourWayJunction
 
 import traci
 

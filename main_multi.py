@@ -2,7 +2,7 @@ import importlib.util
 from multiprocessing import Process, Queue
 from inpout_multi import *
 from config_multi import *
-from multi_reservation_classic_tls import traiettorie
+from multi_reservation_classic_precedence import traiettorie
 
 from sumolib import checkBinary
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
 
-        choice = checkChoice(['g', 'D', 'g', 'G'],
+        choice = checkChoice(['d', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
                              'd = dati): ',
                              "\nUtilizzo la modalità dati come default...",
@@ -57,10 +57,10 @@ if __name__ == "__main__":
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
             [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
-        sumoDict = {'multi_classic_tls': sumoCmd,
-                    'multi_precedence_classic_tls': sumoCmd,
-                    'multi_auction_classic_tls': sumoCmd + ['--step-length', '0.250'],
-                    'multi_reservation_classic_tls': sumoCmd + ['--step-length', '0.050']}
+        sumoDict = {'multi_classic_precedence_classic_tls': sumoCmd,
+                    'multi_classic_precedence': sumoCmd,
+                    'multi_auction_classic_precedence': sumoCmd + ['--step-length', '0.250'],
+                    'multi_reservation_classic_precedence': sumoCmd + ['--step-length', '0.050']}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -102,17 +102,17 @@ if __name__ == "__main__":
 
             for j in range(0, repeat):
                 args = {
-                    'multi_classic_tls': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls'], dir, j,
-                        queue, seeds[j]),
-                    'multi_precedence_classic_tls': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls'], dir, j,
-                        queue, seeds[j]),
-                    'multi_auction_classic_tls': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_tls'], dir, j,
-                        queue, seeds[j]),
-                    'multi_reservation_classic_tls': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation_classic_tls'],
+                    'multi_classic_precedence_classic_tls': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_precedence_classic_tls'],
+                        dir, j, queue, seeds[j]),
+                    'multi_classic_precedence': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_precedence_classic_tls'],
+                        dir, j, queue, seeds[j]),
+                    'multi_auction_classic_precedence': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_precedence'],
+                        dir, j, queue, seeds[j]),
+                    'multi_reservation_classic_precedence': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation_classic_precedence'],
                         celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j])
                 }
 
