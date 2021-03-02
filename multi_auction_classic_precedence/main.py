@@ -20,7 +20,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     departed = 0  # numero di veicoli partiti entro la fine della simulazione
     departed_vehicles = []  # lista dei veicoli partiti entro la fine della simulazione
     totalTime = 0.000  # tempo totale di simulazione
-    step_incr = 0.250  # incremento del numero di step della simulazione
+    step_incr = 0.050  # incremento del numero di step della simulazione
     sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
 
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
