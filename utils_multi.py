@@ -79,7 +79,7 @@ def createJunctions(vehicles):
     return junctions, two_way_junctions
 
 
-def getLaneIndexFromEdges(edges, node_ids, junction_id):
+def getLaneIndexFromEdges(edges, vehicle, node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione correnti"""
 
@@ -87,14 +87,8 @@ def getLaneIndexFromEdges(edges, node_ids, junction_id):
     i = 0
     trovato = False
 
-    start = 0
-    end = 0
-
-    for j in range(0, len(edges)):
-        if int(edges[j][1:3]) in node_ids and int(edges[j][4:6]) == junction_id:
-            start = int(edges[j][1:3])
-            end = int(edges[j + 1][4:6])
-            break
+    start = int(edges[vehicle.edgeIndex][1:3])
+    end = int(edges[vehicle.edgeIndex + 1][4:6])
 
     while True:
         if node_ids[i % 4] == start:

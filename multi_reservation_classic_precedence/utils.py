@@ -4,12 +4,12 @@ from utils_multi import getLaneIndexFromEdges
 import traci
 
 
-def getRoute(auto, node_ids):
+def getRoute(vehicle, node_ids):
 
-    route = traci.vehicle.getRouteID(auto.idVehicle)
+    route = traci.vehicle.getRouteID(vehicle.idVehicle)
     edges = traci.route.getEdges(route)
 
-    suffix, start, end = getLaneIndexFromEdges(edges, auto, node_ids)
+    suffix, start, end = getLaneIndexFromEdges(edges, vehicle, node_ids)
 
     if suffix == 0:
         if start - end == -4:
