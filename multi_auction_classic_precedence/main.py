@@ -19,9 +19,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
     departed = 0  # numero di veicoli partiti entro la fine della simulazione
     departed_vehicles = []  # lista dei veicoli partiti entro la fine della simulazione
-    totalTime = 0.000  # tempo totale di simulazione
-    step_incr = 0.050  # incremento del numero di step della simulazione
-    sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
+    totalTime = 0  # tempo totale di simulazione
 
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
@@ -34,16 +32,13 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     """Di seguito inizializzo gli incroci che fanno parte della simulazione"""
 
-    junctions = createJunctions(vehicles)
+    junctions, two_way_junctions = createJunctions(vehicles)
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
-    n_step = 0
-
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         traci.simulationStep()
-        totalTime += step_incr
-        n_step += 1
+        totalTime += 1
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 
@@ -71,7 +66,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                             if objVeh not in crossingManager.getCurrentPartecipants():
                                 crossingManager.updateVehicleStatus(objVeh)
                             # se non è gia in una auction, non e stoppato
-                            if objVeh.distanceFromEndLane() < 15:
+                            if objVeh.distanceFromEndLane() < 25:
                                 if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
                                         crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
                                         and objVeh not in crossingManager.nonStoppedVehicles:
@@ -80,8 +75,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                 if len(vehAtJunction) > 0:
                     crossingManager.allowCrossing()
 
-        if n_step % sec == 0:
-            vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, int(n_step / sec), schema)
+        vehicles, junctions, two_way_junctions = checkVehicles(vehicles, departed_vehicles, junctions,
+                                                               two_way_junctions, totalTime, schema)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 

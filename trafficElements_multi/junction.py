@@ -1,6 +1,10 @@
 import sys
 from abc import abstractmethod, ABC
 
+from .auction import CompetitiveAuction, CooperativeAuction
+from .competitive import CompetitiveCrossingManager
+from .cooperative import CooperativeCrossingManager
+
 import traci
 
 
@@ -25,6 +29,10 @@ class Junction(ABC):
         self.isCompetitive = sM
         self.bufferMode = bM
         self.maxDimensionOfGroups = groupDimension
+        if sM:
+            self.crossingManager = CompetitiveCrossingManager(self)
+        else:
+            self.crossingManager = CooperativeCrossingManager(self)
 
         self.departed = []
         self.arrived = []
@@ -61,6 +69,7 @@ class Junction(ABC):
         """Funzione utilizzata per calcolare l'insieme delle corsie entranti nell'incrocio e per inizializzare
         informazioni relative alle winnersLane del CrossingManager competitivo."""
         self.incomingLanes = [i for i in self.lanes if int(i[1:3]) != self.nID]
+        self.crossingManager.winnersLanes = {i: [] for i in self.incomingLanes}
 
     def outgoingLanesCalc(self):
         """Funzione utilizzata per calcolare l'insieme delle corsie uscenti dall'incrocio"""
@@ -83,6 +92,10 @@ class Junction(ABC):
         """Ritorna l'insieme delle corsie uscenti dall'incrocio."""
         return self.crossingLanes.copy()
 
+    def getCrossingManager(self):
+        """Restituisce il crossing manager associato all'incrocio."""
+        return self.crossingManager
+
     def getMaxDimension(self):
         """Restituisce la dimensione massima dei gruppi principali."""
         return self.maxDimensionOfGroups
@@ -92,6 +105,11 @@ class Junction(ABC):
         lane = traci.vehicle.getLaneID(veh.getID())
         listOfVehicles = traci.lane.getLastStepVehicleIDs(lane)
         maxDimension = self.maxDimensionCalc(lane)
+        # if maxDimension == -1:
+        #     from math import ceil
+        #     maxDimension = ceil(len(listOfVehicles)/2)
+        #     assert maxDimension != 0, 'Errore sulla dimensione nel caso proporzionale: è a 0'
+        # print('DDD', listOfVehicles[self.getMaxDimension()-1:], listOfVehicles)
         if veh.getID() in listOfVehicles[-maxDimension:]:
             return True
         return False
@@ -103,16 +121,19 @@ class Junction(ABC):
             return self.maxDimensionOfGroups
         num_veh = len(traci.lane.getLastStepVehicleIDs(lane))
         from math import ceil
+        # print(f'AAA {lane} {num_veh} {ceil(num_veh / 2)}')
         return ceil(num_veh / 2)
 
     def fromEdgesToLanes(self, vehicle):
         """Funzione utilizzabile per ottenere la route, composta di lanes, che un veicolo deve seguire per attraversare
         correttamente l'incrocio."""
         route = vehicle.getCurrentRoute()
+        # print('route', route, vehicle.getID())
+        # print(traci.vehicle.getRoute(vehicle.getID()))
         currentLane = traci.vehicle.getLaneID(vehicle.getID())[-1]
         currentEdge = (int(route[0][1:3]), int(route[0][4:6]))
         nextEdge = (int(route[1][1:3]), int(route[1][4:6]))
-        if abs(currentEdge[0] - currentEdge[1]) == abs(nextEdge[0] - nextEdge[1]):  # diritto
+        if abs(currentEdge[0] - currentEdge[1]) == abs(nextEdge[0] - nextEdge[1]):  # front
             return f'{route[0]}_{currentLane}', f'{route[1]}_{currentLane}'
         lane0 = f'{route[0]}_0'
         lane4 = f'{route[0]}_2'
@@ -133,7 +154,10 @@ class Junction(ABC):
 
     def isFrontalTrajectory(self, vehicle):
         """Funzione che restituisce True se il veicolo passato in argomento deve andare dritto, False altrimenti"""
-        route = traci.vehicle.getRoute(vehicle.getID())
+        route = traci.vehicle.getRoute(vehicle.getID())  # vehicle.getCurrentRoute()
+        # print(f'for vehicle {vehicle.getID()}, current route is: {route}')
+        # print(traci.vehicle.getRoute(vehicle.getID()))
+        # currentLane = traci.vehicle.getLaneID(vehicle.getID())[-1]
         currentEdge = (int(route[0][1:3]), int(route[0][4:6]))
         nextEdge = (int(route[1][1:3]), int(route[1][4:6]))
         if abs(currentEdge[0] - currentEdge[1]) == abs(nextEdge[0] - nextEdge[1]):
@@ -168,17 +192,276 @@ class Junction(ABC):
         except:
             pass
 
+    # ################################################################################################################ #
+    """Il seguente blocco di funzioni (fino al prossimo gruppo di ###) è legato al caso delle simulazioni con 
+    bufferizzazione, ed è in uno stato incompleto."""
+
+    def removeWinningVehicles(self, vehiclesFound):
+        """Funzione che rimuove dall'elenco di veicoli che devono partecipare all'asta quelli che ne hanno già vinta
+        una"""
+        for i in vehiclesFound:
+            vehToBeRemoved = []
+            for j in i:
+                if j in self.getCrossingManager().getCurrentWinners():
+                    vehToBeRemoved.append(j)
+            for v in vehToBeRemoved:
+                i.remove(v)
+        vehiclesInCT = [i for i in vehiclesFound if i != []]
+        return vehiclesInCT
+
+    def removeVehiclesAlreadyInAuction(self, vehiclesFound):
+        """Funzione che rimuove dall'elenco di veicoli che devono partecipare all'asta quelli che ne hanno già vinta
+        una"""
+        for i in vehiclesFound:
+            vehToBeRemoved = []
+            for j in i:
+                if j in self.getCrossingManager().vehiclesInAuction:
+                    vehToBeRemoved.append(j)
+            for v in vehToBeRemoved:
+                i.remove(v)
+        vehiclesInCT = [i for i in vehiclesFound if i != []]
+        return vehiclesInCT
+
+    def getVehiclesInClashingTrajectories(self, idVeh, vehicles):
+        """Funzione che ritorna l'elenco di veicoli con traiettorie incidentali rispetto a quello passato in argomento.
+        :param idVeh: veicolo di cui vogliamo conoscere gli avversari all'asta;
+        :param junction: identificatore dell'incrocio in cui si svolgerà l'asta;
+        :param vehicles: dizionario che associa gli id dei veicoli agli oggetti"""
+        routeI = self.fromEdgesToLanes(idVeh)
+        listOfVehicleInFirstLane = [i for i in traci.lane.getLastStepVehicleIDs(self.fromEdgesToLanes(idVeh)[0])
+                                    if i in vehicles]
+        listOfVehicleInFirstLane = [i for i in reversed(listOfVehicleInFirstLane)
+                                    if vehicles[i].distanceFromEndLane() < 40]
+        clashingTrajectoriesII = []
+        for i in listOfVehicleInFirstLane:
+            if routeI != self.fromEdgesToLanes(vehicles[i]):
+                routeII = self.fromEdgesToLanes(vehicles[i])
+                clashingTrajectoriesII = self.getClashingRoutes(routeII)
+                break
+
+        routeI = self.fromEdgesToLanes(idVeh)
+        clashingTrajectories = self.getClashingRoutes(routeI)
+        for t in clashingTrajectoriesII:
+            if t not in clashingTrajectories:
+                clashingTrajectories.append(t)
+        clashingTrajectories.append(routeI)
+        vehiclesInCT = []
+        for j in clashingTrajectories:
+            vehiclesInSameLane = []
+            listOfVehicleInALane = [i for i in traci.lane.getLastStepVehicleIDs(j[0]) if i in vehicles]
+            listOfVehicleInALane = reversed(list(listOfVehicleInALane))  # inverto per partire dal veicolo più
+            # vicino all'incrocio
+            for k in listOfVehicleInALane:
+                # se sono già stati trovati dei veicoli nella stessa corsia faccio il resto dei controlli a
+                # prescindere, anche se non è valida la condizione di clash
+                # if len(vehiclesInSameLane) > 0 or self.fromEdgesToLanes(vehicles[k].getCurrentRoute()) \
+                #                                     in clashingTrajectories:
+                if len(vehiclesInSameLane) > 0 or self.fromEdgesToLanes(vehicles[k]) \
+                        in clashingTrajectories:
+                    if vehicles[k].checkPosition(self):
+                        if vehicles[k].distanceFromEndLane() < 40:
+                            vehiclesInSameLane.append(vehicles[k])
+            if vehiclesInSameLane and vehiclesInSameLane not in vehiclesInCT:
+                vehiclesInCT.append(vehiclesInSameLane)
+        if self.isCompetitive:
+            vehiclesInCT = self.removeWinningVehicles(vehiclesInCT)
+        else:
+            vehiclesInCT = self.removeVehiclesAlreadyInAuction(vehiclesInCT)
+        return vehiclesInCT
+        # else:
+        #     return []
+
+    # ################################################################################################################ #
+
+    def createAuction(self, idVeh, vehicles):
+        """Funzione che permette di aggiungere un'asta all'elenco di quelle attualmente in corso nell'incrocio
+           :param idVeh: ID del veicolo di cui si cercheranno i rivali.
+           :param vehicles: veicoli raggruppati per corsia d'appartenenza;"""
+
+        """Ramo importante della funzione."""
+        lp = []
+        ls = []
+        """Se è variabile otterrò una dimensione dipendente dal numero di veicoli in corsia."""
+        maxLength = self.maxDimensionCalc(idVeh.getCurrentLane())  # non importante, ritorna maxNumberOfVehicles
+        # print('trying auction given vehicle', idVeh.getID()[3:])
+        """Ciclo sulla reversed del getLastStepVehicleIDs() per selezionare prima i veicoli più vicini 
+        all'incrocio."""
+        for veh in reversed(traci.lane.getLastStepVehicleIDs(idVeh.getCurrentLane())):
+            veh = vehicles[veh]
+            # print(f'conditions on {veh.getID()} ({veh.getCurrentLane()}): posizione {veh.checkPosition(self)}, '
+            # f'auction {veh not in self.crossingManager.vehiclesInAuction}, veicoli riattivati {veh not in self.crossingManager.nonStoppedVehicles}, '
+            # f'distanza {veh.distanceFromEndLane() < 40}, maxLength {len(lp) < maxLength}')
+            # se veicolo non e tra quelli in auction ed è stoppato
+            if veh.checkPosition(self) and veh not in self.crossingManager.vehiclesInAuction \
+                    and veh not in self.crossingManager.nonStoppedVehicles:
+                if veh.distanceFromEndLane() < 40 and len(lp) < maxLength:
+                    lp.append(veh)
+                    # print(f'adding {veh.getID()} to lp')
+                else:
+                    ls.append(veh)
+                    # print(f'adding {veh.getID()} to ls')
+
+        clashingLists = [[lp, ls]]
+        vv = [[[[x.getID()] for x in l] for l in group] for group in clashingLists]
+
+        # print(f'clashingLists: {vv}')
+        clashingVehicles = [idVeh]
+        vv = [v.getID() for v in clashingVehicles]
+        # print(f'clashingVehicles: {vv}')
+        vehiclesInHead = [i for i in self.crossingManager.getCrossingStatus().values() if i is not None
+                          and i not in self.crossingManager.getVehiclesInAuction()
+                          and i not in self.crossingManager.nonStoppedVehicles
+                          and i.distanceFromEndLane() < 15 and i.checkPosition(self)]
+        vv = [v.getID() for v in vehiclesInHead]
+        # print(f'vehiclesInHead: {vv}')
+
+        """Cerco i veicoli in traiettoria incidentale con quelli pronti a partecipare all'asta."""
+        for veh in clashingVehicles:
+            # print('veh subject', veh.getID(), veh.getCurrentRoute())
+            # print(f'subject {veh.getID()} ({veh.getCurrentLane()})')
+            for otherVeh in vehiclesInHead:
+                # print(f'object {otherVeh.getID()} ({otherVeh.getCurrentLane()}), condizioni: diversità {otherVeh !=
+                # veh}, non presenza ' f'{otherVeh not in clashingVehicles}, clashing {self.isClashing(
+                # self.fromEdgesToLanes(veh), self.fromEdgesToLanes(otherVeh))}')
+                if otherVeh != veh and otherVeh not in clashingVehicles:
+                    if self.isClashing(self.fromEdgesToLanes(veh),
+                                       self.fromEdgesToLanes(otherVeh)):
+                        clashingVehicles.append(otherVeh)
+                        vlp = []
+                        vls = []
+                        maxLength = self.maxDimensionCalc(otherVeh.getCurrentLane())
+                        for v in reversed(traci.lane.getLastStepVehicleIDs(otherVeh.getCurrentLane())):
+                            v = vehicles[v]
+                            # print( f'conditions on {v.getID()} ({v.getCurrentLane()}): posizione {v.checkPosition(
+                            # self)}, ' f'auction {v not in self.crossingManager.vehiclesInAuction},
+                            # veicoli riattivati {v not in self.crossingManager.nonStoppedVehicles}, ' f'distanza {
+                            # v.distanceFromEndLane() < 40}, maxLength {len(vlp) < maxLength}')
+                            if v.checkPosition(self) and v not in self.crossingManager.vehiclesInAuction \
+                                    and v not in self.crossingManager.nonStoppedVehicles:
+                                if v.distanceFromEndLane() < 40 and len(vlp) < maxLength:
+                                    vlp.append(v)
+                                    # print(f'adding {veh.getID()} to vlp')
+                                else:
+                                    vls.append(v)
+                                    # print(f'adding {veh.getID()} to vls')
+                        if vlp:
+                            clashingLists.append([vlp, vls])
+        # print('number of clashing lists', len(clashingLists))
+        # cLLength = len(clashingLists)
+        # blockingVehicles = []
+
+        # ######################################################################################################## #
+        """Blocco di codice che impedisce ai veicoli in traiettoria incidentale con l'insieme dei bloccanti di 
+        prendere parte alle aste. Tutti i veicoli dopo un veicolo che non può prendere parte ad un'asta vengono
+        messi insieme ad esso nel gruppo degli sponsors."""
+        if self.isCompetitive:
+            """Caso competitivo. Con questo ciclo individuiamo eventuali veicoli in clash con veicoli vincitori 
+            e gli impediamo di prendere parte all'asta. L'asta non viene permessa nemmeno ai veicoli che vengono 
+            dopo il veicolo in clash."""
+            if self.crossingManager.currentWinners:
+                blockingVehicles = self.crossingManager.currentWinners.copy()
+                # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in
+                # blockingVehicles)
+                listsToBeRemoved = []
+                for cl in clashingLists:
+                    vehToBeRemoved = []
+                    for veh in cl[0]:
+                        isInAClash = False
+                        for bv in blockingVehicles:
+                            # print(f'bv {bv.getID()}, ({bv.getCurrentLane()})')
+                            # se trovo un veicolo in clash con un vincitore
+                            if self.isClashing(self.fromEdgesToLanes(veh), self.crossingManager.partecipantsRoutes[bv]):
+                                isInAClash = True
+                                # lo rimuovo insieme a tutti i veicoli vengono dopo di lui
+                                vehToBeRemoved = cl[0][cl[0].index(veh):]
+                                break
+                        if isInAClash:
+                            for v in vehToBeRemoved:
+                                cl[0].remove(v)
+                            if not cl[0]:
+                                # se non ci sono più veicoli rimuoviamo la lista
+                                listsToBeRemoved.append(cl)
+                            else:
+                                # aggiungiamo i veicoli che non possono direttamente partecipare all'asta all'elenco
+                                # degli sponsor.
+                                cl[1].extend(vehToBeRemoved)
+                            break
+                for li in listsToBeRemoved:
+                    clashingLists.remove(li)
+        else:
+            """Caso cooperativo. Con questo ciclo individuiamo eventuali veicoli in clash con veicoli che hanno 
+            preso precedentemente parte ad un'asta. L'asta non viene permessa nemmeno ai veicoli che vengono dopo
+             il veicolo in clash."""
+            if self.crossingManager.orderedCooperativeList:
+                blockingVehicles = [x for j in self.crossingManager.orderedCooperativeList for i in j for x in i]
+                # print(f'bv {self.getID()} {[x.getID() for x in blockingVehicles]}') if len(blockingVehicles) > 2:
+                # blockingVehicles.extend(i for i in self.crossingManager.nonStoppedVehicles if i not in
+                # blockingVehicles)
+                listsToBeRemoved = []
+                for cl in clashingLists:
+                    vehToBeRemoved = []
+                    for veh in cl[0]:
+                        isInAClash = False
+                        for bv in blockingVehicles:
+                            # print(f'bv {bv.getID()}, ({bv.getCurrentLane()})')
+                            # meccanismo uguale al caso competitivo, guarda quei commenti
+                            if self.isClashing(self.fromEdgesToLanes(veh), self.crossingManager.partecipantsRoutes[bv]):
+                                isInAClash = True
+                                vehToBeRemoved = cl[0][cl[0].index(veh):]
+                                break
+                        if isInAClash:
+                            for v in vehToBeRemoved:
+                                cl[0].remove(v)
+                            if not cl[0]:
+                                listsToBeRemoved.append(cl)
+                            else:
+                                # aggiungiamo i veicoli che non possono direttamente partecipare all'asta all'elenco
+                                # degli sponsor.
+                                cl[1].extend(vehToBeRemoved)
+                            break
+                for li in listsToBeRemoved:
+                    clashingLists.remove(li)
+
+        # for vh in vehiclesInHead:
+        #     print('veh in head', vh.getID())
+        # for cl in clashingLists:
+        #     print('c l v: ', end='')
+        #     for v in cl[0]:
+        #         print(v.getID(), end=', ')
+        #     print()
+
+        if len(clashingLists) > 1:
+            # if not (len(clashingLists) != cLLength and len(blockingVehicles) < 3):
+            # print('starting the auction.')
+            # for cl in clashingLists:
+            #     print('f p c l v: ', end='')
+            #     for v in cl[0]:
+            #         print(v.getID(), v.getCurrentLane(), end=', ')
+            #     print()
+            # auction = CompetitiveAuction(clashingLists, self, True)
+            if self.isCompetitive:
+                auction = CompetitiveAuction(clashingLists, self, False, self.payMode, self.bufferMode)
+            else:
+                auction = CooperativeAuction(clashingLists, self, self.payMode, self.bufferMode)
+            self.crossingManager.saveAuctionResults(auction)
+
     def getVehiclesAtJunction(self):
         """Funzione che restituisce tutti i veicoli che viaggiano verso un incrocio"""
         vehiclesAtJunction = []
 
         for lane in self.getIncomingLanes():
+            # print("current junction lanes: " + f'{self.getLanes()}')
+            # print("l is: " + f'{l}')
             if int(lane[1:3]) != self.getNumericID():  # si lavora sui veicoli che viaggiano verso l'incrocio
+                # for v in traci.lane.getLastStepVehicleIDs(l):
+                # vehiclesAtJunction.append(v)
                 vehiclesAtJunction += reversed(traci.lane.getLastStepVehicleIDs(lane))
         return vehiclesAtJunction
 
     def getActualVehicles(self, departed_vehicles):
         """Funzione che ritorna tutti i veicoli che sono nell'incrocio"""
+
+        bs = f"{'0' if self.nID < 9 else ''}"
 
         vehicles = []
 
@@ -188,6 +471,59 @@ class Junction(ABC):
                 vehicles.append(veh)
 
         return vehicles
+
+
+class TwoWayJunction(Junction):
+    """Classe inutilizzata e incompleta."""
+
+    def __init__(self, numericID, vehicles, iP, sM, bM, groupDimension=None):
+        super().__init__(numericID, vehicles, iP, sM, bM, groupDimension)
+        self.edgeCalc()
+        self.laneCalc()
+        self.incomingLanesCalc()
+        self.outgoingLanesCalc()
+        self.laneNESOMapping()
+        self.findPossibleRoutes()
+
+    def edgeCalc(self):
+        """Essendo i casi di incroci a 2 solo 4 l'assegnamento può essere diretto"""
+        cases = {
+            1: ['e01_02', 'e02_01', 'e01_06', 'e06_01'],
+            5: ['e05_04', 'e04_05', 'e05_10', 'e10_05'],
+            21: ['e21_22', 'e22_21', 'e21_16', 'e16_21'],
+            25: ['e25_24', 'e24_25', 'e25_20', 'e20_25'],
+        }
+
+        try:
+            self.edges = cases[self.nID]
+        except KeyError:
+            print("ID errato: un incrocio a 2 vie può avere ID 1, 5, 21, 25", file=sys.stderr)
+
+    def laneNESOMapping(self):
+        cases = {
+            1: {'N': [], 'E': self.lanes[:4], 'S': self.lanes[4:], 'O': []},
+            5: {'N': [], 'E': [], 'S': self.lanes[4:], 'O': self.lanes[:4]},
+            21: {'N': self.lanes[4:], 'E': self.lanes[:4], 'S': [], 'O': []},
+            25: {'N': self.lanes[4:], 'E': [], 'S': [], 'O': self.lanes[:4]},
+        }
+        self.mapNESO = cases[self.nID]
+
+    def findPossibleRoutes(self):
+        counter = -1
+        for i in self.lanes:
+            counter += 1
+            if int(i[1:3]) == self.nID:
+                continue
+            nextEdge = self.lanes[(counter + 2) % 8]
+            self.possibleRoutes[i] = [nextEdge]
+
+    def findClashingEdges(self):
+        """Nel caso dell'incrocio di 2 strade non ci sono mai interferenze, perciò non saranno indicate interferenze."""
+        return {}
+
+    def isClashing(self, route1, route2):
+        """Nel caso dell'incrocio di 2 strade non ci sono mai interferenze, perciò sarà sempre ritornato False."""
+        return False
 
 
 class ThreeWayJunction(Junction):
@@ -848,9 +1184,11 @@ class FourWayJunction(Junction):
     def findClashingEdges(self):
         """Funzione che avvia la ricerca delle traiettorie incidentali nell'incrocio."""
         # inizializzo le liste dei possibili clash
+        # print(f'possible routes are: {self.possibleRoutes}')
         for i in self.possibleRoutes:
             self.clashingEdges[i] = {self.possibleRoutes[i][j]: [] for j in self.possibleRoutes[i]
                                      if self.possibleRoutes[i][j] != ''}
+        # print(f'found possible clashing edges: {self.clashingEdges}')
         for i in self.possibleRoutes:
             for j in self.possibleRoutes[i]:
                 if self.possibleRoutes[i][j] == '':

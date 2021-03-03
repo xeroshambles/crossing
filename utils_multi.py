@@ -1,9 +1,10 @@
 from math import sqrt
 from config_multi import *
 
-from multi_auction_classic_precedence.trafficElements.vehicle import Vehicle
-from multi_auction_classic_precedence.trafficElements.junction import ThreeWayJunction
-from multi_auction_classic_precedence.trafficElements.junction import FourWayJunction
+from trafficElements_multi.vehicle import Vehicle
+from trafficElements_multi.junction import TwoWayJunction
+from trafficElements_multi.junction import ThreeWayJunction
+from trafficElements_multi.junction import FourWayJunction
 
 import traci
 
@@ -58,14 +59,16 @@ def colorVehicles(numberOfVehicles):
 
 
 def createJunctions(vehicles):
-    """Funzione che inizializza gli incroci"""
+    """Funzione che inizializza gli incroci della simulazione"""
 
     junctions = []
 
+    two_way_junctions = []
+
     for i in range(1, 26):
         if i in two_way_junctions_ids:
-            # junctions.append(TwoWayJunction(i))
-            pass
+            two_way_junctions.append(TwoWayJunction(i, vehicles, iP=instantPay, sM=simulationMode, bM=False,
+                                                    groupDimension=dimensionOfGroups))
         elif i in three_way_junctions_ids:
             junctions.append(ThreeWayJunction(i, vehicles, iP=instantPay, sM=simulationMode, bM=False,
                                               groupDimension=dimensionOfGroups))
@@ -73,10 +76,10 @@ def createJunctions(vehicles):
             junctions.append(FourWayJunction(i, vehicles, iP=instantPay, sM=simulationMode, bM=False,
                                              groupDimension=dimensionOfGroups))
 
-    return junctions
+    return junctions, two_way_junctions
 
 
-def getLaneIndexFromEdges(edges, node_ids):
+def getLaneIndexFromEdges(edges, node_ids, junction_id):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
     destinazione correnti"""
 
@@ -88,7 +91,7 @@ def getLaneIndexFromEdges(edges, node_ids):
     end = 0
 
     for j in range(0, len(edges)):
-        if int(edges[j][1:3]) in node_ids:
+        if int(edges[j][1:3]) in node_ids and int(edges[j][4:6]) == junction_id:
             start = int(edges[j][1:3])
             end = int(edges[j + 1][4:6])
             break
@@ -111,7 +114,7 @@ def getLaneIndexFromEdges(edges, node_ids):
     if distance == 3:
         lane = 0
 
-    return lane
+    return lane, start, end
 
 
 def getDistanceFromLaneEnd(spawn_distance, lane_length, shape):
@@ -141,8 +144,8 @@ def checkRoute(vehicles, numberOfVehicles):
     return vehicles
 
 
-def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
-    """Funzione che controlla il posizionamento dei veicoli nell'incrocio e calcola le misure"""
+def checkVehicles(vehicles, departed_vehicles, junctions, two_way_junctions, time, schema):
+    """Funzione che controlla il posizionamento dei veicoli e calcola le relative misure"""
 
     for junction in junctions:
 
@@ -162,9 +165,16 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
                 if veh not in junction.vehiclesEntering:
                     junction.vehiclesEntering.append(veh)
                     junction.departed[time - 1] += 1
-                spawn_distance = traci.vehicle.getDistance(veh)
+                    vehicles[veh].spawnDistances.append(0)
+                    vehicles[veh].edgeIndex += 1
+                spawn_distance = traci.vehicle.getDistance(veh) - sum(vehicles[veh].spawnDistances[:-1])
+                vehicles[veh].spawnDistances[-1] = spawn_distance
                 distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
                                                   junction.junction_shape)
+                if 60 <= distance <= 150:
+                    vehicles[veh].checkLane()
+                if distance < 60:
+                    traci.vehicle.setLaneChangeMode(veh, 512)
                 if distance < 15:
                     vehicles[veh].speeds[vehicles[veh].index].append(traci.vehicle.getSpeed(veh))
                 veh_length = traci.vehicle.getLength(veh)
@@ -190,7 +200,10 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
                         traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
 
             # controllo se il veicolo è all'interno della junction
-            if veh_current_lane in junction.crossingLanes:
+            elif veh_current_lane in junction.crossingLanes:
+                spawn_distance = traci.vehicle.getDistance(veh) - \
+                                 sum(vehicles[veh].spawnDistances[:-1])
+                vehicles[veh].spawnDistances[-1] = spawn_distance
                 leader = traci.vehicle.getLeader(veh)
                 leader_lane = ''
                 if leader:
@@ -216,17 +229,39 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
                         traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
 
             # controllo se il veicolo è in una lane uscente
-            if veh_current_lane in junction.outgoingLanes:
+            elif veh_current_lane in junction.outgoingLanes:
                 if veh in junction.vehiclesEntering:
                     vehicles[veh].startingLane = ''
                     junction.vehiclesEntering.remove(veh)
                     junction.arrived[time - 1] += 1
 
-    return vehicles, junctions
+    for junction in two_way_junctions:
+        vehs_in_junction = junction.getActualVehicles(departed_vehicles)
+        for veh in vehs_in_junction:
+            veh_current_lane = traci.vehicle.getLaneID(veh)
+            # controllo se il veicolo è in una lane entrante
+            if veh_current_lane in junction.incomingLanes:
+                if veh not in junction.vehiclesEntering:
+                    junction.vehiclesEntering.append(veh)
+                    vehicles[veh].spawnDistances.append(0)
+                    vehicles[veh].edgeIndex += 1
+                spawn_distance = traci.vehicle.getDistance(veh) - sum(vehicles[veh].spawnDistances[:-1])
+                vehicles[veh].spawnDistances[-1] = spawn_distance
+
+            # controllo se il veicolo è all'interno della junction
+            elif veh_current_lane in junction.crossingLanes:
+                spawn_distance = traci.vehicle.getDistance(veh) - \
+                                 sum(vehicles[veh].spawnDistances[:-1])
+                vehicles[veh].spawnDistances[-1] = spawn_distance
+            # controllo se il veicolo è in una lane uscente
+            elif veh_current_lane in junction.outgoingLanes:
+                if veh in junction.vehiclesEntering:
+                    junction.vehiclesEntering.remove(veh)
+
+    return vehicles, junctions, two_way_junctions
 
 
 def saveResults(vehicles, departed, junctions):
-
     travelTimes = []  # lista dei tempi di percorrenza medi per ogni veicolo
     varTravelTime = 0  # varianza rispetto al tempo di percorrenza
     headTimes = []  # lista dei tempi passati in testa medi per ogni veicolo

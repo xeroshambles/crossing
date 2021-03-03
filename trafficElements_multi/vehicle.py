@@ -55,15 +55,15 @@ class Vehicle:
 
         self.seed = seed
         self.index = 0
+        self.edgeIndex = -1
         self.travelTimes = [0]
         self.headTimes = [0]
         self.tailTimes = [0]
         self.speeds = [[]]
-        self.isEntered = 0
+        self.spawnDistances = []
         self.startingLane = ''
 
         random.seed(self.numericID + self.seed)
-
 
     def makeBid(self):
         """Funzione utilizzata per effettuare le offerte per le aste. Attualmente impiegata solo dalla versione delle
@@ -144,8 +144,8 @@ class Vehicle:
             stopLane = traci.vehicle.getLaneID(self.getID())
             try:
                 traci.vehicle.setStop(self.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
-                                    pos=traci.lane.getLength(stopLane))
-            except traci.exceptions.TraCIException as e:
+                                      pos=traci.lane.getLength(stopLane))
+            except traci.TraCIException as e:
                 # print(f"ERROR: {e}")
                 pass
             self.isOnAStop = True
@@ -247,6 +247,45 @@ class Vehicle:
         collisioni."""
         traci.vehicle.setLaneChangeMode(self.getID(), 512)
         self.canChangeLane = False
+
+    def checkLane(self):
+        """Funzione che setta la lane corretta da far seguire al veicolo."""
+        route = traci.vehicle.getRouteID(self.idVehicle)
+        edges = traci.route.getEdges(route)
+        lane = traci.vehicle.getLaneID(self.idVehicle)
+        suffix = int(lane[-1])
+
+        start = int(edges[self.edgeIndex][1:3])
+        end = int(edges[self.edgeIndex + 1][4:6])
+        junctionID = int(edges[self.edgeIndex][4:6])
+
+        # if self.idVehicle == 'idV36':
+        #     print(f"EDGES: {edges}, START: {start}, END: {end}, SUFFIX: {suffix}, INDEX: {self.edgeIndex}")
+
+        if (start - junctionID == -5 and end - junctionID == -1) or (start - junctionID == 1 and end -
+                                                                     junctionID == -5) or (start -
+                                                                                           junctionID == 5 and end
+                                                                                           - junctionID == 1) or \
+                (start - junctionID == -1 and end - junctionID == 5):
+            if suffix != 0:
+                traci.vehicle.setLaneChangeMode(self.getID(), 1365)
+                traci.vehicle.changeLane(self.idVehicle, 0, 10000.0)
+        if (start - junctionID == -5 and end - junctionID == 5) or (start - junctionID == 1 and end -
+                                                                    junctionID == -1) or (start -
+                                                                                          junctionID == 5 and end
+                                                                                          - junctionID == -5) or \
+                (start - junctionID == -1 and end - junctionID == 1):
+            if suffix != 1:
+                traci.vehicle.setLaneChangeMode(self.getID(), 1365)
+                traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
+        if (start - junctionID == -5 and end - junctionID == 1) or (start - junctionID == 1 and end -
+                                                                    junctionID == 5) or (start -
+                                                                                         junctionID == 5 and end
+                                                                                         - junctionID == -1) or \
+                (start - junctionID == -1 and end - junctionID == -5):
+            if suffix != 2:
+                traci.vehicle.setLaneChangeMode(self.getID(), 1365)
+                traci.vehicle.changeLane(self.idVehicle, 2, 10000.0)
 
     def allowLaneChange(self):
         """Funzione che riattiva la possibilità di cambiare corsia."""

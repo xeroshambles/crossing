@@ -53,7 +53,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
     """Di seguito inizializzo gli incroci che fanno parte della simulazione"""
 
-    junctions = createJunctions(vehicles)
+    junctions, two_way_junctions = createJunctions(vehicles)
 
     junctIDList = [junction for junction in junctions if junction.nID in four_way_junctions_ids]
 
@@ -153,9 +153,9 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                                 # controllo se l'auto non ha subito rallentamenti e la fermo in 16 m
                                 if round(traci.vehicle.getSpeed(auto), 2) == round(traci.vehicle.getMaxSpeed(auto), 2):
                                     info = arrivoAuto(auto, passaggio[incrID], ferme[incrID], attesa[incrID],
-                                                          matrice_incrocio[incrID], passaggio_cella[incrID],
-                                                          traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
-                                                          x_auto_in_celle, y_auto_in_celle, junction.node_ids)
+                                                      matrice_incrocio[incrID], passaggio_cella[incrID],
+                                                      traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
+                                                      x_auto_in_celle, y_auto_in_celle, vehicles, junction.node_ids)
                                     passaggio[incrID] = info[0]
                                     attesa[incrID] = info[1]
                                     ferme[incrID] = info[2]
@@ -186,9 +186,9 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
                                     if dist_to_stop + 2 >= dist_stop:
                                         info = arrivoAuto(auto, passaggio[incrID], ferme[incrID], attesa[incrID],
-                                                              matrice_incrocio[incrID], passaggio_cella[incrID],
-                                                              traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
-                                                              x_auto_in_celle, y_auto_in_celle, junction.node_ids)
+                                                          matrice_incrocio[incrID], passaggio_cella[incrID],
+                                                          traiettorie_matrice, stop[incrID], secondi_di_sicurezza,
+                                                          x_auto_in_celle, y_auto_in_celle, vehicles, junction.node_ids)
                                         passaggio[incrID] = info[0]
                                         attesa[incrID] = info[1]
                                         ferme[incrID] = info[2]
@@ -201,7 +201,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                 for x in passaggio_cella[incrID]:
                     rotta = traci.vehicle.getRouteID(x[0])
                     edges = traci.route.getEdges(rotta)
-                    lane = getLaneIndexFromEdges(edges, junction.node_ids)
+                    lane = getLaneIndexFromEdges(edges, vehicles[x[0]], junction.node_ids)
                     if lane != 0:
                         # se l'auto non gira a destra
                         if x[1] is None and x[2] is None:
@@ -212,7 +212,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                                                                                           limiti_celle_Y[incrID])
 
                 info = percorso_libero(passaggio[incrID], matrice_incrocio[incrID], passaggio_cella[incrID],
-                                    limiti_celle_X[incrID], limiti_celle_Y[incrID], stop[incrID], junction.node_ids)
+                                       limiti_celle_X[incrID], limiti_celle_Y[incrID], stop[incrID], vehicles,
+                                       junction.node_ids)
                 passaggio[incrID] = info[0]
                 matrice_incrocio[incrID] = info[1]
                 passaggio_cella[incrID] = info[2]
@@ -224,12 +225,12 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                         if auto_ferma in ferme[incrID]:
                             if get_from_matrice_incrocio(auto_ferma, matrice_incrocio[incrID], traiettorie_matrice,
                                                          stop[incrID], secondi_di_sicurezza, x_auto_in_celle,
-                                                         y_auto_in_celle):
+                                                         y_auto_in_celle, junction.node_ids, junction.nID):
                                 # vedo se il suo percorso è libero e nel caso la faccio partire
                                 info = avantiAuto(auto_ferma, passaggio[incrID], attesa[incrID], ferme[incrID],
-                                                      matrice_incrocio[incrID], passaggio_cella[incrID],
-                                                      traiettorie_matrice, stop[incrID], x_auto_in_celle,
-                                                      y_auto_in_celle)
+                                                  matrice_incrocio[incrID], passaggio_cella[incrID],
+                                                  traiettorie_matrice, stop[incrID], x_auto_in_celle,
+                                                  y_auto_in_celle, vehicles, junction.node_ids)
 
                                 passaggio[incrID] = info[0]
                                 attesa[incrID] = info[1]
@@ -258,7 +259,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
         n_step += 1
 
         if n_step % sec == 0:
-            vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, int(n_step / sec), schema)
+            vehicles, junctions, two_way_junctions = checkVehicles(vehicles, departed_vehicles, junctions,
+                                                                   two_way_junctions, int(n_step / sec), schema)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 

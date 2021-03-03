@@ -45,7 +45,7 @@ if __name__ == "__main__":
         config_file = os.path.join(os.path.split(__file__)[0], project,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
 
-        choice = checkChoice(['d', 'D', 'g', 'G'],
+        choice = checkChoice(['g', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
                              'd = dati): ',
                              "\nUtilizzo la modalità dati come default...",
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
         sumoDict = {'multi_classic_precedence_classic_tls': sumoCmd,
                     'multi_classic_precedence': sumoCmd,
-                    'multi_auction_classic_precedence': sumoCmd + ['--step-length', '0.050'],
+                    'multi_auction_classic_precedence': sumoCmd,
                     'multi_reservation_classic_precedence': sumoCmd + ['--step-length', '0.050']}
 
         schema = ''
