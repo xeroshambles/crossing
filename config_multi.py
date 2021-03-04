@@ -2,7 +2,7 @@
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
 # Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
-numberOfVehicles = [[50, 50, 50, 50]]
+numberOfVehicles = [[200, 200, 200, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare

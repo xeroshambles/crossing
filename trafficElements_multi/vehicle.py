@@ -259,7 +259,9 @@ class Vehicle:
         end = int(edges[self.edgeIndex + 1][4:6])
         junctionID = int(edges[self.edgeIndex][4:6])
 
-        # if self.idVehicle == 'idV36':
+        traci.vehicle.setLaneChangeMode(self.idVehicle, 1365)
+
+        # if self.idVehicle == 'idV560':
         #     print(f"EDGES: {edges}, START: {start}, END: {end}, SUFFIX: {suffix}, INDEX: {self.edgeIndex}")
 
         if (start - junctionID == -5 and end - junctionID == -1) or (start - junctionID == 1 and end -
@@ -268,7 +270,6 @@ class Vehicle:
                                                                                            - junctionID == 1) or \
                 (start - junctionID == -1 and end - junctionID == 5):
             if suffix != 0:
-                traci.vehicle.setLaneChangeMode(self.getID(), 1365)
                 traci.vehicle.changeLane(self.idVehicle, 0, 10000.0)
         if (start - junctionID == -5 and end - junctionID == 5) or (start - junctionID == 1 and end -
                                                                     junctionID == -1) or (start -
@@ -276,7 +277,6 @@ class Vehicle:
                                                                                           - junctionID == -5) or \
                 (start - junctionID == -1 and end - junctionID == 1):
             if suffix != 1:
-                traci.vehicle.setLaneChangeMode(self.getID(), 1365)
                 traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
         if (start - junctionID == -5 and end - junctionID == 1) or (start - junctionID == 1 and end -
                                                                     junctionID == 5) or (start -
@@ -284,7 +284,6 @@ class Vehicle:
                                                                                          - junctionID == -1) or \
                 (start - junctionID == -1 and end - junctionID == -5):
             if suffix != 2:
-                traci.vehicle.setLaneChangeMode(self.getID(), 1365)
                 traci.vehicle.changeLane(self.idVehicle, 2, 10000.0)
 
     def allowLaneChange(self):

@@ -32,7 +32,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     """Di seguito inizializzo gli incroci che fanno parte della simulazione"""
 
-    junctions, two_way_junctions = createJunctions(vehicles)
+    junctions = createJunctions(vehicles)
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
@@ -75,8 +75,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                 if len(vehAtJunction) > 0:
                     crossingManager.allowCrossing()
 
-        vehicles, junctions, two_way_junctions = checkVehicles(vehicles, departed_vehicles, junctions,
-                                                               two_way_junctions, totalTime, schema)
+        vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, totalTime, schema)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 

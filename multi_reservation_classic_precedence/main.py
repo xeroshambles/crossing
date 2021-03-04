@@ -53,7 +53,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
     """Di seguito inizializzo gli incroci che fanno parte della simulazione"""
 
-    junctions, two_way_junctions = createJunctions(vehicles)
+    junctions = createJunctions(vehicles)
 
     junctIDList = [junction for junction in junctions if junction.nID in four_way_junctions_ids]
 
@@ -259,8 +259,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
         n_step += 1
 
         if n_step % sec == 0:
-            vehicles, junctions, two_way_junctions = checkVehicles(vehicles, departed_vehicles, junctions,
-                                                                   two_way_junctions, int(n_step / sec), schema)
+            vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, int(n_step / sec), schema)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 

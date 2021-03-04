@@ -1,4 +1,5 @@
 import sys
+from config_multi import *
 from abc import abstractmethod, ABC
 
 from .auction import CompetitiveAuction, CooperativeAuction
@@ -473,79 +474,71 @@ class Junction(ABC):
         return vehicles
 
 
-class TwoWayJunction(Junction):
-    """Classe inutilizzata e incompleta."""
+class FourWayJunction(Junction):
+    """Caso di incrocio a quattro strade, unici utilizzati nelle simulazioni finali."""
 
     def __init__(self, numericID, vehicles, iP, sM, bM, groupDimension=None):
         super().__init__(numericID, vehicles, iP, sM, bM, groupDimension)
-        self.edgeCalc()
-        self.laneCalc()
-        self.incomingLanesCalc()
-        self.outgoingLanesCalc()
-        self.laneNESOMapping()
-        self.findPossibleRoutes()
-
-    def edgeCalc(self):
-        """Essendo i casi di incroci a 2 solo 4 l'assegnamento può essere diretto"""
-        cases = {
-            1: ['e01_02', 'e02_01', 'e01_06', 'e06_01'],
-            5: ['e05_04', 'e04_05', 'e05_10', 'e10_05'],
-            21: ['e21_22', 'e22_21', 'e21_16', 'e16_21'],
-            25: ['e25_24', 'e24_25', 'e25_20', 'e20_25'],
-        }
-
-        try:
-            self.edges = cases[self.nID]
-        except KeyError:
-            print("ID errato: un incrocio a 2 vie può avere ID 1, 5, 21, 25", file=sys.stderr)
-
-    def laneNESOMapping(self):
-        cases = {
-            1: {'N': [], 'E': self.lanes[:4], 'S': self.lanes[4:], 'O': []},
-            5: {'N': [], 'E': [], 'S': self.lanes[4:], 'O': self.lanes[:4]},
-            21: {'N': self.lanes[4:], 'E': self.lanes[:4], 'S': [], 'O': []},
-            25: {'N': self.lanes[4:], 'E': [], 'S': [], 'O': self.lanes[:4]},
-        }
-        self.mapNESO = cases[self.nID]
-
-    def findPossibleRoutes(self):
-        counter = -1
-        for i in self.lanes:
-            counter += 1
-            if int(i[1:3]) == self.nID:
-                continue
-            nextEdge = self.lanes[(counter + 2) % 8]
-            self.possibleRoutes[i] = [nextEdge]
-
-    def findClashingEdges(self):
-        """Nel caso dell'incrocio di 2 strade non ci sono mai interferenze, perciò non saranno indicate interferenze."""
-        return {}
-
-    def isClashing(self, route1, route2):
-        """Nel caso dell'incrocio di 2 strade non ci sono mai interferenze, perciò sarà sempre ritornato False."""
-        return False
-
-
-class ThreeWayJunction(Junction):
-    """Caso di incrocio a tre strade, non utilizzato nelle simulazioni finali ma completo."""
-
-    def __init__(self, numericID, vehicles, iP, sM, bM, groupDimension=None):
-        super().__init__(numericID, vehicles, iP, sM, bM, groupDimension)
-        self.edgeCalc()
+        if self.nID in two_way_junctions_ids:
+            self.edgeCalcTwo()
+        elif self.nID in three_way_junctions_ids:
+            self.edgeCalcThree()
+        else:
+            self.edgeCalcFour()
         self.laneCalc()
         self.incomingLanesCalc()
         self.outgoingLanesCalc()
         self.crossingLanesCalc()
         self.laneNESOMapping()
-        self.findPossibleRoutes()
+        if self.nID in two_way_junctions_ids:
+            self.findPossibleRoutesTwo()
+        elif self.nID in three_way_junctions_ids:
+            self.findPossibleRoutesThree()
+        else:
+            self.findPossibleRoutesFour()
         self.findClashingEdges()
 
         self.tails_per_lane = {lane: [] for lane in self.incomingLanes}
 
-    def edgeCalc(self):
+    def edgeCalcTwo(self):
         """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
         pre-processing."""
-        # bs sta per 'baseString'
+
+        bs = f'{"0" if self.nID <= 9 else ""}'  # determina se deve essere presente uno 0 prima degli id degli edge
+        bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
+        bsA1 = f'{"0" if self.nID + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
+        bsS5 = f'{"0" if self.nID - 5 <= 9 else ""}'  # come bs, ma sottrae 5
+        bsA5 = f'{"0" if self.nID + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
+
+        if self.nID == 1:
+            self.node_ids = [self.nID + 25, self.nID + 1, self.nID + 5, self.nID + 50]
+            self.edges = [f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
+                          f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
+                          f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
+                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}']
+        elif self.nID == 5:
+            self.node_ids = [self.nID + 25, self.nID + 50, self.nID + 5, self.nID - 1]
+            self.edges = [f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
+                          f'e{self.nID + 50}_{bs}{self.nID}, 'f'e{bs}{self.nID}_{self.nID + 50}',
+                          f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
+                          f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
+        elif self.nID == 21:
+            self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 25, self.nID + 50]
+            self.edges = [f'e{bsS5}{self.nID - 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS5}{self.nID - 5}',
+                          f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
+                          f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
+                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}']
+        elif self.nID == 25:
+            self.node_ids = [self.nID - 5, self.nID + 50, self.nID + 25, self.nID - 1]
+            self.edges = [f'e{bsS5}{self.nID - 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS5}{self.nID - 5}',
+                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}',
+                          f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
+                          f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
+
+    def edgeCalcThree(self):
+        """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
+        pre-processing."""
+
         bs = f'{"0" if self.nID <= 9 else ""}'  # determina se deve essere presente uno 0 prima degli id degli edge
         bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
         bsA1 = f'{"0" if self.nID + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
@@ -553,49 +546,73 @@ class ThreeWayJunction(Junction):
         bsA5 = f'{"0" if self.nID + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
 
         if self.nID in range(2, 5):
-            self.node_ids = [self.nID + 1, self.nID + 5, self.nID - 1]
-        if self.nID in [10, 15, 20]:
-            self.node_ids = [self.nID - 5, self.nID + 5, self.nID - 1]
-        if self.nID in range(22, 25):
-            self.node_ids = [self.nID - 5, self.nID + 1, self.nID - 1]
-        if self.nID in [6, 11, 16]:
-            self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 5]
+            self.node_ids = [self.nID + 25, self.nID + 1, self.nID + 5, self.nID - 1]
+            self.edges = [f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
+                          f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
+                          f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
+                          f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
+        elif self.nID in [10, 15, 20]:
+            self.node_ids = [self.nID - 5, self.nID + 50, self.nID + 5, self.nID - 1]
+            self.edges = [f'e{bsS5}{self.nID - 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS5}{self.nID - 5}',
+                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}',
+                          f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
+                          f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
+        elif self.nID in range(22, 25):
+            self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 50, self.nID - 1]
+            self.edges = [f'e{bsS5}{self.nID - 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS5}{self.nID - 5}',
+                          f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
+                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}',
+                          f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
+        elif self.nID in [6, 11, 16]:
+            self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 5, self.nID + 50]
+            self.edges = [f'e{bsS5}{self.nID - 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS5}{self.nID - 5}',
+                          f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
+                          f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
+                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}']
 
-        if self.nID % 5 != 1 and self.nID % 5 != 0:
-            self.edges = [f'e{bs}{self.nID}_{bsS1}{self.nID - 1}', f'e{bsS1}{self.nID - 1}_{bs}{self.nID}',
-                          f'e{bs}{self.nID + 1}_{bsA1}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}', ]
-            if self.nID in range(2, 5):
-                self.edges += [f'e{bs}{self.nID + 5}_{bsA5}{self.nID}', f'e{bsA5}{self.nID}_{bs}{self.nID + 5}', ]
-            if self.nID in range(22, 25):
-                self.edges += [f'e{bs}{self.nID - 5}_{bsS5}{self.nID}', f'e{bsS5}{self.nID}_{bs}{self.nID - 5}', ]
-        else:
-            self.edges = [f'e{bs}{self.nID}_{bsS5}{self.nID - 5}', f'e{bsS5}{self.nID - 5}_{bs}{self.nID}',
-                          f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}', ]
-            if self.nID % 5 == 1:
-                self.edges += [f'e{bs}{self.nID}_{bsA1}{self.nID + 1}', f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', ]
-            if self.nID % 5 == 0:
-                self.edges += [f'e{bs}{self.nID}_{bsS1}{self.nID - 1}', f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', ]
+    def edgeCalcFour(self):
+        """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
+        pre-processing."""
+
+        bs = f'{"0" if self.nID <= 9 else ""}'  # determina se deve essere presente uno 0 prima degli id degli edge
+        bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
+        bsA1 = f'{"0" if self.nID + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
+        bsS5 = f'{"0" if self.nID - 5 <= 9 else ""}'  # come bs, ma sottrae 5
+        bsA5 = f'{"0" if self.nID + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
+
+        self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 5, self.nID - 1]
+
+        self.edges = [f'e{bsS5}{self.nID - 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS5}{self.nID - 5}',
+                      f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
+                      f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
+                      f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
 
     def laneNESOMapping(self):
         """Mapping effettuato sulla base della rete utilizzata, altamente specifico per essa."""
-        cases = {
-            str([2, 3, 4]): {'N': [], 'E': self.lanes[6:12], 'S': self.lanes[12:], 'O': self.lanes[:6]},
-            str([22, 23, 24]): {'N': self.lanes[12:], 'E': self.lanes[6:12], 'S': [], 'O': self.lanes[:6]},
-            str([6, 11, 16]): {'N': self.lanes[:6], 'E': self.lanes[12:], 'S': self.lanes[6:12], 'O': []},
-            str([10, 15, 20]): {'N': self.lanes[:6], 'E': [], 'S': self.lanes[6:12], 'O': self.lanes[12:]},
-        }
-        pos = ''
-        for i in cases.keys():
-            if str(self.nID) in i:
-                pos = i
-                break
-        try:
-            self.mapNESO = cases[pos]
-        except KeyError:
-            print("Errore nell'inserimento dell'ID, o se ne è scelto uno scorretto o l'incrocio deve essere a 1/2 vie.",
-                  file=sys.stderr)
+        self.mapNESO = {'N': self.lanes[:6], 'E': self.lanes[6:12], 'S': self.lanes[12:18], 'O': self.lanes[18:]}
 
-    def findPossibleRoutes(self):
+    def getArrivalEdgesFromEdge(self, start):
+        """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
+        destinazione"""
+
+        distance = -1
+        i = 0
+        edges = []
+        trovato = False
+
+        while True:
+            if self.node_ids[i % 4] == start:
+                trovato = True
+            if trovato:
+                distance += 1
+                edges.append(self.node_ids[(i + 1) % 4])
+                if distance == 3:
+                    break
+            i += 1
+
+        return edges[0], edges[1], edges[2]
+
+    def findPossibleRoutesTwo(self):
         """Metodo che trova tutte le possibili corsie obbiettivo (outgoing lanes) per ogni corsia entrante
         nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
         generalizzabili."""
@@ -617,479 +634,341 @@ class ThreeWayJunction(Junction):
                 bsE2S5 = f'{"0" if e2 - 5 <= 9 else ""}'  # come bs, ma sottrae 5
                 bsE1A5 = f'{"0" if e1 + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
                 bsE2A5 = f'{"0" if e2 + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
+                bsE1S25 = f'{"0" if e2 - 25 <= 9 else ""}'  # come bs, ma sottrae 25
+                bsE1S50 = f'{"0" if e2 - 50 <= 9 else ""}'  # come bs, ma sottrae 25
 
                 frontEdge = rightEdge = leftEdge = ''
 
-                """Determino se sono presenti strade a destra e ne calcolo l'id"""
-                if suffix == '0':
-                    if self.nID in [2, 3, 4]:
-                        if e1 - e2 == 1:
-                            frontEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S1}{e2 - 1}_{suffix}'
-                        if e1 - e2 == 5:
-                            rightEdge = f'e{bsE1S5}{e1 - 5}_{bsE2A1}{e2 + 1}_{suffix}'
-                        if e1 - e2 == -1:
-                            rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}'
-                    if self.nID in [10, 15, 20]:
-                        if e1 - e2 == -5:
-                            rightEdge = f'e{bsE1A5}{e1 + 5}_{bsE2S1}{e2 - 1}_{suffix}'
-                        if e1 - e2 == 5:
-                            frontEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S5}{e2 - 5}_{suffix}'
-                        if e1 - e2 == -1:
-                            rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}'
-                    if self.nID in [22, 23, 24]:
-                        if e1 - e2 == -5:
-                            rightEdge = f'e{bsE1A5}{e1 + 5}_{bsE2S1}{e2 - 1}_{suffix}'
-                        if e1 - e2 == 1:
-                            rightEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S5}{e2 - 5}_{suffix}'
-                        if e1 - e2 == -1:
-                            frontEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A1}{e2 + 1}_{suffix}'
-                    if self.nID in [6, 11, 16]:
-                        if e1 - e2 == -5:
-                            frontEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A5}{e2 + 5}_{suffix}'
-                        if e1 - e2 == 1:
-                            rightEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S5}{e2 - 5}_{suffix}'
-                        if e1 - e2 == 5:
-                            rightEdge = f'e{bsE1A5}{e1 - 5}_{bsE2A5}{e2 + 1}_{suffix}'
+                if self.nID == 1:
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == 1:
+                                rightEdge = f'e{bsE1A5}{e1 - 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 5:
+                                rightEdge = f'e{bsE1S5}{e1 - 5}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 25:
+                                rightEdge = f'e{bsE1S25}{e1 - 25}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 50:
+                                rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
 
-                """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
-                if suffix == '1':
-                    if self.nID in [2, 3, 4]:
-                        if abs(e1 - e2) == 1:
-                            frontEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A1}{e2 + 1}_{suffix}' if e1 < e2 \
-                                else f'e{bsE1S1}{e1 - 1}_{bsE2S1}{e2 - 1}_{suffix}'
-                        if e1 - e2 == 5:
-                            rightEdge = f'e{bsE1S5}{e1 - 5}_{bsE2A1}{e2 + 1}_{suffix}'
-                            leftEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S1}{e2 - 1}_{suffix}'
-                    if self.nID in [10, 15, 20]:
-                        if abs(e1 - e2) == 5:
-                            frontEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A5}{e2 + 5}_{suffix}' if e1 < e2 \
-                                else f'e{bsE1S5}{e1 - 5}_{bsE2S5}{e2 - 5}_{suffix}'
-                        if e1 - e2 == -1:
-                            rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}'
-                            leftEdge = f'e{bsE1A1}{e1 + 1}_{bsE2S5}{e2 - 5}_{suffix}'
-                    if self.nID in [22, 23, 24]:
-                        if e1 - e2 == -5:
-                            rightEdge = f'e{bsE1A5}{e1 + 5}_{bsE2S1}{e2 - 1}_{suffix}'
-                            leftEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A1}{e2 + 1}_{suffix}'
-                        if abs(e1 - e2) == 1:
-                            frontEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A1}{e2 + 1}_{suffix}' if e1 < e2 \
-                                else f'e{bsE1S1}{e1 - 1}_{bsE2S1}{e2 - 1}_{suffix}'
-                    if self.nID in [6, 11, 16]:
-                        if abs(e1 - e2) == 5:
-                            frontEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A5}{e2 + 5}_{suffix}' if e1 < e2 \
-                                else f'e{bsE1S5}{e1 - 5}_{bsE2S5}{e2 - 5}_{suffix}'
-                        if e1 - e2 == 1:
-                            rightEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S5}{e2 - 5}_{suffix}'
-                            leftEdge = f'e{bsE1S1}{e1 - 1}_{bsE2A5}{e2 + 5}_{suffix}'
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == 1:
+                                frontEdge = f'e{bsE1S1}{e1 - 1}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 5:
+                                frontEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 25:
+                                frontEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 50:
+                                frontEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A1}{e2 + 1}_{suffix}'
 
-                """Determino se sono presenti strade a sinistra e ne calcolo l'id"""
-                if suffix == '2':
-                    if self.nID in [2, 3, 4]:
-                        if e1 - e2 == 1:
-                            leftEdge = f'e{bsE1S1}{e1 - 1}_{bsE2A5}{e2 + 5}_{suffix}'
-                        if e1 - e2 == 5:
-                            leftEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S1}{e2 - 1}_{suffix}'
-                        if e1 - e2 == -1:
-                            frontEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A1}{e2 + 1}_{suffix}'
-                    if self.nID in [10, 15, 20]:
-                        if e1 - e2 == -5:
-                            frontEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A5}{e2 + 5}_{suffix}'
-                        if e1 - e2 == 5:
-                            leftEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S1}{e2 - 1}_{suffix}'
-                        if e1 - e2 == -1:
-                            leftEdge = f'e{bsE1A1}{e1 + 1}_{bsE2S5}{e2 - 5}_{suffix}'
-                    if self.nID in [22, 23, 24]:
-                        if e1 - e2 == -5:
-                            leftEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A1}{e2 + 1}_{suffix}'
-                        if e1 - e2 == 1:
-                            frontEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S1}{e2 - 1}_{suffix}'
-                        if e1 - e2 == -1:
-                            leftEdge = f'e{bsE1A1}{e1 + 1}_{bsE2S5}{e2 - 5}_{suffix}'
-                    if self.nID in [6, 11, 16]:
-                        if e1 - e2 == -5:
-                            leftEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A1}{e2 + 1}_{suffix}'
-                        if e1 - e2 == 1:
-                            leftEdge = f'e{bsE1S1}{e1 - 1}_{bsE2A5}{e2 + 5}_{suffix}'
-                        if e1 - e2 == 5:
-                            frontEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S5}{e2 - 5}_{suffix}'
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == 1:
+                                leftEdge = f'e{bsE1S1}{e1 - 1}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 5:
+                                leftEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 25:
+                                leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 50:
+                                leftEdge = f'e{bsE1S50}{e1 - 50}_{e2 + 25}_{suffix}'
+
+                elif self.nID == 5:
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == -1:
+                                rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 5:
+                                rightEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 25:
+                                leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == 50:
+                                rightEdge = f'e{bsE1S50}{e1 - 50}_{e2 + 25}_{suffix}'
+
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == -1:
+                                frontEdge = f'e{bsE1A1}{e1 + 1}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 5:
+                                frontEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 25:
+                                frontEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 50:
+                                frontEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S1}{e2 - 1}_{suffix}'
+
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == -1:
+                                leftEdge = f'e{bsE1A1}{e1 + 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 5:
+                                leftEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == 25:
+                                leftEdge = f'e{bsE1S25}{e1 - 25}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 50:
+                                leftEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
+
+                elif self.nID == 21:
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == -5:
+                                rightEdge = f'e{bsE1A5}{e1 + 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 1:
+                                rightEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 25:
+                                rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 50:
+                                rightEdge = f'e{bsE1S50}{e1 - 50}_{e2 + 25}_{suffix}'
+
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == -5:
+                                frontEdge = f'e{bsE1A5}{e1 + 5}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 1:
+                                frontEdge = f'e{bsE1S1}{e1 - 1}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 25:
+                                rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 50:
+                                frontEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A1}{e2 + 1}_{suffix}'
+
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == -5:
+                                leftEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 1:
+                                leftEdge = f'e{bsE1S1}{e1 - 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 25:
+                                leftEdge = f'e{bsE1S25}{e1 - 25}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 50:
+                                leftEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S5}{e2 - 5}_{suffix}'
+
+                elif self.nID == 25:
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == -5:
+                                rightEdge = f'e{bsE1A5}{e1 + 5}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == -1:
+                                rightEdge = f'e{bsE1A1}{e1 + 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 25:
+                                rightEdge = f'e{bsE1S25}{e1 - 25}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 50:
+                                rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S5}{e2 - 5}_{suffix}'
+
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == -5:
+                                frontEdge = f'e{bsE1A5}{e1 + 5}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == -1:
+                                frontEdge = f'e{bsE1A1}{e1 + 1}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 25:
+                                frontEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 50:
+                                frontEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S1}{e2 - 1}_{suffix}'
+
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == -5:
+                                leftEdge = f'e{bsE1A5}{e1 + 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == -1:
+                                leftEdge = f'e{bsE1A1}{e1 + 1}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 25:
+                                leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == 50:
+                                leftEdge = f'e{bsE1S50}{e1 - 50}_{e2 + 25}_{suffix}'
 
                 """Salvo le traiettorie trovate."""
                 self.possibleRoutes[lane] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
 
-    def findClashingRoutesForCentralStreets(self, base, obj):
-        """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
-        all'incrocio, in particolare quelle che si hanno nell'andare diritto."""
+    def findPossibleRoutesThree(self):
+        """Metodo che trova tutte le possibili corsie obbiettivo (outgoing lanes) per ogni corsia entrante
+        nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
+        generalizzabili."""
+        neso = {0: 'N', 1: 'E', 2: 'S', 3: 'O'}
 
-        e1 = int(base[1:3])
-        e2 = int(base[4:6])
-        e3 = int(obj[1:3])
-        e4 = int(obj[4:6])
-
-        bs = f'{"0" if self.nID <= 9 else ""}'
-        bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
-        bsA1 = f'{"0" if self.nID + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
-        bsS5 = f'{"0" if self.nID - 5 <= 9 else ""}'  # come bs, ma aggiunge 5
-        bsA5 = f'{"0" if self.nID + 5 <= 9 else ""}'  # come bs, ma sottrae 5
-
-        if self.nID in [2, 3, 4]:
-            if e1 - e2 == 1:
-                clashingEdge1 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-            if e1 - e2 == 5:
-                if e3 - e4 == -1:
-                    clashingEdge1 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-                if e3 - e4 == 1:
-                    clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-                    clashingEdge2 = (f'e{bsS1}{self.nID + 1}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge2)
-                    clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge3)
-                    clashingEdge4 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge4)
-            if e1 - e2 == -1:
-                clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-        if self.nID in [10, 15, 20]:
-            if e1 - e2 == -5:
-                clashingEdge1 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-            if e1 - e2 == 5:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-            if e1 - e2 == -1:
-                if e3 - e4 == 5:
-                    clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-                    clashingEdge2 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge2)
-                    clashingEdge3 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge3)
-                    clashingEdge4 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge4)
-                if e3 - e4 == -5:
-                    clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-        if self.nID in [22, 23, 24]:
-            if e1 - e2 == -5:
-                if e3 - e4 == -1:
-                    clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-                    clashingEdge2 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge2)
-                    clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge3)
-                    clashingEdge4 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge4)
-                if e3 - e4 == 1:
-                    clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-            if e1 - e2 == 1:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-            if e1 - e2 == -1:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-        if self.nID in [6, 11, 16]:
-            if e1 - e2 == -5:
-                clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-            if e1 - e2 == 1:
-                if e3 - e4 == 5:
-                    clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-                    clashingEdge2 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge2)
-                    clashingEdge3 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge3)
-                    clashingEdge4 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                     f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                    self.clashingEdges[base][obj].append(clashingEdge4)
-                if e3 - e4 == -5:
-                    clashingEdge1 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                     f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                    self.clashingEdges[base][obj].append(clashingEdge1)
-            if e1 - e2 == 5:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS5}{self.nID + 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS5}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-
-    def findClashingRoutesForLeftStreets(self, base, obj):
-        """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
-        all'incrocio, in particolare quelle che si hanno nello svoltare a sinistra."""
-
-        e1 = int(base[1:3])
-        e2 = int(base[4:6])
-
-        bs = f'{"0" if self.nID <= 9 else ""}'
-        bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
-        bsA1 = f'{"0" if self.nID + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
-        bsS5 = f'{"0" if self.nID - 5 <= 9 else ""}'  # come bs, ma aggiunge 5
-        bsA5 = f'{"0" if self.nID + 5 <= 9 else ""}'  # come bs, ma sottrae 5
-
-        if self.nID in [2, 3, 4]:
-            if e1 - e2 == 1:
-                clashingEdge1 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-                clashingEdge4 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge4)
-            if e1 - e2 == 5:
-                clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-            if e1 - e2 == -1:
-                clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-        if self.nID in [10, 15, 20]:
-            if e1 - e2 == -5:
-                clashingEdge1 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-            if e1 - e2 == 5:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-                clashingEdge4 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge4)
-            if e1 - e2 == -1:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-        if self.nID in [22, 23, 24]:
-            if e1 - e2 == -5:
-                clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-            if e1 - e2 == 1:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS1}{self.nID - 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-            if e1 - e2 == -1:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_1')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-                clashingEdge4 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS1}{self.nID - 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge4)
-        if self.nID in [6, 11, 16]:
-            if e1 - e2 == -5:
-                clashingEdge1 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsA1}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-                clashingEdge4 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge4)
-            if e1 - e2 == 1:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsA5}{self.nID + 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsS5}{self.nID - 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-            if e1 - e2 == 5:
-                clashingEdge1 = (f'e{bsS5}{self.nID - 5}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA1}{self.nID + 1}_2')
-                self.clashingEdges[base][obj].append(clashingEdge1)
-                clashingEdge2 = (f'e{bsS5}{self.nID + 1}_{bs}{self.nID}_1',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_1')
-                self.clashingEdges[base][obj].append(clashingEdge2)
-                clashingEdge3 = (f'e{bsS5}{self.nID + 1}_{bs}{self.nID}_2',
-                                 f'e{bs}{self.nID}_{bsA5}{self.nID + 5}_2')
-                self.clashingEdges[base][obj].append(clashingEdge3)
-
-    def findClashingEdges(self):
-        """Funzione che avvia la ricerca delle traiettorie incidentali nell'incrocio."""
-        # inizializzo le liste dei possibili clash
-        # print(f'possible routes are: {self.possibleRoutes}')
-        for i in self.possibleRoutes:
-            self.clashingEdges[i] = {self.possibleRoutes[i][j]: [] for j in self.possibleRoutes[i]
-                                     if self.possibleRoutes[i][j] != ''}
-        # print(f'found possible clashing edges: {self.clashingEdges}')
-        for i in self.possibleRoutes:
-            for j in self.possibleRoutes[i]:
-                if self.possibleRoutes[i][j] == '':
+        for c in neso:
+            for lane in self.mapNESO[neso[c]]:
+                e1 = int(lane[1:3])
+                if e1 == self.nID:
                     continue
-                k = self.possibleRoutes[i][j]
-                if i[-1] == '1':  # front
-                    self.findClashingRoutesForCentralStreets(i, k)
-                if i[-1] == '2':  # left
-                    self.findClashingRoutesForLeftStreets(i, k)
+                e2 = int(lane[4:6])
+                suffix = lane[-1]
 
+                bsE1S1 = f'{"0" if e1 - 1 <= 9 else ""}'  # come bs, ma sottrae 1
+                bsE2S1 = f'{"0" if e2 - 1 <= 9 else ""}'  # come bs, ma sottrae 1
+                bsE1A1 = f'{"0" if e1 + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
+                bsE2A1 = f'{"0" if e2 + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
+                bsE1S5 = f'{"0" if e1 - 5 <= 9 else ""}'  # come bs, ma sottrae 5
+                bsE2S5 = f'{"0" if e2 - 5 <= 9 else ""}'  # come bs, ma sottrae 5
+                bsE1A5 = f'{"0" if e1 + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
+                bsE2A5 = f'{"0" if e2 + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
+                bsE1S25 = f'{"0" if e1 - 25 <= 9 else ""}'  # come bs, ma sottrae 25
+                bsE1S50 = f'{"0" if e1 - 50 <= 9 else ""}'  # come bs, ma sottrae 50
 
-class FourWayJunction(Junction):
-    """Caso di incrocio a quattro strade, unici utilizzati nelle simulazioni finali."""
+                frontEdge = rightEdge = leftEdge = ''
 
-    def __init__(self, numericID, vehicles, iP, sM, bM, groupDimension=None):
-        super().__init__(numericID, vehicles, iP, sM, bM, groupDimension)
-        self.edgeCalc()
-        self.laneCalc()
-        self.incomingLanesCalc()
-        self.outgoingLanesCalc()
-        self.crossingLanesCalc()
-        self.laneNESOMapping()
-        self.findPossibleRoutes()
-        self.findClashingEdges()
+                if self.nID in range(2, 5):
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == -1:
+                                rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 1:
+                                rightEdge = f'e{bsE1S1}{e1 - 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 5:
+                                rightEdge = f'e{bsE1S5}{e1 - 5}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 25:
+                                rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
 
-        self.tails_per_lane = {lane: [] for lane in self.incomingLanes}
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == -1:
+                                frontEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 1:
+                                frontEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == 5:
+                                frontEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 25:
+                                frontEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A5}{e2 + 5}_{suffix}'
 
-    def edgeCalc(self):
-        """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
-        pre-processing."""
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == -1:
+                                leftEdge = f'e{bsE1A1}{e1 + 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 1:
+                                leftEdge = f'e{bsE1S1}{e1 - 1}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 5:
+                                leftEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == 25:
+                                leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A1}{e2 + 1}_{suffix}'
 
-        bs = f'{"0" if self.nID <= 9 else ""}'  # determina se deve essere presente uno 0 prima degli id degli edge
-        bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
-        bsA1 = f'{"0" if self.nID + 1 <= 9 else ""}'  # come bs, ma aggiunge 1
-        bsS5 = f'{"0" if self.nID - 5 <= 9 else ""}'  # come bs, ma sottrae 5
-        bsA5 = f'{"0" if self.nID + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
+                elif self.nID in [10, 15, 20]:
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == -5:
+                                rightEdge = f'e{bsE1A5}{e1 + 5}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == -1:
+                                rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 5:
+                                leftEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 50:
+                                rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S5}{e2 - 5}_{suffix}'
 
-        self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 5, self.nID - 1]
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == -5:
+                                frontEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == -1:
+                                frontEdge = f'e{bsE1A1}{e1 + 1}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 5:
+                                frontEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 50:
+                                frontEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S1}{e2 - 1}_{suffix}'
 
-        self.edges = [f'e{bs}{self.nID}_{bsS1}{self.nID - 1}', f'e{bsS1}{self.nID - 1}_{bs}{self.nID}',
-                      f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
-                      f'e{bs}{self.nID}_{bsS5}{self.nID - 5}', f'e{bsS5}{self.nID - 5}_{bs}{self.nID}',
-                      f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}']
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == -5:
+                                leftEdge = f'e{bsE1A5}{e1 + 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == -1:
+                                leftEdge = f'e{bsE1A1}{e1 + 1}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 5:
+                                leftEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == 50:
+                                leftEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
 
-    def laneNESOMapping(self):
-        """Mapping effettuato sulla base della rete utilizzata, altamente specifico per essa."""
-        self.mapNESO = {'N': self.lanes[12:18], 'E': self.lanes[6:12], 'S': self.lanes[-6:], 'O': self.lanes[:6]}
+                elif self.nID in range(22, 25):
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == -5:
+                                rightEdge = f'e{bsE1A5}{e1 + 5}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == -1:
+                                rightEdge = f'e{bsE1A1}{e1 + 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 1:
+                                rightEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 25:
+                                rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A1}{e2 + 1}_{suffix}'
 
-    def getArrivalEdgesFromEdge(self, start):
-        """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-        destinazione"""
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == -5:
+                                frontEdge = f'e{bsE1A5}{e1 + 5}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == -1:
+                                frontEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 1:
+                                frontEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S1}{e2 - 1}_{suffix}'
+                            if e1 - e2 == 25:
+                                frontEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S5}{e2 - 5}_{suffix}'
 
-        distance = -1
-        i = 0
-        edges = []
-        trovato = False
-        while True:
-            if self.node_ids[i % 4] == start:
-                trovato = True
-            if trovato:
-                distance += 1
-                edges.append(self.node_ids[(i + 1) % 4])
-                if distance == 3:
-                    break
-            i += 1
-        return edges[0], edges[1], edges[2]
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == -5:
+                                leftEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == -1:
+                                leftEdge = f'e{bsE1A1}{e1 + 1}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 1:
+                                leftEdge = f'e{bsE1S1}{e1 - 1}_{e2 + 25}_{suffix}'
+                            if e1 - e2 == 25:
+                                leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
 
-    def findPossibleRoutes(self):
+                elif self.nID in [6, 11, 16]:
+                    """Determino se sono presenti curve a destra e ne calcolo l'id"""
+                    if suffix == '0':
+                        if self.mapNESO[neso[(c - 1) % 4]]:
+                            if e1 - e2 == -5:
+                                rightEdge = f'e{bsE1A5}{e1 + 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 1:
+                                rightEdge = f'e{bsE1S1}{e1 - 1}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 5:
+                                rightEdge = f'e{bsE1S5}{e1 - 5}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 50:
+                                rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
+
+                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    if suffix == '1':
+                        if self.mapNESO[neso[(c + 2) % 4]]:
+                            if e1 - e2 == -5:
+                                frontEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 1:
+                                frontEdge = f'e{bsE1S1}{e1 - 1}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 5:
+                                frontEdge = f'e{bsE1S5}{e1 - 5}_{bsE2S5}{e2 - 5}_{suffix}'
+                            if e1 - e2 == 50:
+                                frontEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A1}{e2 + 1}_{suffix}'
+
+                    """Determino se sono presenti curve a sinistra e ne calcolo l'id"""
+                    if suffix == '2':
+                        if self.mapNESO[neso[(c + 1) % 4]]:
+                            if e1 - e2 == -5:
+                                leftEdge = f'e{bsE1A5}{e1 + 5}_{bsE2A1}{e2 + 1}_{suffix}'
+                            if e1 - e2 == 1:
+                                leftEdge = f'e{bsE1S1}{e1 - 1}_{bsE2A5}{e2 + 5}_{suffix}'
+                            if e1 - e2 == 5:
+                                leftEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 50}_{suffix}'
+                            if e1 - e2 == 50:
+                                leftEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S5}{e2 - 5}_{suffix}'
+
+                """Salvo le traiettorie trovate."""
+                self.possibleRoutes[lane] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
+
+    def findPossibleRoutesFour(self):
         """Metodo che trova tutte le possibili corsie obbiettivo (outgoing lanes) per ogni corsia entrante
         nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
         generalizzabili."""
