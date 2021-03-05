@@ -4,6 +4,9 @@ from inpout import redirect_output
 from reservation.main import stopXY, limiti_celle, costruzioneArray
 from classic_tls.main import intermediateRun as tlsRun
 from classic_precedence.main import intermediateRun as precedenceRun
+from precedence_with_auction.main import intermediateRun as precedenceWithAuctionRun
+from reservation.main import intermediateRun as reservationRun
+from precedence_with_auction.trafficElements.junction import FourWayJunction
 import traci
 from sumolib import miscutils
 
@@ -14,17 +17,6 @@ def noVehiclesInJunction(vehicles):
     if not [veh for veh in vehs_in_net if traci.vehicle.getLaneID(veh)[0:3] == f":n{junction_id}"]:
         return True
     return False
-
-def resetProject(vehicles):
-    vehs_in_net = [veh for veh in vehicles if veh in traci.vehicle.getIDList()]
-    #vehs_in_net = [veh for veh in vehs_in_net if traci.vehicle.getLaneID(veh)[1:3] != "07"]
-    for veh in vehs_in_net:
-        traci.vehicle.setSpeedMode(veh, "11111")
-            #shape = traci.junction.getShape('n' + str(junction_id))  # forma dell'incrocio
-            #current_lane = traci.vehicle.getLaneID(veh)
-            #if not current_lane:
-            #    current_lane = vehicles[veh].startingLane
-            #traci.vehicle.setStop(veh, vehicles[veh].startingLane[: -2], laneIndex=vehicles[veh].startingLane[-1], pos=traci.lane.getLength(current_lane))#, duration=50)
 
 def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, simulationMode, instantPay, dimensionOfGroups, train):
     """ Param1: Array of number of vehicles to be spawned for each main step
@@ -62,8 +54,17 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
 
+
+
+    #params di precedence_with_auction
+
+    """Di seguito inizializzo l'incrocio che fa parte della simulazione, assegnandogli una classe che ne descriva
+        il comportamento specifico"""
+
+    junction = FourWayJunction(junction_id, vehicles, iP=instantPay, sM=simulationMode, bM=False,
+                               groupDimension=dimensionOfGroups)
     #params di reservation
-    step_incr = 0.250  # incremento di step della simulazione
+    step_incr = 0.050  # incremento di step della simulazione
     sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
     # istanzio le matrici [nome_incrocio, variabile]
     attesa = []  # ordine di arrivo su lista, si resetta quando le auto liberano incrocio
@@ -120,38 +121,66 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     # fino a quando tutte le auto da inserire hanno terminato la corsa
 
     n_step = 0
-
+    incrID = 0
 
     # ////////////////////////////FOR LOOP RESPECTIVE SIM//////////////////////////////////////////
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         # if main step
         """Lancio il progetto giusto per ogni step"""
-        if main_step < len(numberOfVehicles):
+        if mainStep(totalTime, stepsSpawn, numberOfVehicles) and main_step < len(numberOfVehicles):
             project = train[str(main_step)]
-        print(f"step: {main_step}, project: {project}\n")
+        print(f"step: {totalTime}, main_step: {main_step}, project: {project}\n")
 
-        if totalTime != 0 and mainStep(totalTime, stepsSpawn, numberOfVehicles):
-            traci.trafficlight.setProgram("n7", 1) #all red
+        #if mainStep(totalTime, stepsSpawn, numberOfVehicles):
+            #traci.trafficlight.setProgram("n7", "all_red") #all red
+            #if project == "reservation":
+                #arrayAuto = costruzioneArray(arrayAuto)
+
+        '''
         if project == "classic_tls":
-            if totalTime != 0 and noVehiclesInJunction(vehicles):
+            #if noVehiclesInJunction(vehicles):
+                #if totalTime != 0 and noVehiclesInJunction(vehicles):
                 #resetProject(vehicles)
-                traci.trafficlight.setProgram("n7", 0) # tls
-            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane = tlsRun(numberOfVehicles, schema, totalTime,
-                                                                                                      departed, intermediate_departed,
-                                                                                                      vehicles, tails_per_lane, main_step,
-                                                                                                      mean_th_per_num)
+                #traci.trafficlight.setProgram("n7", "tls") # tls
+            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step = tlsRun(numberOfVehicles,
+                                                                                                                    schema, totalTime,
+                                                                                                                    departed, intermediate_departed,
+                                                                                                                    vehicles, tails_per_lane, main_step,
+                                                                                                                    mean_th_per_num, step_incr, n_step, sec)
+        '''
         if project == "classic_precedence":
-            if totalTime != 0 and noVehiclesInJunction(vehicles):
+            #if noVehiclesInJunction(vehicles):
+                #if totalTime != 0 and noVehiclesInJunction(vehicles):
                 #resetProject(vehicles)
-                traci.trafficlight.setProgram("n7", 2)
+                #traci.trafficlight.setProgram("n7", "all_green")
+
+            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step = precedenceRun(numberOfVehicles,
+                                                                                                                    schema, totalTime,
+                                                                                                                    departed, intermediate_departed,
+                                                                                                                    vehicles, tails_per_lane, main_step,
+                                                                                                                    mean_th_per_num, step_incr, n_step, sec)
+        if project == "precedence_with_auction":
+            totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
+            mean_th_per_num = precedenceWithAuctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
+                    sec, schema, main_step, mean_th_per_num)
+
+        if project == "reservation":
+            #if noVehiclesInJunction(vehicles):
+                #if totalTime != 0 and noVehiclesInJunction(vehicles):
+                #resetProject(vehicles)
 
 
+                #traci.trafficlight.setProgram("n7", "all_green")
 
-            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane = precedenceRun(numberOfVehicles, schema,
-                                                                                                     totalTime, departed,
-                                                                                                     intermediate_departed,
-                                                                                                     vehicles, tails_per_lane,
-                                                                                                     main_step, mean_th_per_num)
+            mean_th_per_num, main_step, intermediate_departed, totalTime,\
+            departed, tails_per_lane, arrayAuto, lista_arrivo, stop, attesa,\
+            ferme, passaggio, matrice_incrocio, passaggio_cella, traiettorie_matrice,\
+            x_auto_in_celle, y_auto_in_celle, passaggio_precedente, n_step = reservationRun(numberOfVehicles, schema,
+                                                                                            totalTime, departed, intermediate_departed,
+                                                                                            vehicles, tails_per_lane, main_step, mean_th_per_num, arrayAuto,
+                                                                                            lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
+                                                                                            traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
+                                                                                            step_incr, passaggio_precedente, n_step, sec, incrID)
 
 
 
@@ -166,7 +195,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     traci.close()
 
-    redirect_output(path, index, True)
+    redirect_output(path, index, False)
 
-    queue.put([totalTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, stDevTailTime, maxTailTime,
+    queue.put([int(totalTime), meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, stDevTailTime, maxTailTime,
                meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, stoppedVehicles, throughput, mean_th_per_num])

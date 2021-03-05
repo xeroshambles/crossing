@@ -7,45 +7,41 @@ from precedence_with_auction.trafficElements.vehicle import Vehicle
 import traci
 
 
+def mainStep(total_time, n_steps, n_vehs):
+
+    r = round(total_time)
+
+    mod = r % (n_steps / len(n_vehs))
+
+    if mod == 0 and r <= n_steps:
+        return True
+    else:
+        return False
+
+def saveIntermediateResults(n_vehs, step, vehicles, departed):
+
+    passed = 0
+    floor = sum(n_vehs[0: step])
+    ceil = floor + n_vehs[step]
+    ids = [k for k in vehicles]
+    ids_c = ids[floor: ceil]
+    dummy = {k: vehicles[k] for k in vehicles if k in ids_c}
+    for veh in dummy:
+        if int(veh[-1]) < departed:
+            passed += vehicles[veh].hasPassed
+    mean_th = passed / departed
+
+    return mean_th
+
 def checkIfMainStep(total_time, n_steps, n_vehs, step, vehicles, departed, mean_th_per_num):
 
-    check, temp = saveIntermediateResults(total_time, n_steps, n_vehs, step, vehicles, departed)
-    if check:
-            mean_th_per_num[step] = temp
+    if mainStep(total_time, n_steps, n_vehs):
+            mean_th_per_num[step] = saveIntermediateResults(n_vehs, step, vehicles, departed)
             if step < (len(n_vehs) - 1):
                 step += 1
             departed = 0
 
     return mean_th_per_num, step, departed
-
-def mainStep(total_time, n_steps, n_vehs):
-    mod = total_time % (n_steps / len(n_vehs))
-    if mod == 0 and total_time <= n_steps:
-        return True
-    else:
-        return False
-
-
-def saveIntermediateResults(total_time, n_steps, n_vehs, step, vehicles, departed):
-
-    mean_th = -1
-    mod = total_time % (n_steps / len(n_vehs))
-    if mod == 0 and total_time <= n_steps:
-        passed = 0
-        floor = sum(n_vehs[0: step])
-        ceil = floor + n_vehs[step]
-        ids = [k for k in vehicles]
-        ids_c = ids[floor: ceil]
-        dummy = {k: vehicles[k] for k in vehicles if k in ids_c}
-        for veh in dummy:
-            if int(veh[-1]) < departed:
-                passed += vehicles[veh].hasPassed
-        mean_th = passed / departed
-
-    if mean_th == -1:
-        return False, mean_th
-    else:
-        return True, mean_th
 
 
 def getLaneIndexFromEdges(start, end, node_ids):
@@ -152,8 +148,6 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
     routes = generateRoutes(junction_id, node_ids)
     sequence = generateLaneSequence(33, 33, sum(numberOfVehicles), seed)
 
-    print(routes)
-
     for i in range(0, sum(numberOfVehicles)):
         if t < numberOfVehicles[c]:
             t += 1
@@ -196,7 +190,7 @@ def colorVehicles(numberOfVehicles):
             traci.vehicle.setColor(f'{i}', (255, 100, 0))  # arancione
 
 
-def checkVehicles(vehicles, tails_per_lane, time, schema):
+def checkVehicles(vehicles, tails_per_lane, time, schema, resetSpeedMode=False):
     """Funzione che controlla il posizionamento dei veicoli nell'incrocio e prende le misure"""
 
     vehs_loaded = traci.vehicle.getIDList()
@@ -207,10 +201,14 @@ def checkVehicles(vehicles, tails_per_lane, time, schema):
 
     # loop per tutti i veicoli
     for veh in vehs_loaded:
+
         veh_current_lane = traci.vehicle.getLaneID(veh)
 
         # controllo se il veicolo è in una lane entrante
         if veh_current_lane[4:6] == '07':
+            #if resetSpeedMode:
+                #traci.vehicle.setSpeedMode(veh, 31)
+                #pass
             vehicles[veh].startingLane = veh_current_lane
             spawn_distance = traci.vehicle.getDistance(veh)
             distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
