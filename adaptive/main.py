@@ -10,6 +10,141 @@ from precedence_with_auction.trafficElements.junction import FourWayJunction
 import traci
 from sumolib import miscutils
 
+
+def noMoreVehiclesToStop(vehicles_to_stop):
+    check = [k for k in vehicles_to_stop if vehicles_to_stop[k][0] == ""]
+    if not check:
+        return True
+    return False
+
+def getVehiclesInNet(vehicles):
+    return {k:v for (k,v) in vehicles.items() if k in traci.vehicle.getIDList()}
+
+def getVehiclesNotCrossed(vehicles):
+    vehs_in_net = getVehiclesInNet(vehicles)
+    return {k: v for (k,v) in vehs_in_net.items() if traci.vehicle.getLaneID(k)[0:3] != f":n{junction_id}" and traci.vehicle.getLaneID(k)[1:3] != f"0{junction_id}"}
+
+def getVehiclesWithHigherDistanceFromEndLaneThan(vehicles, m):
+    return {k:v for (k,v) in vehicles.items() if v.distanceFromEndLane() > m}
+
+def noVehiclesWithLesserDistanceFromEndLaneThan(vehicles, m):
+    if not {k:v for (k,v) in vehicles.items() if v.distanceFromEndLane() < m}:
+        return True
+    return False
+
+def getEnteringLanes():
+    return [l for l in lanes if l[1:3] != f"0{junction_id}"]
+
+def stopVehicle(obj, m=0):
+    """Funzione che blocca il veicolo a una certa distanza (metri) dalla fine della corsia in cui si trova"""
+
+    stopLane = traci.vehicle.getLaneID(obj.getID())
+    pos = traci.lane.getLength(stopLane) - m
+    try:
+        traci.vehicle.setStop(obj.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
+                              pos=pos)
+    except traci.exceptions.TraCIException as e:
+        # print(f"ERROR: {e}")
+        return False
+    obj.isOnAStop = True
+    return False
+
+
+def restartVehicle(obj, m=0):
+    """Funzione che sblocca il veicolo nel caso in cui questo fosse bloccato."""
+    try:
+        if obj.isStopped():
+            stopLane = traci.vehicle.getLaneID(obj.getID())
+            pos = traci.lane.getLength(stopLane) - m
+            traci.vehicle.setStop(obj.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
+                                  pos=pos, duration=0)
+            obj.isOnAStop = False
+    except:
+        return False
+    return True
+
+def tryStop(obj, tryButDontStop=False, m=0):
+    """Funzione che prova a fermare un veicolo e, se ci riesce, restituisce True (fermandolo), altrimenti
+    restituisce False.
+    :param tryButDontStop: parametro booleano che, se diverso da False, si limita a provare a stoppare il
+                     veicolo senza applicare effettivamente lo stop."""
+    try:
+        # provo a fermare il veicolo
+        if tryButDontStop:
+            # controllo che il veicolo non sia già fermo, altrimenti lo sbloccherei, se è già fermo posso restituire
+            # True, essendo il veicolo già fermo o in frenata
+            if not obj.isStopped():
+                stopLane = traci.vehicle.getLaneID(obj.getID())
+                pos = traci.lane.getLength(stopLane) - m
+                traci.vehicle.setStop(obj.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
+                                      pos=pos, duration=0)
+        else:
+            # tentativo riuscito
+            stopVehicle(obj, m)
+        return True
+    except:
+        # tentativo fallito
+        return False
+
+def isStoppable(obj, m=0):
+    """Funzione che controlla se un veicolo è fermabile in un certo momento. ATTENZIONE, il veicolo potrebbe
+    comunque non essere fermabile in momenti successivi."""
+    return tryStop(obj, tryButDontStop=True, m=m)
+
+
+def updateStopVehicles(vehicles, vehs_to_stop, m=0):
+    """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
+    possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
+    #prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
+    vehs_not_crossed = getVehiclesNotCrossed(vehicles)
+    vehs_eligible_to_be_stopped = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_not_crossed, 51)
+    entering_lanes = getEnteringLanes()
+
+    # prendo per ogni lane il veicolo piu prossimo agli m metri dall incrocio
+    for (k,v) in vehs_eligible_to_be_stopped.items():
+        stopLane = traci.vehicle.getLaneID(v.getID())
+        control = vehs_to_stop[stopLane]
+        distance_from_pos = v.distanceFromEndLane() - m
+        if control[0] == "" and isStoppable(v, m):
+
+            vehs_to_stop[stopLane] = (v, distance_from_pos)
+
+    for (l, tup) in vehs_to_stop.items():
+
+        if tup[0] != "":
+            if not tup[0].isOnAStop:
+                stopVehicle(tup[0], m)
+
+    return vehs_to_stop
+
+def stopVehicles(vehicles, m=0):
+    """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
+    possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
+    #prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
+    vehs_not_crossed = getVehiclesNotCrossed(vehicles)
+    vehs_eligible_to_be_stopped = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_not_crossed, 51)
+    entering_lanes = getEnteringLanes()
+    vehs_to_stop = {k: ("", -1) for k in entering_lanes}
+
+    # prendo per ogni lane il veicolo piu prossimo agli m metri dall incrocio
+    for (k,v) in vehs_eligible_to_be_stopped.items():
+        stopLane = traci.vehicle.getLaneID(v.getID())
+        control = vehs_to_stop[stopLane]
+        distance_from_pos = v.distanceFromEndLane() - m
+        if (control[0] == "" or distance_from_pos < control[1]) and isStoppable(v, m):
+            vehs_to_stop[stopLane] = (v, distance_from_pos)
+
+    for (l, tup) in vehs_to_stop.items():
+        if tup[0] != "":
+            stopVehicle(tup[0], m)
+
+    return vehs_to_stop
+
+def restartVehicles(vehicles_to_restart_per_lane, m=0):
+    for (l, tup) in vehicles_to_restart_per_lane.items():
+        if tup[0] != "":
+            restartVehicle(tup[0], m)
+
 def noVehiclesInJunction(vehicles):
     vehs_in_net = [veh for veh in vehicles if veh in traci.vehicle.getIDList()]
     if not vehs_in_net:
@@ -18,13 +153,27 @@ def noVehiclesInJunction(vehicles):
         return True
     return False
 
+def noVehiclesAtUnsafeDistance(vehicles, m):
+    vehs_not_crossed = getVehiclesNotCrossed(vehicles)
+    if noVehiclesInJunction(vehicles) and noVehiclesWithLesserDistanceFromEndLaneThan(vehs_not_crossed, m):
+        return True
+    return False
+
+
+def isTransitioning(old, new):
+    if old == new:
+        return False
+    return True
+
 def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, simulationMode, instantPay, dimensionOfGroups, train):
     """ Param1: Array of number of vehicles to be spawned for each main step
         Param2: Array of projects names to be used on each main step
         NON considero precedence with auction per il momento
     """
-
     main_step = 0
+    main_step_old = main_step
+    transitioning = "false"
+
     port = miscutils.getFreeSocketPort()
 
     redirect_output(path, index, True)
@@ -49,7 +198,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     non significativo, dandogli un colore diverso per distinguerli meglio all'interno della simulazione"""
 
     """ATTENZIONE: OCCORRE FARLA ANCHE PER PRECEDENCE WITH AUCTION"""
-    vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids)
+    vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids, allowLaneChange=False)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
@@ -63,6 +212,8 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     junction = FourWayJunction(junction_id, vehicles, iP=instantPay, sM=simulationMode, bM=False,
                                groupDimension=dimensionOfGroups)
+
+
     #params di reservation
     step_incr = 0.050  # incremento di step della simulazione
     sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
@@ -122,19 +273,27 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     n_step = 0
     incrID = 0
-
+    m = 55
     # ////////////////////////////FOR LOOP RESPECTIVE SIM//////////////////////////////////////////
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         # if main step
+
         """Lancio il progetto giusto per ogni step"""
-        if mainStep(totalTime, stepsSpawn, numberOfVehicles) and main_step < len(numberOfVehicles):
+        if transitioning == "false":
             project = train[str(main_step)]
         print(f"step: {totalTime}, main_step: {main_step}, project: {project}\n")
+        #if mainStep(totalTime, stepsSpawn, numberOfVehicles) and main_step < len(numberOfVehicles):
+        if transitioning == "true":
+            vehs = stopVehicles(vehicles, m)
+            transitioning = "waiting"
+        if transitioning == "waiting":
+            if not noMoreVehiclesToStop(vehs):
+                vehs = updateStopVehicles(vehicles, vehs, m)
+            if noVehiclesAtUnsafeDistance(vehicles, m):
+                restartVehicles(vehs, m)
+                transitioning = "false"
 
-        #if mainStep(totalTime, stepsSpawn, numberOfVehicles):
-            #traci.trafficlight.setProgram("n7", "all_red") #all red
-            #if project == "reservation":
-                #arrayAuto = costruzioneArray(arrayAuto)
+
 
         '''
         if project == "classic_tls":
@@ -168,8 +327,6 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
             #if noVehiclesInJunction(vehicles):
                 #if totalTime != 0 and noVehiclesInJunction(vehicles):
                 #resetProject(vehicles)
-
-
                 #traci.trafficlight.setProgram("n7", "all_green")
 
             mean_th_per_num, main_step, intermediate_departed, totalTime,\
@@ -181,7 +338,9 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
                                                                                             lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
                                                                                             traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
                                                                                             step_incr, passaggio_precedente, n_step, sec, incrID)
-
+        if isTransitioning(main_step_old, main_step):
+            transitioning = "true"
+            main_step_old = main_step
 
 
 
