@@ -29,14 +29,13 @@ def runDifferentAdaptiveSimulations(train, numberOfVehicles, schema, sumoCmd, pa
 
 
 
-def simulate(procs, queue, project):
+def simulate(procs, queue, project, train=None):
     """ This function allows to simulate <repeat> times using <repeat> different seeds"""
 
 
 
     for j in range(0, repeat):
-        dummy_train = {'0': "classic_tls", '1': "classic_precedence", '2': "classic_tls", '3': "classic_precedence"}
-        # dummy_train = {'0': "classic_precedence", '1': "classic_precedence", '2': "classic_precedence", '3': "classic_precedence"}
+
         args = {
             'classic_tls': (
                 numberOfVehicles[i], schema, sumoDict['classic_tls'], dir, j, queue, seeds[j]),
@@ -54,17 +53,18 @@ def simulate(procs, queue, project):
             'adaptive': (
                 numberOfVehicles[i], schema, sumoDict['adaptive'], dir, j, queue, seeds[j],
                 celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
-                simulationMode, instantPay, dimensionOfGroups, dummy_train
+                simulationMode, instantPay, dimensionOfGroups, train
             )
         }
         if project == 'adaptive':
-            p = Process(target=module.adaptiveSimulation, args=args[project])
+            if train:
+                p = Process(target=module.adaptiveSimulation, args=args[project])
+            else:
+                return queue
         else:
             p = Process(target=module.run, args=args[project])
         p.start()
         procs.append(p)
-
-
     for p in procs:
         p.join()
 
@@ -131,9 +131,6 @@ if __name__ == "__main__":
                         mode, arr=True)
 
 
-    #t = {'[50, 100, 150, 200]' : {}, '[20, 40, 60, 80]' : {}}
-    #adaptiveSimulation(t)
-
     for project in projs:
         project_label = projects_labels[projects.index(project)]
 
@@ -165,7 +162,6 @@ if __name__ == "__main__":
                              '\nInserire un carattere tra d e g!',
                              mode)
 
-
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
@@ -175,7 +171,7 @@ if __name__ == "__main__":
                     'classic_precedence': sumoCmd,
                     'reservation': sumoCmd + ["--step-length", "0.050"],
                     'precedence_with_auction': sumoCmd + ["--step-length", "0.250"],
-                    'adaptive': sumoCmd}
+                    'adaptive': sumoCmd + ["--step-length", "0.050"]}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -218,8 +214,12 @@ if __name__ == "__main__":
 
             print(f'\nUtilizzo un set di {numberOfVehicles[i]} veicoli in {stepsSpawn} steps...')
 
+            # dummy_train = {'0': "classic_precedence", '1': "reservation", '2': "classic_tls", '3': "reservation"}
+            dummy_train = {'0': "classic_precedence", '1': "reservation", '2': "precedence_with_auction",
+                           '3': "classic_precedence"}
+
             procs = []
-            queue = simulate(project=project , procs=[], queue=queue)
+            queue = simulate(project=project , procs=[], queue=queue, train=dummy_train)
 
             intermediate_group_measures = collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures,
                                                     single_measures, groups, titles,

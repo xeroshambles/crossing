@@ -7,6 +7,55 @@ from precedence_with_auction.trafficElements.junction import FourWayJunction
 import traci
 from sumolib import miscutils
 
+def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
+                    sec, schema, main_step, mean_th_per_num):
+    traci.simulationStep()
+    totalTime += step_incr
+    n_step += 1
+    departed += traci.simulation.getDepartedNumber()
+    intermediate_departed += traci.simulation.getDepartedNumber()
+
+    """Ciclo principale dell'applicazione"""
+
+    """Prime operazioni sull'incrocio"""
+
+    vehAtJunction = junction.getVehiclesAtJunction()
+    crossingManager = junction.getCrossingManager()
+    crossingManager.updateCrossingStatus(vehicles)
+
+    """Flusso principale"""
+
+    for idVeh in vehAtJunction:
+        if idVeh in vehicles:
+            objVeh = vehicles[idVeh]
+
+            if objVeh.distanceFromEndLane() < 50:
+                if objVeh not in crossingManager.getCurrentPartecipants():
+                    crossingManager.updateVehicleStatus(objVeh)
+                # se non è gia in una auction, non e stoppato
+                if objVeh.distanceFromEndLane() < 15:
+                    if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
+                            crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
+                            and objVeh not in crossingManager.nonStoppedVehicles:
+                        junction.createAuction(objVeh, vehicles)
+
+    if len(vehAtJunction) > 0:
+        crossingManager.allowCrossing()
+
+    if n_step % sec == 0:
+        vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
+
+        """Salvo i risultati intermedi se si conclude un main step"""
+
+        # step preliminare per rendere compatibili gli id dei veicoli con la funzione
+        vehicles_temp = {k.replace("idV", ""): v for (k, v) in vehicles.items()}
+        mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
+                                                                            main_step, vehicles_temp,
+                                                                            intermediate_departed, mean_th_per_num)
+
+    return totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
+           mean_th_per_num
+
 
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationMode, instantPay, dimensionOfGroups):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
@@ -90,13 +139,13 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
         if n_step % sec == 0:
             vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
 
-        """Salvo i risultati intermedi se si conclude un main step"""
+            """Salvo i risultati intermedi se si conclude un main step"""
 
-        # step preliminare per rendere compatibili gli id dei veicoli con la funzione
-        vehicles_temp = {k.replace("idV", ""): v for (k, v) in vehicles.items()}
-        mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
-                                                                            main_step, vehicles_temp,
-                                                                            intermediate_departed, mean_th_per_num)
+            # step preliminare per rendere compatibili gli id dei veicoli con la funzione
+            vehicles_temp = {k.replace("idV", ""): v for (k, v) in vehicles.items()}
+            mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
+                                                                                main_step, vehicles_temp,
+                                                                                intermediate_departed, mean_th_per_num)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
