@@ -55,7 +55,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
     junctions = createJunctions(vehicles)
 
-    junctIDList = [junction for junction in junctions if junction.nID in four_way_junctions_ids]
+    junctIDList = [junction for junction in junctions if junction.nID in central_junctions_ids]
 
     for junction in junctIDList:  # scorro lista incroci
         incrID = junctIDList.index(junction)  # popolo vettori e matrici inserendo le righe
@@ -109,7 +109,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
         vehicles = checkRoute(vehicles, numberOfVehicles)
 
-        for junction in junctIDList:  # scorro la lista incroci
+        for junction in junctIDList:  # scorro la lista degli incroci
             incrID = junctIDList.index(junction)
 
             for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione
@@ -139,7 +139,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                     if len(stop_temp) > 3:
                         if (stop_temp[3] - 13.5 <= pos[0] <= stop_temp[1] + 13.5) and \
                                 (stop_temp[2] - 13.5 <= pos[1] <= stop_temp[0] + 13.5):
-
                             traci.vehicle.setDecel(auto, 1.92901)
                             traci.vehicle.setAccel(auto, 1.92901)
                             # salvo l'auto leader di quella lane
@@ -225,7 +224,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                         if auto_ferma in ferme[incrID]:
                             if get_from_matrice_incrocio(auto_ferma, matrice_incrocio[incrID], traiettorie_matrice,
                                                          stop[incrID], secondi_di_sicurezza, x_auto_in_celle,
-                                                         y_auto_in_celle, junction.node_ids, junction.nID):
+                                                         y_auto_in_celle, vehicles, junction.node_ids):
                                 # vedo se il suo percorso è libero e nel caso la faccio partire
                                 info = avantiAuto(auto_ferma, passaggio[incrID], attesa[incrID], ferme[incrID],
                                                   matrice_incrocio[incrID], passaggio_cella[incrID],
@@ -245,8 +244,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
                         traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
                         traci.vehicle.setSpeedMode(auto_uscita[0], 7)
                 passaggio_precedente[incrID] = passaggio[incrID][:]
-        # ogni 10 step pulisco la matrice da valori troppo vecchi
-        if int(totalTime / step_incr) % 10 == 0:
+        # ogni 5 step pulisco la matrice da valori troppo vecchi
+        if int(totalTime / step_incr) % 5 == 0:
             matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
 
         # inserisco nell'array le auto presenti nella simulazione

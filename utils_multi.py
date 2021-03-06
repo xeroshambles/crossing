@@ -1,3 +1,4 @@
+import random
 from math import sqrt
 from config_multi import *
 
@@ -7,6 +8,8 @@ from trafficElements_multi.junction import FourWayJunction
 import traci
 
 
+
+
 def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, routeMode, instantPay, seed):
     """Genero veicoli per ogni route possibile nel caso di incrocio multiplo"""
 
@@ -14,6 +17,8 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, routeMode, insta
     t = 0
     depart = 0
     auto_every = (numberOfSteps / len(numberOfVehicles)) / numberOfVehicles[c]
+
+    random.seed(seed)
 
     for i in range(0, sum(numberOfVehicles)):
         if t < numberOfVehicles[c]:
@@ -25,7 +30,8 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, routeMode, insta
         depart += auto_every
         idV = f'idV{i}'
         vehicles[idV] = Vehicle(idV, seed, iP=instantPay)
-        base_route = vehicles[idV].generateRoute(static=routeMode)
+        # base_route = vehicles[idV].generateRoute(static=routeMode)
+        base_route = vehicles[idV].getInitialRoute()
         route = traci.simulation.findRoute(base_route[0], base_route[1])
         traci.route.add(f'route_{i}', route.edges)
         vehicles[idV].setEdgeObjective(base_route[1])
@@ -64,6 +70,8 @@ def createJunctions(vehicles):
     for i in range(1, 26):
         junctions.append(FourWayJunction(i, vehicles, iP=instantPay, sM=simulationMode, bM=False,
                                          groupDimension=dimensionOfGroups))
+        if i in vertex_junctions_ids:
+            print(junctions[i - 1].incomingLanes)
 
     return junctions
 
@@ -79,6 +87,9 @@ def getLaneIndexFromEdges(edges, vehicle, node_ids):
     start = int(edges[vehicle.edgeIndex][1:3])
     end = int(edges[vehicle.edgeIndex + 1][4:6])
 
+    #print(vehicle.idVehicle, vehicle.edgeIndex, traci.vehicle.getLaneID(vehicle.idVehicle),
+    # traci.vehicle.getRoute(vehicle.idVehicle), start, end, node_ids)
+
     while True:
         if node_ids[i % 4] == start:
             trovato = True
@@ -87,6 +98,8 @@ def getLaneIndexFromEdges(edges, vehicle, node_ids):
             if node_ids[i % 4] == end:
                 break
         i += 1
+
+    # print("RISOLTO")
 
     lane = 0
 
@@ -105,22 +118,14 @@ def getDistanceFromLaneEnd(spawn_distance, lane_length, shape, ID):
 
     min_x = shape[0][0]
     max_x = shape[0][0]
-    min_y = shape[0][1]
-    max_y = shape[0][1]
 
     for point in shape:
         if point[0] < min_x:
             min_x = point[0]
         if point[0] > max_x:
             max_x = point[0]
-        if point[1] < min_y:
-            min_y = point[1]
-        if point[1] > max_y:
-            max_y = point[1]
-    if max_x - min_x >= max_y - min_y:
-        lane_end = lane_length - (max_x - min_x) / 2
-    else:
-        lane_end = lane_length - (max_y - min_y) / 2
+
+    lane_end = lane_length - (max_x - min_x) / 2
 
     return lane_end - spawn_distance
 
@@ -156,14 +161,18 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
                 if veh not in junction.vehiclesEntering:
                     junction.vehiclesEntering.append(veh)
                     junction.departed[time - 1] += 1
-                    vehicles[veh].spawnDistances.append(0)
-                    vehicles[veh].edgeIndex += 1
                 spawn_distance = traci.vehicle.getDistance(veh) - sum(vehicles[veh].spawnDistances[:-1])
                 vehicles[veh].spawnDistances[-1] = spawn_distance
                 distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
                                                   junction.junction_shape, junction.nID)
-                # if distance > 60:
-                #     vehicles[veh].checkLane()
+                if distance >= 60:
+                    if vehicles[veh].isEntered == 0:
+                        vehicles[veh].edgeIndex += 1
+                        vehicles[veh].isEntered = 1
+                    traci.vehicle.setLaneChangeMode(veh, 1621)
+                    vehicles[veh].checkLane()
+                if distance < 50:
+                    traci.vehicle.setLaneChangeMode(veh, 512)
                 if distance < 15:
                     vehicles[veh].speeds[vehicles[veh].index].append(traci.vehicle.getSpeed(veh))
                 veh_length = traci.vehicle.getLength(veh)
@@ -177,7 +186,8 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (0, 0, 255))  # blu
                     # verifico se il veicolo è in coda
-                    elif leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane:
+                    elif leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane \
+                            and traci.vehicle.getColor(leader[0]) != (255, 255, 0, 255):
                         junction.tails_per_lane[veh_current_lane][time - 1] += 1
                         vehicles[veh].tailTimes[vehicles[veh].index] += 1
                         if schema in ['s', 'S']:
@@ -217,8 +227,10 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
             elif veh_current_lane in junction.outgoingLanes:
                 if veh in junction.vehiclesEntering:
                     vehicles[veh].startingLane = ''
+                    vehicles[veh].isEntered = 0
                     junction.vehiclesEntering.remove(veh)
                     junction.arrived[time - 1] += 1
+                    vehicles[veh].spawnDistances.append(0)
 
     return vehicles, junctions
 

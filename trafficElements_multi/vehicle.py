@@ -1,6 +1,7 @@
 import random
 import re
 from random import randint, choice
+from config_multi import *
 
 from .junction import Junction
 
@@ -60,8 +61,9 @@ class Vehicle:
         self.headTimes = [0]
         self.tailTimes = [0]
         self.speeds = [[]]
-        self.spawnDistances = []
+        self.spawnDistances = [0]
         self.startingLane = ''
+        self.isEntered = 0
 
         random.seed(self.numericID + self.seed)
 
@@ -259,32 +261,65 @@ class Vehicle:
         end = int(edges[self.edgeIndex + 1][4:6])
         junctionID = int(edges[self.edgeIndex][4:6])
 
-        traci.vehicle.setLaneChangeMode(self.idVehicle, 1365)
+        if self.idVehicle == 'idV38':
+            print(f"EDGES: {edges}, START: {start}, END: {end}, SUFFIX: {suffix}, INDEX: {self.edgeIndex}")
 
-        # if self.idVehicle == 'idV560':
-        #     print(f"EDGES: {edges}, START: {start}, END: {end}, SUFFIX: {suffix}, INDEX: {self.edgeIndex}")
-
+        # se il veicolo deve andare a destra al prossimo incrocio
         if (start - junctionID == -5 and end - junctionID == -1) or (start - junctionID == 1 and end -
                                                                      junctionID == -5) or (start -
                                                                                            junctionID == 5 and end
                                                                                            - junctionID == 1) or \
                 (start - junctionID == -1 and end - junctionID == 5):
-            if suffix != 0:
-                traci.vehicle.changeLane(self.idVehicle, 0, 10000.0)
-        if (start - junctionID == -5 and end - junctionID == 5) or (start - junctionID == 1 and end -
+            if suffix == 1:
+                if traci.vehicle.couldChangeLane(self.idVehicle, -1):
+                    traci.vehicle.changeLane(self.idVehicle, 0, 10000.0)
+                else:
+                    traci.vehicle.setSpeed(self.idVehicle, 3)
+            elif suffix == 2:
+                if traci.vehicle.couldChangeLane(self.idVehicle, -1):
+                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
+                else:
+                    traci.vehicle.setSpeed(self.idVehicle, 2)
+            else:
+                traci.vehicle.setSpeed(self.idVehicle, 13.89)
+
+        # se il veicolo deve andare diritto al prossimo incrocio
+        elif (start - junctionID == -5 and end - junctionID == 5) or (start - junctionID == 1 and end -
                                                                     junctionID == -1) or (start -
                                                                                           junctionID == 5 and end
                                                                                           - junctionID == -5) or \
                 (start - junctionID == -1 and end - junctionID == 1):
-            if suffix != 1:
-                traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
-        if (start - junctionID == -5 and end - junctionID == 1) or (start - junctionID == 1 and end -
+            if suffix == 0:
+                if traci.vehicle.couldChangeLane(self.idVehicle, 1):
+                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
+                else:
+                    traci.vehicle.setSpeed(self.idVehicle, 4)
+            elif suffix == 2:
+                if traci.vehicle.couldChangeLane(self.idVehicle, -1):
+                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
+                else:
+                    traci.vehicle.setSpeed(self.idVehicle, 2)
+            else:
+                traci.vehicle.setSpeed(self.idVehicle, 13.89)
+
+        # se il veicolo deve andare a sinistra al prossimo incrocio
+        elif (start - junctionID == -5 and end - junctionID == 1) or (start - junctionID == 1 and end -
                                                                     junctionID == 5) or (start -
                                                                                          junctionID == 5 and end
                                                                                          - junctionID == -1) or \
                 (start - junctionID == -1 and end - junctionID == -5):
-            if suffix != 2:
-                traci.vehicle.changeLane(self.idVehicle, 2, 10000.0)
+            if suffix == 0:
+                if traci.vehicle.couldChangeLane(self.idVehicle, 1):
+                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
+                else:
+                    traci.vehicle.setSpeed(self.idVehicle, 4)
+            elif suffix == 1:
+                if traci.vehicle.couldChangeLane(self.idVehicle, 1):
+                    traci.vehicle.changeLane(self.idVehicle, 2, 10000.0)
+                else:
+                    traci.vehicle.setSpeed(self.idVehicle, 3)
+            else:
+                traci.vehicle.setSpeed(self.idVehicle, 13.89)
 
     def allowLaneChange(self):
         """Funzione che riattiva la possibilità di cambiare corsia."""
@@ -334,6 +369,34 @@ class Vehicle:
     def resetTarget(self):
         """Funzione che resetta l'obiettivo a quello memorizzato prima di un cambio temporaneo."""
         traci.vehicle.changeTarget(self.getID(), self.edgeObjective)
+
+    def getInitialRoute(self):
+        origin = random.choice(external_north_ids + external_east_ids + external_south_ids + external_west_ids)
+        destination = random.choice(central_junctions_ids)
+        start = 0
+        end = 0
+        if origin in external_north_ids or origin in external_south_ids:
+            start += origin - 25
+        if origin in external_east_ids or origin in external_west_ids:
+            start += origin - 50
+
+        arrival_direction = random.choice([0, 1, 2, 3])
+
+        if arrival_direction == 0:
+            end += destination - 5
+        if arrival_direction == 1:
+            end += destination + 1
+        if arrival_direction == 2:
+            end += destination + 5
+        if arrival_direction == 3:
+            end += destination - 1
+
+        bsStart = f'{"0" if start <= 9 else ""}'
+        bsEnd = f'{"0" if end <= 9 else ""}'
+        bsDestination = f'{"0" if destination <= 9 else ""}'
+
+        return [f'e{origin}_{bsStart}{start}', f'e{bsEnd}{end}_{bsDestination}{destination}']
+
 
     def generateRoute(self, initEdge=None, static=False):
         """Metodo che genera una coppia di edge seguendo una serie di vincoli"""

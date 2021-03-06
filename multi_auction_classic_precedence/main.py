@@ -50,7 +50,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
         for junction in junctions:
 
-            if junction.nID in four_way_junctions_ids:
+            if junction.nID in central_junctions_ids:
 
                 vehAtJunction = junction.getVehiclesAtJunction()
                 crossingManager = junction.getCrossingManager()
@@ -66,7 +66,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                             if objVeh not in crossingManager.getCurrentPartecipants():
                                 crossingManager.updateVehicleStatus(objVeh)
                             # se non è gia in una auction, non e stoppato
-                            if objVeh.distanceFromEndLane() < 25:
+                            if objVeh.distanceFromEndLane() < 15:
                                 if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
                                         crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
                                         and objVeh not in crossingManager.nonStoppedVehicles:

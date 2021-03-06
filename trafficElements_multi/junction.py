@@ -1,4 +1,3 @@
-import sys
 from config_multi import *
 from abc import abstractmethod, ABC
 
@@ -479,30 +478,34 @@ class FourWayJunction(Junction):
 
     def __init__(self, numericID, vehicles, iP, sM, bM, groupDimension=None):
         super().__init__(numericID, vehicles, iP, sM, bM, groupDimension)
-        if self.nID in two_way_junctions_ids:
-            self.edgeCalcTwo()
-        elif self.nID in three_way_junctions_ids:
-            self.edgeCalcThree()
+
+        if self.nID in vertex_junctions_ids:
+            self.edgeCalcVertex()
+        elif self.nID in lateral_junctions_ids:
+            self.edgeCalcLateral()
         else:
-            self.edgeCalcFour()
+            self.edgeCalcCentral()
+
         self.laneCalc()
         self.incomingLanesCalc()
         self.outgoingLanesCalc()
         self.crossingLanesCalc()
         self.laneNESOMapping()
-        if self.nID in two_way_junctions_ids:
-            self.findPossibleRoutesTwo()
-        elif self.nID in three_way_junctions_ids:
-            self.findPossibleRoutesThree()
+
+        if self.nID in vertex_junctions_ids:
+            self.findPossibleRoutesVertex()
+        elif self.nID in lateral_junctions_ids:
+            self.findPossibleRoutesLateral()
         else:
-            self.findPossibleRoutesFour()
+            self.findPossibleRoutesCentral()
+
         self.findClashingEdges()
 
         self.tails_per_lane = {lane: [] for lane in self.incomingLanes}
 
-    def edgeCalcTwo(self):
-        """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
-        pre-processing."""
+    def edgeCalcVertex(self):
+        """Funzione utilizzata per calcolare le strade entranti ed uscenti dagli incroci ai vertici.
+        Funzione eseguita in fase di pre-processing."""
 
         bs = f'{"0" if self.nID <= 9 else ""}'  # determina se deve essere presente uno 0 prima degli id degli edge
         bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
@@ -519,7 +522,7 @@ class FourWayJunction(Junction):
         elif self.nID == 5:
             self.node_ids = [self.nID + 25, self.nID + 50, self.nID + 5, self.nID - 1]
             self.edges = [f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
-                          f'e{self.nID + 50}_{bs}{self.nID}, 'f'e{bs}{self.nID}_{self.nID + 50}',
+                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}',
                           f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
                           f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
         elif self.nID == 21:
@@ -535,9 +538,9 @@ class FourWayJunction(Junction):
                           f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
                           f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
 
-    def edgeCalcThree(self):
-        """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
-        pre-processing."""
+    def edgeCalcLateral(self):
+        """Funzione utilizzata per calcolare le strade entranti ed uscenti dagli incroci laterali.
+        Funzione eseguita in fase di pre-processing."""
 
         bs = f'{"0" if self.nID <= 9 else ""}'  # determina se deve essere presente uno 0 prima degli id degli edge
         bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
@@ -558,10 +561,10 @@ class FourWayJunction(Junction):
                           f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
                           f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
         elif self.nID in range(22, 25):
-            self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 50, self.nID - 1]
+            self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 25, self.nID - 1]
             self.edges = [f'e{bsS5}{self.nID - 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS5}{self.nID - 5}',
                           f'e{bsA1}{self.nID + 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA1}{self.nID + 1}',
-                          f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}',
+                          f'e{self.nID + 25}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 25}',
                           f'e{bsS1}{self.nID - 1}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsS1}{self.nID - 1}']
         elif self.nID in [6, 11, 16]:
             self.node_ids = [self.nID - 5, self.nID + 1, self.nID + 5, self.nID + 50]
@@ -570,9 +573,9 @@ class FourWayJunction(Junction):
                           f'e{bsA5}{self.nID + 5}_{bs}{self.nID}', f'e{bs}{self.nID}_{bsA5}{self.nID + 5}',
                           f'e{self.nID + 50}_{bs}{self.nID}', f'e{bs}{self.nID}_{self.nID + 50}']
 
-    def edgeCalcFour(self):
-        """Funzione utilizzata per calcolare le strade entranti ed uscenti dall'incrocio. Funzione eseguita in fase di
-        pre-processing."""
+    def edgeCalcCentral(self):
+        """Funzione utilizzata per calcolare le strade entranti ed uscenti dagli incroci interni.
+        Funzione eseguita in fase di pre-processing."""
 
         bs = f'{"0" if self.nID <= 9 else ""}'  # determina se deve essere presente uno 0 prima degli id degli edge
         bsS1 = f'{"0" if self.nID - 1 <= 9 else ""}'  # come bs, ma sottrae 1
@@ -593,7 +596,7 @@ class FourWayJunction(Junction):
 
     def getArrivalEdgesFromEdge(self, start):
         """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-        destinazione"""
+        destinazione."""
 
         distance = -1
         i = 0
@@ -612,10 +615,10 @@ class FourWayJunction(Junction):
 
         return edges[0], edges[1], edges[2]
 
-    def findPossibleRoutesTwo(self):
+    def findPossibleRoutesVertex(self):
         """Metodo che trova tutte le possibili corsie obbiettivo (outgoing lanes) per ogni corsia entrante
-        nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
-        generalizzabili."""
+        negli incroci ai vertici. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma
+        facilmente generalizzabili."""
         neso = {0: 'N', 1: 'E', 2: 'S', 3: 'O'}
 
         for c in neso:
@@ -652,7 +655,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == 1:
@@ -685,11 +688,11 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 5:
                                 rightEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 50}_{suffix}'
                             if e1 - e2 == 25:
-                                leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
+                                rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
                             if e1 - e2 == 50:
                                 rightEdge = f'e{bsE1S50}{e1 - 50}_{e2 + 25}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == -1:
@@ -726,7 +729,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 rightEdge = f'e{bsE1S50}{e1 - 50}_{e2 + 25}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == -5:
@@ -734,7 +737,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 1:
                                 frontEdge = f'e{bsE1S1}{e1 - 1}_{e2 + 50}_{suffix}'
                             if e1 - e2 == 25:
-                                rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S5}{e2 - 5}_{suffix}'
+                                frontEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S5}{e2 - 5}_{suffix}'
                             if e1 - e2 == 50:
                                 frontEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A1}{e2 + 1}_{suffix}'
 
@@ -763,7 +766,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S5}{e2 - 5}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == -5:
@@ -790,10 +793,10 @@ class FourWayJunction(Junction):
                 """Salvo le traiettorie trovate."""
                 self.possibleRoutes[lane] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
 
-    def findPossibleRoutesThree(self):
+    def findPossibleRoutesLateral(self):
         """Metodo che trova tutte le possibili corsie obbiettivo (outgoing lanes) per ogni corsia entrante
-        nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
-        generalizzabili."""
+        negli incroci laterali. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma
+        facilmente generalizzabili."""
         neso = {0: 'N', 1: 'E', 2: 'S', 3: 'O'}
 
         for c in neso:
@@ -830,7 +833,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 25:
                                 rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == -1:
@@ -863,11 +866,11 @@ class FourWayJunction(Junction):
                             if e1 - e2 == -1:
                                 rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}'
                             if e1 - e2 == 5:
-                                leftEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 50}_{suffix}'
+                                rightEdge = f'e{bsE1S5}{e1 - 5}_{e2 + 50}_{suffix}'
                             if e1 - e2 == 50:
                                 rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S5}{e2 - 5}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == -5:
@@ -904,7 +907,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 25:
                                 rightEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A1}{e2 + 1}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == -5:
@@ -941,7 +944,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 rightEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
 
-                    """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                    """Determino se sono presenti strade frontali e ne calcolo l'id"""
                     if suffix == '1':
                         if self.mapNESO[neso[(c + 2) % 4]]:
                             if e1 - e2 == -5:
@@ -968,7 +971,7 @@ class FourWayJunction(Junction):
                 """Salvo le traiettorie trovate."""
                 self.possibleRoutes[lane] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
 
-    def findPossibleRoutesFour(self):
+    def findPossibleRoutesCentral(self):
         """Metodo che trova tutte le possibili corsie obbiettivo (outgoing lanes) per ogni corsia entrante
         nell'incrocio. I calcoli effettuati da questa funzione sono specifici per una rete 5x5, ma facilmente
         generalizzabili."""
@@ -1003,7 +1006,7 @@ class FourWayJunction(Junction):
                             rightEdge = f'e{bsE1A1}{e1 + 1}_{bsE2A5}{e2 + 5}_{suffix}' if e1 < e2 \
                                 else f'e{bsE1S1}{e1 - 1}_{bsE2S5}{e2 - 5}_{suffix}'
 
-                """Determino se sono presenti strade frontali (passaggio diritto all'incrocio) e ne calcolo l'id"""
+                """Determino se sono presenti strade frontali e ne calcolo l'id"""
                 if suffix == '1':
                     if self.mapNESO[neso[(c + 2) % 4]]:
                         if abs(e1 - e2) == 1:

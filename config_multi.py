@@ -5,7 +5,7 @@ mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale 
 numberOfVehicles = [[200, 200, 200, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
-numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare
+numberOfSteps = 100  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
 seeds = [9001]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
@@ -24,10 +24,14 @@ dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per
 
 # Progetti: ["multi_classic_precedence_classic_tls", "multi_classic_precedence", "multi_reservation_classic_precedence",
 # "multi_auction_classic_precedence"]
-projects_multi = ["multi_classic_precedence"]
-two_way_junctions_ids = [1, 5, 21, 25]  # id degli incroci a 2 vie
-three_way_junctions_ids = [2, 3, 4, 6, 10, 11, 15, 16, 20, 22, 23, 24]  # id degli incroci a 3 vie
-four_way_junctions_ids = [7, 8, 9, 12, 13, 14, 17, 18, 19]  # id degli incroci a 4 vie
+projects_multi = ["multi_reservation_classic_precedence"]
+external_north_ids = [26, 27, 28, 29, 30]
+external_east_ids = [55, 60, 65, 70, 75]
+external_south_ids = [46, 47, 48, 49, 50]
+external_west_ids = [51, 56, 61, 66, 71]
+vertex_junctions_ids = [1, 5, 21, 25]  # id degli incroci ai vertici
+lateral_junctions_ids = [2, 3, 4, 6, 10, 11, 15, 16, 20, 22, 23, 24]  # id degli incroci laterali
+central_junctions_ids = [7, 8, 9, 12, 13, 14, 17, 18, 19]  # id degli incroci centrali
 routeMode = True  # generazione delle route dei veicoli in modo statico (True) o dinamico (False)
 
 labels_multi = ['Tempo medio di percorrenza (s)', 'Deviazione standard tempo di percorrenza (s)',

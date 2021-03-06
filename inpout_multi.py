@@ -249,8 +249,7 @@ def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
         ax.set_xticks(r)
         ax.set_title(project_label)
         if i > len(groups) - 3:
-            ax.set_xticklabels([f'I{incr}' for incr in range(1, 26) if incr in three_way_junctions_ids +
-                                four_way_junctions_ids])
+            ax.set_xticklabels([f'I{incr}' for incr in range(1, 26)])
         else:
             ax.set_xticklabels([f'{round(sum(eval(sim)) / stepsSpawn)} veicoli / s' for sim in sims])
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
