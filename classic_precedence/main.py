@@ -5,26 +5,8 @@ from inpout import redirect_output
 import traci
 from sumolib import miscutils
 
-def intermediateRun2(numberOfVehicles, schema,
-                    totalTime, departed, intermediate_departed, vehicles, tails_per_lane, main_step, mean_th_per_num):
 
-    traci.simulationStep()
-    totalTime += 1
-    departed += traci.simulation.getDepartedNumber()
-    intermediate_departed += traci.simulation.getDepartedNumber()
-
-    vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, totalTime, schema, True)
-
-    """Salvo i risultati intermedi se si conclude un main step"""
-
-    mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
-                                                                        main_step, vehicles,
-                                                                        intermediate_departed, mean_th_per_num)
-
-    return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane
-
-
-def intermediateRun(numberOfVehicles, schema, totalTime, departed, intermediate_departed, vehicles, tails_per_lane, main_step, mean_th_per_num, step_incr, n_step, sec):
+def intermediateRun(numberOfVehicles, schema, totalTime, departed, intermediate_departed, vehicles, tails_per_lane, main_step, mean_th_per_num, step_incr, n_step, sec, arrayAuto):
     totalTime += step_incr
     n_step += 1
     # faccio avanzare la simulazione
@@ -40,7 +22,9 @@ def intermediateRun(numberOfVehicles, schema, totalTime, departed, intermediate_
 
         mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles, main_step, vehicles, intermediate_departed, mean_th_per_num)
 
-    return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step
+    # NECESSARIO PER GARANTIRE COERENZA CON LE STRUTTURE DATI DELLA RESERVATION
+    arrayAuto = updateReservationArray(arrayAuto)
+    return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step, arrayAuto
 
 
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):

@@ -8,7 +8,7 @@ import traci
 from sumolib import miscutils
 
 def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
-                    sec, schema, main_step, mean_th_per_num):
+                    sec, schema, main_step, mean_th_per_num, arrayAuto):
     traci.simulationStep()
     totalTime += step_incr
     n_step += 1
@@ -53,8 +53,10 @@ def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, in
                                                                             main_step, vehicles_temp,
                                                                             intermediate_departed, mean_th_per_num)
 
+    # NECESSARIO PER GARANTIRE COERENZA CON LE STRUTTURE DATI DELLA RESERVATION
+    arrayAuto = updateReservationArray(arrayAuto)
     return totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
-           mean_th_per_num
+           mean_th_per_num, arrayAuto
 
 
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationMode, instantPay, dimensionOfGroups):

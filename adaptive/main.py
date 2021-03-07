@@ -97,7 +97,7 @@ def updateStopVehicles(vehicles, vehs_to_stop, m=0):
     possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
     #prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
     vehs_not_crossed = getVehiclesNotCrossed(vehicles)
-    vehs_eligible_to_be_stopped = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_not_crossed, 51)
+    vehs_eligible_to_be_stopped = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_not_crossed, m)
     entering_lanes = getEnteringLanes()
 
     # prendo per ogni lane il veicolo piu prossimo agli m metri dall incrocio
@@ -107,12 +107,14 @@ def updateStopVehicles(vehicles, vehs_to_stop, m=0):
         distance_from_pos = v.distanceFromEndLane() - m
         if control[0] == "" and isStoppable(v, m):
 
-            vehs_to_stop[stopLane] = (v, distance_from_pos)
+            vehs_to_stop[stopLane] = (v, distance_from_pos, k)
 
     for (l, tup) in vehs_to_stop.items():
 
         if tup[0] != "":
             if not tup[0].isOnAStop:
+                #riattivo il brake hard on stop
+                traci.vehicle.setSpeedMode(tup[0].getID(), 31)
                 stopVehicle(tup[0], m)
 
     return vehs_to_stop
@@ -122,7 +124,7 @@ def stopVehicles(vehicles, m=0):
     possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
     #prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
     vehs_not_crossed = getVehiclesNotCrossed(vehicles)
-    vehs_eligible_to_be_stopped = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_not_crossed, 51)
+    vehs_eligible_to_be_stopped = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_not_crossed, m)
     entering_lanes = getEnteringLanes()
     vehs_to_stop = {k: ("", -1) for k in entering_lanes}
 
@@ -132,10 +134,13 @@ def stopVehicles(vehicles, m=0):
         control = vehs_to_stop[stopLane]
         distance_from_pos = v.distanceFromEndLane() - m
         if (control[0] == "" or distance_from_pos < control[1]) and isStoppable(v, m):
-            vehs_to_stop[stopLane] = (v, distance_from_pos)
+            vehs_to_stop[stopLane] = (v, distance_from_pos, k)
 
     for (l, tup) in vehs_to_stop.items():
         if tup[0] != "":
+            # riattivo il brake hard on stop
+            #sm = traci.vehicle.getSpeedMode(tup[0].getID())
+            traci.vehicle.setSpeedMode(tup[0].getID(), 31)
             stopVehicle(tup[0], m)
 
     return vehs_to_stop
@@ -273,7 +278,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     n_step = 0
     incrID = 0
-    m = 55
+    m = 60
     # ////////////////////////////FOR LOOP RESPECTIVE SIM//////////////////////////////////////////
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         # if main step
@@ -289,45 +294,39 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
         if transitioning == "waiting":
             if not noMoreVehiclesToStop(vehs):
                 vehs = updateStopVehicles(vehicles, vehs, m)
+                if project == "reservation":
+                    arrayAuto, attesa, passaggio, ferme, rallentate = cleanReservationArrays(arrayAuto, attesa, passaggio, ferme, rallentate, vehicles, vehs)
             if noVehiclesAtUnsafeDistance(vehicles, m):
                 restartVehicles(vehs, m)
+                #if train[str(main_step)] == "reservation":
+                #    arrayAuto = costruzioneArray(arrayAuto)
                 transitioning = "false"
 
 
 
         '''
         if project == "classic_tls":
-            #if noVehiclesInJunction(vehicles):
-                #if totalTime != 0 and noVehiclesInJunction(vehicles):
-                #resetProject(vehicles)
-                #traci.trafficlight.setProgram("n7", "tls") # tls
-            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step = tlsRun(numberOfVehicles,
+            
+            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step, arrayAuto = tlsRun(numberOfVehicles,
                                                                                                                     schema, totalTime,
                                                                                                                     departed, intermediate_departed,
                                                                                                                     vehicles, tails_per_lane, main_step,
-                                                                                                                    mean_th_per_num, step_incr, n_step, sec)
+                                                                                                                    mean_th_per_num, step_incr, n_step, sec, arrayAuto)
         '''
         if project == "classic_precedence":
-            #if noVehiclesInJunction(vehicles):
-                #if totalTime != 0 and noVehiclesInJunction(vehicles):
-                #resetProject(vehicles)
-                #traci.trafficlight.setProgram("n7", "all_green")
 
-            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step = precedenceRun(numberOfVehicles,
+            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step, arrayAuto = precedenceRun(numberOfVehicles,
                                                                                                                     schema, totalTime,
                                                                                                                     departed, intermediate_departed,
                                                                                                                     vehicles, tails_per_lane, main_step,
-                                                                                                                    mean_th_per_num, step_incr, n_step, sec)
+                                                                                                                    mean_th_per_num, step_incr, n_step, sec, arrayAuto)
         if project == "precedence_with_auction":
+
             totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
-            mean_th_per_num = precedenceWithAuctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
-                    sec, schema, main_step, mean_th_per_num)
+            mean_th_per_num, arrayAuto = precedenceWithAuctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
+                    sec, schema, main_step, mean_th_per_num, arrayAuto)
 
         if project == "reservation":
-            #if noVehiclesInJunction(vehicles):
-                #if totalTime != 0 and noVehiclesInJunction(vehicles):
-                #resetProject(vehicles)
-                #traci.trafficlight.setProgram("n7", "all_green")
 
             mean_th_per_num, main_step, intermediate_departed, totalTime,\
             departed, tails_per_lane, arrayAuto, lista_arrivo, stop, attesa,\
