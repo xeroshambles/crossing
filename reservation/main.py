@@ -13,7 +13,7 @@ def intermediateRun(numberOfVehicles, schema,
                     vehicles, tails_per_lane, main_step, mean_th_per_num, arrayAuto,
                     lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
                     traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
-                    step_incr, passaggio_precedente, n_step, sec, incrID):
+                    step_incr, passaggio_precedente, n_step, sec, incrID, isTransitioning):
 
     for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione
 
@@ -22,6 +22,7 @@ def intermediateRun(numberOfVehicles, schema,
         # vedo se l'auto corrente è tra le auto segnate per attraversare l'incrocio
         try:
             presente = int(lista_arrivo[incrID].index(auto))
+
         except ValueError:
             auto_in_lista = False
         pos = traci.vehicle.getPosition(auto)
@@ -33,6 +34,9 @@ def intermediateRun(numberOfVehicles, schema,
             if (stop_temp[3] - 50 <= pos[0] <= stop_temp[1] + 50) and \
                     (stop_temp[2] - 50 <= pos[1] <= stop_temp[0] + 50):
                 # inserisco l'auto nella lista d'arrivo di quell'incrocio
+                print(auto)
+                if auto == "idV42":
+                    print("HALP")
                 lista_arrivo[incrID].append(auto)
                 # inserisco l'auto nella lista d'attesa di quell'incrocio
                 attesa[incrID].append(auto)
@@ -126,6 +130,8 @@ def intermediateRun(numberOfVehicles, schema,
                     if get_from_matrice_incrocio(auto_ferma, matrice_incrocio[incrID], traiettorie_matrice,
                                                  stop[incrID], secondi_di_sicurezza, x_auto_in_celle,
                                                  y_auto_in_celle):
+                        if auto_ferma == "idV42":
+                            print(f"presente@{totalTime}, auto_ferma\n")
                         # vedo se il suo percorso è libero e nel caso la faccio partire
                         info = avantiAuto(auto_ferma, passaggio[incrID], attesa[incrID], ferme[incrID],
                                           matrice_incrocio[incrID], passaggio_cella[incrID],
@@ -141,6 +147,8 @@ def intermediateRun(numberOfVehicles, schema,
     if int(totalTime / step_incr) % 10 == 0:
         for auto_uscita in passaggio_precedente[incrID]:
             if auto_uscita not in passaggio[incrID]:
+                if auto_uscita == "idV42":
+                    print(f"presente@{totalTime}, auto_uscita\n")
                 traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
                 traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
                 traci.vehicle.setSpeedMode(auto_uscita[0], 7)
@@ -156,7 +164,8 @@ def intermediateRun(numberOfVehicles, schema,
     departed += traci.simulation.getDepartedNumber()
     intermediate_departed += traci.simulation.getDepartedNumber()
     # inserisco nell'array le auto presenti nella simulazione
-    arrayAuto = costruzioneArray(arrayAuto)
+    if isTransitioning != "true" or "waiting":
+        arrayAuto = costruzioneArray(arrayAuto)
 
     if n_step % sec == 0:
         vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
@@ -388,6 +397,8 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
         if int(totalTime / step_incr) % 10 == 0:
             for auto_uscita in passaggio_precedente[incrID]:
                 if auto_uscita not in passaggio[incrID]:
+                    if auto_uscita == "idV42":
+                        print(f"presente@{totalTime}, auto_uscita\n")
                     traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
                     traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
                     traci.vehicle.setSpeedMode(auto_uscita[0], 7)

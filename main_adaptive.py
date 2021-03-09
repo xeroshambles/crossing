@@ -217,7 +217,7 @@ if __name__ == "__main__":
             #dummy_train = {'0': "reservation", '1': "precedence_with_auction", '2': "classic_precedence", '3': "reservation"}
             #dummy_train = {'0': "classic_precedence", '1': "reservation", '2': "precedence_with_auction",'3': "classic_precedence"}
             dummy_train = {'0': "reservation", '1': "classic_precedence", '2': "precedence_with_auction",'3': "classic_precedence"}
-
+            #dummy_train = {'0': "classic_precedence", '1': "precedence_with_auction", '2': "classic_precedence", '3': "classic_precedence"}
             procs = []
             queue = simulate(project=project , procs=[], queue=queue, train=dummy_train)
 

@@ -7,12 +7,8 @@ from precedence_with_auction.trafficElements.vehicle import Vehicle
 import traci
 
 
-def cleanReservationArrays(arrayAuto_temp, attesa, passaggio, ferme, rallentate, vehicles, auto_per_lane_to_stop):
-    #lista_arrivo = []  # auto entrate nelle vicinanze dell'incrocio, non si resetta
-    #matrice_incrocio = []  # rappresenta la suddivisione matriciale dell'incrocio (in celle)
-    #lista_uscita = []  # auto uscite dall'incrocio, non si resetta
+def cleanReservationArrays(arrayAuto_temp, lista_arrivo, vehicles, auto_per_lane_to_stop):
 
-    #passaggio_precedente = []  # salvo l'ultima situazione di auto in passaggio per rilasciarle all'uscita
     """Funzione che consente di rimuovere da ArrayAuto tutte le auto che non dovranno piu essere trattate a causa del cambio di
     main_step(tutte quelle che si fermano prima dei 50 mt per consentire la pulizia dell incrocio oppure che sono dietro ad esse)"""
     for (l, tup) in auto_per_lane_to_stop.items():
@@ -20,28 +16,17 @@ def cleanReservationArrays(arrayAuto_temp, attesa, passaggio, ferme, rallentate,
         if tup[0] != "":
             if tup[0].getID() in arrayAuto_temp:
                 arrayAuto_temp.pop(arrayAuto_temp.index(tup[0].getID()))
-            if tup[0].getID() in attesa:
-                attesa.pop(attesa.index(tup[0].getID()))
-            if tup[0].getID() in passaggio:
-                passaggio.pop(passaggio.index(tup[0].getID()))
-            if tup[0].getID() in ferme:
-                ferme.pop(ferme.index(tup[0].getID()))
-            if tup[0].getID() in rallentate:
-                rallentate.pop(rallentate.index(tup[0].getID()))
+            if tup[0].getID() in lista_arrivo:
+                lista_arrivo.pop(lista_arrivo.index(tup[0].getID()))
             # cleanup di tutti i veicoli che si trovano dietro al suddetto veicolo appena rimosso
             for v in arrayAuto_temp:
                 if traci.vehicle.getLaneID(v) == traci.vehicle.getLaneID(tup[0].getID()):
                     if vehicles[v].distanceFromEndLane() > tup[0].distanceFromEndLane():
                         arrayAuto_temp.pop(arrayAuto_temp.index(v))
-                        if v in attesa:
-                            attesa.pop(attesa.index(v))
-                        if v in passaggio:
-                            passaggio.pop(passaggio.index(v))
-                        if v in ferme:
-                            ferme.pop(ferme.index(v))
-                        if v in rallentate:
-                            rallentate.pop(rallentate.index(v))
-    return arrayAuto_temp, attesa, passaggio, ferme, rallentate
+                        if v in lista_arrivo:
+                            lista_arrivo.pop(lista_arrivo.index(v))
+
+    return arrayAuto_temp, lista_arrivo
 
 def updateReservationArray(arrayAuto_temp, clean=False):
     """Costruzione dell'array composto dal nome delle auto presenti nella simulazione"""
@@ -246,7 +231,7 @@ def colorVehicles(numberOfVehicles):
             traci.vehicle.setColor(f'{i}', (255, 100, 0))  # arancione
 
 
-def checkVehicles(vehicles, tails_per_lane, time, schema, resetSpeedMode=False):
+def checkVehicles(vehicles, tails_per_lane, time, schema):
     """Funzione che controlla il posizionamento dei veicoli nell'incrocio e prende le misure"""
 
     vehs_loaded = traci.vehicle.getIDList()
@@ -262,9 +247,7 @@ def checkVehicles(vehicles, tails_per_lane, time, schema, resetSpeedMode=False):
 
         # controllo se il veicolo è in una lane entrante
         if veh_current_lane[4:6] == '07':
-            #if resetSpeedMode:
-                #traci.vehicle.setSpeedMode(veh, 31)
-                #pass
+
             vehicles[veh].startingLane = veh_current_lane
             spawn_distance = traci.vehicle.getDistance(veh)
             distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),

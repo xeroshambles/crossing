@@ -176,6 +176,8 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
     # l'auto può passare, la segno nella matrice e nei vettori
     else:
         # disattivo la safe speed del veicolo
+        if auto_temp == "idV42":
+            print(f"presente@arrivoAuto\n")
         traci.vehicle.setSpeedMode(auto_temp, 30)
         passaggio_temp.append([auto_temp, traci.vehicle.getRoadID(auto_temp), traci.vehicle.getAngle(auto_temp)])
         # tolgo l'auto dalla lista d'attesa e la sottoscrivo nella matrice
@@ -191,6 +193,8 @@ def arrivoAuto(auto_temp, passaggio_temp, ferme_temp, attesa_temp, matrice_incro
             passaggio_cella_temp.append([auto_temp, None, None])
         # se l'auto gira a destra la faccio rallentare fino a dimezzarne la velocità
         else:
+            if auto_temp == "idV42":
+                print(f"presente@arrivoAuto\n")
             traci.vehicle.setSpeed(auto_temp, traci.vehicle.getMaxSpeed(auto_temp) / float(2))
 
     ritorno = [passaggio_temp, attesa_temp, ferme_temp, matrice_incrocio_temp, passaggio_cella_temp]
@@ -262,7 +266,8 @@ def percorso_libero(passaggio_temp, matrice_incrocio_temp, passaggio_cella_temp,
     passaggio_cella_nuovo = passaggio_cella_temp[:]
 
     for x in passaggio_temp:
-
+        if x[0] == "idV42":
+            print(f"presente@PercorsoLibero\n")
         rotta = traci.vehicle.getRouteID(x[0])
         edges = traci.route.getEdges(rotta)
         lane = getLaneIndexFromEdges(int(edges[0][1:3]), int(edges[1][4:6]), node_ids)
@@ -305,7 +310,8 @@ def avantiAuto(auto_temp, passaggio_temp, attesa_temp, ferme_temp, matrice_incro
     """Faccio avanzare le auto"""
 
     traci.vehicle.setSpeedMode(auto_temp, 30)
-
+    if auto_temp == "idV42":
+        print(f"presente@AvantiAuto\n")
     traci.vehicle.setSpeed(auto_temp, traci.vehicle.getMaxSpeed(auto_temp))  # riparte l'auto
     passaggio_temp.append([auto_temp, traci.vehicle.getRoadID(auto_temp), traci.vehicle.getAngle(auto_temp)])
     matrice_incrocio_temp = set_in_matrice_incrocio(auto_temp, matrice_incrocio_temp, traiettorie_matrice_temp,
@@ -339,6 +345,8 @@ def costruzioneArray(arrayAuto_temp):
     for id_auto in loadedIDList:
         if id_auto not in arrayAuto_temp:
             arrayAuto_temp.append(id_auto)
+            if id_auto == "idV42":
+                print(f"presente@costruzioneArray\n")
             traci.vehicle.setSpeed(id_auto, traci.vehicle.getMaxSpeed(id_auto))
 
     arrivedIDList = traci.simulation.getArrivedIDList()  # elimina nell'array le auto arrivate

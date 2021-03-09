@@ -10,6 +10,13 @@ from precedence_with_auction.trafficElements.junction import FourWayJunction
 import traci
 from sumolib import miscutils
 
+def showSpeedMode(vehs_to_stop):
+    ret = {tup[0].getID(): 0 for (l, tup) in vehs_to_stop.items() if tup[0] != ""}
+    for (l, tup) in vehs_to_stop.items():
+        if tup[0] != "":
+            ret[tup[0].getID()] = traci.vehicle.getSpeedMode(tup[0].getID())
+
+    return ret
 
 def noMoreVehiclesToStop(vehicles_to_stop):
     check = [k for k in vehicles_to_stop if vehicles_to_stop[k][0] == ""]
@@ -35,14 +42,18 @@ def noVehiclesWithLesserDistanceFromEndLaneThan(vehicles, m):
 def getEnteringLanes():
     return [l for l in lanes if l[1:3] != f"0{junction_id}"]
 
-def stopVehicle(obj, m=0):
+def stopVehicle(obj, m):
     """Funzione che blocca il veicolo a una certa distanza (metri) dalla fine della corsia in cui si trova"""
 
     stopLane = traci.vehicle.getLaneID(obj.getID())
     pos = traci.lane.getLength(stopLane) - m
+    #max_speed = traci.vehicle.getMaxSpeed(obj.getID())
+    #traci.vehicle.setSpeed(obj.getID(), max_speed/8)
+    #print(f"pos:{pos}\n")
     try:
         traci.vehicle.setStop(obj.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
                               pos=pos)
+        #print(f"STOPPED: {obj.getID()}\n")
     except traci.exceptions.TraCIException as e:
         # print(f"ERROR: {e}")
         return False
@@ -50,12 +61,14 @@ def stopVehicle(obj, m=0):
     return False
 
 
-def restartVehicle(obj, m=0):
+def restartVehicle(obj, m):
     """Funzione che sblocca il veicolo nel caso in cui questo fosse bloccato."""
     try:
         if obj.isStopped():
             stopLane = traci.vehicle.getLaneID(obj.getID())
             pos = traci.lane.getLength(stopLane) - m
+            #max_speed = traci.lane.getMaxSpeed(stopLane)
+            #traci.vehicle.setSpeed(obj.getID(), max_speed)
             traci.vehicle.setStop(obj.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
                                   pos=pos, duration=0)
             obj.isOnAStop = False
@@ -63,7 +76,7 @@ def restartVehicle(obj, m=0):
         return False
     return True
 
-def tryStop(obj, tryButDontStop=False, m=0):
+def tryStop(obj,  m, tryButDontStop=False):
     """Funzione che prova a fermare un veicolo e, se ci riesce, restituisce True (fermandolo), altrimenti
     restituisce False.
     :param tryButDontStop: parametro booleano che, se diverso da False, si limita a provare a stoppare il
@@ -74,10 +87,15 @@ def tryStop(obj, tryButDontStop=False, m=0):
             # controllo che il veicolo non sia già fermo, altrimenti lo sbloccherei, se è già fermo posso restituire
             # True, essendo il veicolo già fermo o in frenata
             if not obj.isStopped():
+                #if not considerCurrentSpeedMode:
+                #    sm = traci.vehicle.getSpeedMode(obj.getID())
+                #    traci.vehicle.setSpeedMode(obj.getID(), 31)
                 stopLane = traci.vehicle.getLaneID(obj.getID())
                 pos = traci.lane.getLength(stopLane) - m
                 traci.vehicle.setStop(obj.getID(), stopLane[:-2], laneIndex=int(stopLane[-1]),
                                       pos=pos, duration=0)
+                #if not considerCurrentSpeedMode:
+                #    traci.vehicle.setSpeedMode(obj.getID(), sm)
         else:
             # tentativo riuscito
             stopVehicle(obj, m)
@@ -86,19 +104,18 @@ def tryStop(obj, tryButDontStop=False, m=0):
         # tentativo fallito
         return False
 
-def isStoppable(obj, m=0):
+def isStoppable(obj, m):
     """Funzione che controlla se un veicolo è fermabile in un certo momento. ATTENZIONE, il veicolo potrebbe
     comunque non essere fermabile in momenti successivi."""
-    return tryStop(obj, tryButDontStop=True, m=m)
+    return tryStop(obj, m, tryButDontStop=True)
 
 
-def updateStopVehicles(vehicles, vehs_to_stop, m=0):
+def updateStopVehicles(vehicles, vehs_to_stop, m):
     """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
     possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
     #prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
     vehs_not_crossed = getVehiclesNotCrossed(vehicles)
     vehs_eligible_to_be_stopped = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_not_crossed, m)
-    entering_lanes = getEnteringLanes()
 
     # prendo per ogni lane il veicolo piu prossimo agli m metri dall incrocio
     for (k,v) in vehs_eligible_to_be_stopped.items():
@@ -114,12 +131,12 @@ def updateStopVehicles(vehicles, vehs_to_stop, m=0):
         if tup[0] != "":
             if not tup[0].isOnAStop:
                 #riattivo il brake hard on stop
-                traci.vehicle.setSpeedMode(tup[0].getID(), 31)
+                #traci.vehicle.setSpeedMode(tup[0].getID(), 31)
                 stopVehicle(tup[0], m)
 
     return vehs_to_stop
 
-def stopVehicles(vehicles, m=0):
+def stopVehicles(vehicles, m):
     """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
     possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
     #prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
@@ -140,12 +157,12 @@ def stopVehicles(vehicles, m=0):
         if tup[0] != "":
             # riattivo il brake hard on stop
             #sm = traci.vehicle.getSpeedMode(tup[0].getID())
-            traci.vehicle.setSpeedMode(tup[0].getID(), 31)
+            #traci.vehicle.setSpeedMode(tup[0].getID(), 31)
             stopVehicle(tup[0], m)
 
     return vehs_to_stop
 
-def restartVehicles(vehicles_to_restart_per_lane, m=0):
+def restartVehicles(vehicles_to_restart_per_lane, m):
     for (l, tup) in vehicles_to_restart_per_lane.items():
         if tup[0] != "":
             restartVehicle(tup[0], m)
@@ -295,11 +312,13 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
             if not noMoreVehiclesToStop(vehs):
                 vehs = updateStopVehicles(vehicles, vehs, m)
                 if project == "reservation":
-                    arrayAuto, attesa, passaggio, ferme, rallentate = cleanReservationArrays(arrayAuto, attesa, passaggio, ferme, rallentate, vehicles, vehs)
+                    arrayAuto, lista_arrivo = cleanReservationArrays(arrayAuto, lista_arrivo, vehicles, vehs)
+                sms = showSpeedMode(vehs)
+                print(f"step: {totalTime}, speedModes:{sms}\n")
             if noVehiclesAtUnsafeDistance(vehicles, m):
                 restartVehicles(vehs, m)
                 #if train[str(main_step)] == "reservation":
-                #    arrayAuto = costruzioneArray(arrayAuto)
+                #arrayAuto = costruzioneArray(arrayAuto)
                 transitioning = "false"
 
 
@@ -336,7 +355,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
                                                                                             vehicles, tails_per_lane, main_step, mean_th_per_num, arrayAuto,
                                                                                             lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
                                                                                             traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
-                                                                                            step_incr, passaggio_precedente, n_step, sec, incrID)
+                                                                                            step_incr, passaggio_precedente, n_step, sec, incrID, transitioning)
         if isTransitioning(main_step_old, main_step):
             transitioning = "true"
             main_step_old = main_step
