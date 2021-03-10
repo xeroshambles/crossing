@@ -1,11 +1,16 @@
 import random
 from math import sqrt
 from config import *
-
 from precedence_with_auction.trafficElements.vehicle import Vehicle
 
 import traci
 
+def getVehiclesInNet(vehicles):
+    return {k:v for (k, v) in vehicles.items() if v.getID() in traci.vehicle.getIDList()}
+
+def getVehiclesNotCrossed(vehicles):
+    vehs_in_net = getVehiclesInNet(vehicles)
+    return {k:v for (k, v) in vehs_in_net.items() if traci.vehicle.getLaneID(v.getID())[0:3] != f":n{junction_id}" and traci.vehicle.getLaneID(v.getID())[1:3] != f"0{junction_id}"}
 
 def cleanReservationArrays(arrayAuto_temp, lista_arrivo, vehicles, auto_per_lane_to_stop):
 
@@ -52,23 +57,31 @@ def mainStep(total_time, n_steps, n_vehs):
 
     mod = r % (n_steps / len(n_vehs))
 
-    if mod == 0 and r <= n_steps:
+    if mod == 0 and r <= n_steps and (round(total_time - r) == 0):
         return True
     else:
         return False
 
-def saveIntermediateResults(n_vehs, step, vehicles, departed):
+def getVehiclesWithHigherDistanceFromEndLaneThan(vehicles, m=0):
+    vehs_not_crossed = getVehiclesNotCrossed(getVehiclesInNet(vehicles))
+    return {k:v for (k,v) in vehs_not_crossed.items() if v.distanceFromEndLane() > m}
+
+def saveIntermediateResults(n_vehs, step, vehicles, departed, m=60):
 
     passed = 0
     floor = sum(n_vehs[0: step])
     ceil = floor + n_vehs[step]
-    ids = [k for k in vehicles]
-    ids_c = ids[floor: ceil]
-    dummy = {k: vehicles[k] for k in vehicles if k in ids_c}
-    for veh in dummy:
-        if int(veh[-1]) < departed:
-            passed += vehicles[veh].hasPassed
-    mean_th = passed / departed
+    #ids = {v.getID(): v for v in vehicles.values()}
+    vehs_not_crossed = getVehiclesWithHigherDistanceFromEndLaneThan(vehicles, m)
+    n_vehs_not_crossed = len(vehs_not_crossed)
+    #ids_c = ids[floor: ceil]
+    current_main_step_vehicles_to_consider = {k:v for (k,v) in vehicles.items() if floor <= int(v.getID().replace("idV", "")) < ceil and v not in vehs_not_crossed.values()}
+    for v in current_main_step_vehicles_to_consider.values():
+        num = v.getID().replace("idV", "")
+
+        if int(num) <= departed:
+            passed += v.hasPassed
+    mean_th = passed / (departed + 1 - n_vehs_not_crossed)
 
     return mean_th
 

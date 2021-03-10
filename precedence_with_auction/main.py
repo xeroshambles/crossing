@@ -48,9 +48,9 @@ def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, in
         """Salvo i risultati intermedi se si conclude un main step"""
 
         # step preliminare per rendere compatibili gli id dei veicoli con la funzione
-        vehicles_temp = {k.replace("idV", ""): v for (k, v) in vehicles.items()}
+        #vehicles_temp = {k.replace("idV", ""): v for (k, v) in vehicles.items()}
         mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
-                                                                            main_step, vehicles_temp,
+                                                                            main_step, vehicles,
                                                                             intermediate_departed, mean_th_per_num)
 
     # NECESSARIO PER GARANTIRE COERENZA CON LE STRUTTURE DATI DELLA RESERVATION
@@ -144,9 +144,9 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
             """Salvo i risultati intermedi se si conclude un main step"""
 
             # step preliminare per rendere compatibili gli id dei veicoli con la funzione
-            vehicles_temp = {k.replace("idV", ""): v for (k, v) in vehicles.items()}
+
             mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
-                                                                                main_step, vehicles_temp,
+                                                                                main_step, vehicles,
                                                                                 intermediate_departed, mean_th_per_num)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""

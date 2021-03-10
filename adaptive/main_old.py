@@ -1,5 +1,5 @@
 from utils import *
-from config_adaptive import *
+from config import *
 from inpout import redirect_output
 from reservation.main import stopXY, limiti_celle, costruzioneArray
 from classic_tls.main import intermediateRun as tlsRun
@@ -24,24 +24,15 @@ def noMoreVehiclesToStop(vehicles_to_stop):
         return True
     return False
 
+def getVehiclesInNet(vehicles):
+    return {k:v for (k,v) in vehicles.items() if k in traci.vehicle.getIDList()}
 
-
-
-
-def getVehiclesInJunction(vehicles):
+def getVehiclesNotCrossed(vehicles):
     vehs_in_net = getVehiclesInNet(vehicles)
-    return {k: v for (k,v) in vehs_in_net.items() if traci.vehicle.getLaneID(k)[0:3] == f":n{junction_id}"}
-
-def getVehiclesCrossed(vehicles):
-    vehs_in_net = getVehiclesInNet(vehicles)
-    return {k: v for (k,v) in vehs_in_net.items() if traci.vehicle.getLaneID(k)[0:3] == f":n{junction_id}" or traci.vehicle.getLaneID(k)[1:3] == f"0{junction_id}"}
+    return {k: v for (k,v) in vehs_in_net.items() if traci.vehicle.getLaneID(k)[0:3] != f":n{junction_id}" and traci.vehicle.getLaneID(k)[1:3] != f"0{junction_id}"}
 
 def getVehiclesWithHigherDistanceFromEndLaneThan(vehicles, m):
     return {k:v for (k,v) in vehicles.items() if v.distanceFromEndLane() > m}
-
-
-def getVehiclesWithLesserDistanceFromEndLaneThan(vehicles, m):
-    return {k:v for (k,v) in vehicles.items() if v.distanceFromEndLane() < m}
 
 def noVehiclesWithLesserDistanceFromEndLaneThan(vehicles, m):
     if not {k:v for (k,v) in vehicles.items() if v.distanceFromEndLane() < m}:
@@ -144,32 +135,6 @@ def updateStopVehicles(vehicles, vehs_to_stop, m):
                 stopVehicle(tup[0], m)
 
     return vehs_to_stop
-
-def removeVehiclesBetweenStopAnd(vehicles, arrayAuto, m):
-    """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
-        possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
-    # prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
-    vehs_not_crossed = getVehiclesNotCrossed(vehicles)
-    vehs_in_junction = getVehiclesInJunction(vehicles)
-    vehs_crossed = getVehiclesCrossed(vehicles)
-    vehs_between_stop_and_m = getVehiclesWithLesserDistanceFromEndLaneThan(vehs_not_crossed, m)
-    vehs_to_remove = {}
-    vehs_to_remove.update(vehs_between_stop_and_m)
-    vehs_to_remove.update(vehs_crossed)
-
-    #for (k,v) in vehs_crossed.items():
-    #    d = v.distanceFromEndLane()
-
-    for k in vehs_to_remove:
-        # remove from simulation
-        #if k not in vehs_crossed.keys():
-        traci.vehicle.remove(k)
-        #adjust data structures to take into account vehicles removal
-        del vehicles[k]
-        if k in arrayAuto:
-            arrayAuto.pop(arrayAuto.index(k))
-
-    return vehs_to_remove, vehicles, arrayAuto
 
 def stopVehicles(vehicles, m):
     """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
@@ -330,57 +295,33 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     n_step = 0
     incrID = 0
-
+    m = 60
     # ////////////////////////////FOR LOOP RESPECTIVE SIM//////////////////////////////////////////
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         # if main step
 
-        if transitioning == "true":
-            removed, vehicles, arrayAuto = removeVehiclesBetweenStopAnd(vehicles, arrayAuto, m)
-            if project == "precedence_with_auction":
-                junction = FourWayJunction(junction_id, vehicles, iP=instantPay, sM=simulationMode, bM=False,
-                                           groupDimension=dimensionOfGroups)
-            if project == "reservation":
-
-                # reset delle variabili
-                attesa = []  # ordine di arrivo su lista, si resetta quando le auto liberano incrocio
-                attesa.append([])
-
-                lista_arrivo = []  # auto entrate nelle vicinanze dell'incrocio, non si resetta
-                lista_arrivo.append([])
-
-                lista_uscita = []  # auto uscite dall'incrocio, non si resetta
-                lista_uscita.append([])
-
-                ferme = []  # lista di auto ferme allo stop
-                ferme.append([])
-
-                passaggio = []  # auto in passaggio nell'incrocio
-                passaggio.append([])
-
-                rallentate = []  # lista di auto rallentate in prossimità dell'incrocio
-                rallentate.append([])
-
-                passaggio_cella = []  # salvo in che cella si trova l'auto in passaggio [incrID][ [ auto , cella_X , cella_Y ],... ]
-                passaggio_cella.append([])
-
-                passaggio_precedente = []  # salvo l'ultima situazione di auto in passaggio per rilasciarle all'uscita
-                passaggio_precedente.append([])
-
-                matrice_incrocio = []  # rappresenta la suddivisione matriciale dell'incrocio (in celle)
-                matrice_incrocio.append([])
-
-                for x in range(0, celle_per_lato):
-                    matrice_incrocio[0].append([])
-                    for y in range(0, celle_per_lato):
-                        # ogni cella è un'array dei tempi stimati di occupazione della medesima
-                        matrice_incrocio[0][x].append([])
-
-            transitioning = "false"
-
         """Lancio il progetto giusto per ogni step"""
-        project = train[str(main_step)]
+        if transitioning == "false":
+            project = train[str(main_step)]
         print(f"step: {totalTime}, main_step: {main_step}, project: {project}\n")
+        #if mainStep(totalTime, stepsSpawn, numberOfVehicles) and main_step < len(numberOfVehicles):
+        if transitioning == "true":
+            vehs = stopVehicles(vehicles, m)
+            transitioning = "waiting"
+        if transitioning == "waiting":
+            if not noMoreVehiclesToStop(vehs):
+                vehs = updateStopVehicles(vehicles, vehs, m)
+                if project == "reservation":
+                    arrayAuto, lista_arrivo = cleanReservationArrays(arrayAuto, lista_arrivo, vehicles, vehs)
+                sms = showSpeedMode(vehs)
+                print(f"step: {totalTime}, speedModes:{sms}\n")
+            if noVehiclesAtUnsafeDistance(vehicles, m):
+                restartVehicles(vehs, m)
+                #if train[str(main_step)] == "reservation":
+                #arrayAuto = costruzioneArray(arrayAuto)
+                transitioning = "false"
+
+
 
         '''
         if project == "classic_tls":

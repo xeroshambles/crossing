@@ -4,7 +4,7 @@ import importlib.util
 from multiprocessing import Process, Queue
 from inpout import *
 from utils import *
-from config import *
+from config_adaptive import *
 from reservation import traiettorie
 from adaptive.main import adaptiveSimulation
 import traci
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                         '\nInserire un nome di progetto valido!',
                         mode, arr=True)
 
-
+    a = 0
     for project in projs:
         project_label = projects_labels[projects.index(project)]
 
@@ -213,11 +213,13 @@ if __name__ == "__main__":
 
 
             print(f'\nUtilizzo un set di {numberOfVehicles[i]} veicoli in {stepsSpawn} steps...')
-
+            p = ["precedence_with_auction", "classic_precedence", "reservation"]
             #dummy_train = {'0': "reservation", '1': "precedence_with_auction", '2': "classic_precedence", '3': "reservation"}
             #dummy_train = {'0': "classic_precedence", '1': "reservation", '2': "precedence_with_auction",'3': "classic_precedence"}
-            dummy_train = {'0': "reservation", '1': "classic_precedence", '2': "precedence_with_auction",'3': "classic_precedence"}
+            #dummy_train = {'0': "reservation", '1': "classic_precedence", '2': "precedence_with_auction",'3': "classic_precedence"}
             #dummy_train = {'0': "classic_precedence", '1': "precedence_with_auction", '2': "classic_precedence", '3': "classic_precedence"}
+            #dummy_train = {'0': "reservation", '1': "classic_precedence", '2': "reservation",'3': "classic_precedence"}
+            dummy_train = {'0': p[a], '1': p[a], '2': p[a], '3': p[a]}
             procs = []
             queue = simulate(project=project , procs=[], queue=queue, train=dummy_train)
 
@@ -232,7 +234,7 @@ if __name__ == "__main__":
         linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label)
 
         clearMeasures(group_measures, groups, head_titles)
-
+        a += 1
 
 
     linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
