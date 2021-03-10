@@ -36,8 +36,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
-        traci.simulationStep()
         totalTime += 1
+        traci.simulationStep()
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 

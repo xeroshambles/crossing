@@ -57,7 +57,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
     junctIDList = [junction for junction in junctions if junction.nID in central_junctions_ids]
 
-    for junction in junctIDList:  # scorro lista incroci
+    for junction in junctIDList:  # scorro la lista di incroci
         incrID = junctIDList.index(junction)  # popolo vettori e matrici inserendo le righe
         attesa.append([])
         lista_arrivo.append([])
@@ -104,6 +104,9 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
     n_step = 0
 
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
+        totalTime += step_incr
+        traci.simulationStep(totalTime)
+        n_step += 1
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 
@@ -250,12 +253,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, celle_per_lato, traiet
 
         # inserisco nell'array le auto presenti nella simulazione
         arrayAuto = costruzioneArray(arrayAuto)
-
-        totalTime += step_incr
-        # faccio avanzare la simulazione
-        traci.simulationStep(totalTime)
-
-        n_step += 1
 
         if n_step % sec == 0:
             vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, int(n_step / sec), schema)

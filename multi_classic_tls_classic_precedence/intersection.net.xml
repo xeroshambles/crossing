@@ -4,11 +4,11 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="C:\Users\marco\PycharmProjects\crossing\multi_classic_precedence_classic_tls\intersection.net.xml"/>
+        <sumo-net-file value="C:\Users\marco\PycharmProjects\crossing\multi_classic_tls_classic_precedence\intersection.net.xml"/>
     </input>
 
     <output>
-        <output-file value="C:\Users\marco\PycharmProjects\crossing\multi_classic_precedence_classic_tls\intersection.net.xml"/>
+        <output-file value="C:\Users\marco\PycharmProjects\crossing\multi_classic_tls_classic_precedence\intersection.net.xml"/>
     </output>
 
     <processing>

@@ -12,32 +12,32 @@ def getRoute(vehicle, node_ids):
     suffix, start, end = getLaneIndexFromEdges(edges, vehicle, node_ids)
 
     if suffix == 0:
-        if start - end == -4:
+        if start - end == -4 or (start - end == -25 and end == 51) or start - end == 26 or start - end == -55:
             return 'route_2'
-        if start - end == -6:
-            return 'route_11'
-        if start - end == 4:
-            return 'route_7'
-        if start - end == 6:
+        if start - end == -24 or start - end == 6 or (start - end == 25 and start == 55) or start - end == 55:
             return 'route_3'
+        if start - end == -45 or (start - end == -25 and end == 75) or start - end == 4 or start - end == 24:
+            return 'route_7'
+        if start - end == -26 or start - end == -6 or (start - end == 25 and start == 71) or start - end == 45:
+            return 'route_11'
     if suffix == 1:
-        if start - end == -10:
+        if start - end == -30 or start - end == -10 or start - end == 20:
             return 'route_1'
-        if start - end == -2:
-            return 'route_10'
-        if start - end == 10:
-            return 'route_6'
-        if start - end == 2:
+        if start - end == -49 or start - end == 2 or start - end == 51:
             return 'route_5'
+        if start - end == -20 or start - end == 10 or start - end == 30:
+            return 'route_6'
+        if start - end == -51 or start - end == -2 or start - end == 49:
+            return 'route_10'
     if suffix == 2:
-        if start - end == -6:
+        if start - end == -55 or (start - end == -25 and end == 55) or start - end == -6 or start - end == 24:
             return 'route_0'
-        if start - end == 4:
-            return 'route_9'
-        if start - end == 6:
-            return 'route_8'
-        if start - end == -4:
+        if start - end == -24 or start - end == -4 or (start - end == 25 and start == 75) or start - end == 45:
             return 'route_4'
+        if start - end == -45 or (start - end == -25 and end == 71) or start - end == 6 or start - end == 26:
+            return 'route_8'
+        if start - end == -26 or start - end == 4 or (start - end == 25 and start == 51) or start - end == 55:
+            return 'route_9'
 
 
 def stopXY(shape_temp):

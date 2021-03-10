@@ -8,8 +8,6 @@ from trafficElements_multi.junction import FourWayJunction
 import traci
 
 
-
-
 def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, routeMode, instantPay, seed):
     """Genero veicoli per ogni route possibile nel caso di incrocio multiplo"""
 
@@ -70,8 +68,8 @@ def createJunctions(vehicles):
     for i in range(1, 26):
         junctions.append(FourWayJunction(i, vehicles, iP=instantPay, sM=simulationMode, bM=False,
                                          groupDimension=dimensionOfGroups))
-        if i in vertex_junctions_ids:
-            print(junctions[i - 1].incomingLanes)
+        if i == 13:
+            print(junctions[i - 1].clashingEdges)
 
     return junctions
 
@@ -87,9 +85,6 @@ def getLaneIndexFromEdges(edges, vehicle, node_ids):
     start = int(edges[vehicle.edgeIndex][1:3])
     end = int(edges[vehicle.edgeIndex + 1][4:6])
 
-    #print(vehicle.idVehicle, vehicle.edgeIndex, traci.vehicle.getLaneID(vehicle.idVehicle),
-    # traci.vehicle.getRoute(vehicle.idVehicle), start, end, node_ids)
-
     while True:
         if node_ids[i % 4] == start:
             trovato = True
@@ -98,8 +93,6 @@ def getLaneIndexFromEdges(edges, vehicle, node_ids):
             if node_ids[i % 4] == end:
                 break
         i += 1
-
-    # print("RISOLTO")
 
     lane = 0
 
@@ -134,7 +127,7 @@ def checkRoute(vehicles, numberOfVehicles):
     """Controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route"""
 
     for i in range(0, sum(numberOfVehicles)):
-        vehicles[f'idV{i}'].travelTimes[vehicles[f'idV{i}'].index] += 1
+        vehicles[f'idV{i}'].travelTimes[vehicles[f'idV{i}'].travelIndex] += 1
         vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)
 
     return vehicles
@@ -145,56 +138,69 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
 
     for junction in junctions:
 
+        # per ogni junction creo dei nuovi valori per il calcolo del throughput
         junction.departed.append(0)
         junction.arrived.append(0)
 
         vehs_in_junction = junction.getActualVehicles(departed_vehicles)
+
+        # per ogni junction creo dei nuovi valori per il calcolo delle code nelle lane entranti
         for lane in junction.tails_per_lane:
             junction.tails_per_lane[lane].append(0)
-        # loop per tutti i veicoli
+
+        # loop per tutti i veicoli della junction corrente
         for veh in vehs_in_junction:
             veh_current_lane = traci.vehicle.getLaneID(veh)
 
             # controllo se il veicolo è in una lane entrante
             if veh_current_lane in junction.incomingLanes:
                 vehicles[veh].startingLane = veh_current_lane
+                # registro il veicolo nella gestione dell'incrocio
                 if veh not in junction.vehiclesEntering:
                     junction.vehiclesEntering.append(veh)
                     junction.departed[time - 1] += 1
+                    vehicles[veh].edgeIndex += 1
+                    vehicles[veh].headTimes.append(0)
+                    vehicles[veh].tailTimes.append(0)
+                    vehicles[veh].spawnDistances.append(0)
+                # calcolo la distanza tra il veicolo e l'inizio dell'incrocio
                 spawn_distance = traci.vehicle.getDistance(veh) - sum(vehicles[veh].spawnDistances[:-1])
                 vehicles[veh].spawnDistances[-1] = spawn_distance
                 distance = getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
                                                   junction.junction_shape, junction.nID)
-                if distance >= 60:
-                    if vehicles[veh].isEntered == 0:
-                        vehicles[veh].edgeIndex += 1
-                        vehicles[veh].isEntered = 1
+                # se la distanza è maggiore di 50 provo a far cambiare la lane al veicolo
+                if distance >= 80:
                     traci.vehicle.setLaneChangeMode(veh, 1621)
-                    vehicles[veh].checkLane()
-                if distance < 50:
+                    vehicles[veh].tryChangeLane()
+                # se la distanza è inferiore a 50 e il veicolo non è riuscito ad andare nella lane corretta
+                # gli impedisco di cambiare lane e gli cambio temporaneamente la route
+                if 60 <= distance < 80:
                     traci.vehicle.setLaneChangeMode(veh, 512)
+                    vehicles[veh].checkCorrectLane(junction)
                 if distance < 15:
-                    vehicles[veh].speeds[vehicles[veh].index].append(traci.vehicle.getSpeed(veh))
+                    vehicles[veh].speeds.append(traci.vehicle.getSpeed(veh))
                 veh_length = traci.vehicle.getLength(veh)
                 check = veh_length / 2 + 0.2
                 leader = traci.vehicle.getLeader(veh)
+                # se il veicolo è fermo
                 if traci.vehicle.getSpeed(veh) <= 1:
-                    # verifico se il veicolo è in testa
+                    # verifico se il veicolo è in testa e nel caso lo coloro di blu
                     if check >= distance and ((leader and leader[1] < 0) or not leader):
                         junction.tails_per_lane[veh_current_lane][time - 1] += 1
-                        vehicles[veh].headTimes[vehicles[veh].index] += 1
+                        vehicles[veh].headTimes[vehicles[veh].edgeIndex] += 1
                         if schema in ['s', 'S']:
-                            traci.vehicle.setColor(veh, (0, 0, 255))  # blu
-                    # verifico se il veicolo è in coda
+                            traci.vehicle.setColor(veh, (0, 0, 255))
+                    # verifico se il veicolo è in coda e nel caso lo color di rosso
                     elif leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane \
                             and traci.vehicle.getColor(leader[0]) != (255, 255, 0, 255):
                         junction.tails_per_lane[veh_current_lane][time - 1] += 1
-                        vehicles[veh].tailTimes[vehicles[veh].index] += 1
+                        vehicles[veh].tailTimes[vehicles[veh].edgeIndex] += 1
                         if schema in ['s', 'S']:
-                            traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
+                            traci.vehicle.setColor(veh, (255, 0, 0))
+                # se il veicolo non è fermo lo coloro di giallo
                 else:
                     if schema in ['s', 'S']:
-                        traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
+                        traci.vehicle.setColor(veh, (255, 255, 0))
 
             # controllo se il veicolo è all'interno della junction
             elif veh_current_lane in junction.crossingLanes:
@@ -205,42 +211,43 @@ def checkVehicles(vehicles, departed_vehicles, junctions, time, schema):
                 leader_lane = ''
                 if leader:
                     leader_lane = traci.vehicle.getLaneID(leader[0])
-                vehicles[veh].speeds[vehicles[veh].index].append(traci.vehicle.getSpeed(veh))
+                vehicles[veh].speeds.append(traci.vehicle.getSpeed(veh))
+                # se il veicolo è fermo
                 if traci.vehicle.getSpeed(veh) <= 1:
-                    # verifico se il veicolo è in testa
+                    # verifico se il veicolo è in testa e nel caso lo coloro di blu
                     if (leader and leader_lane != veh_current_lane) or not leader:
                         junction.tails_per_lane[vehicles[veh].startingLane][time - 1] += 1
-                        vehicles[veh].headTimes[vehicles[veh].index] += 1
+                        vehicles[veh].headTimes[vehicles[veh].edgeIndex] += 1
                         if schema in ['s', 'S']:
-                            traci.vehicle.setColor(veh, (0, 0, 255))  # blu
-                    # verifico se il veicolo è in coda
-                    elif leader and leader[1] <= 0.5 and leader_lane == veh_current_lane:
+                            traci.vehicle.setColor(veh, (0, 0, 255))
+                    # verifico se il veicolo è in coda e nel caso lo coloro di rosso
+                    elif leader and leader[1] <= 0.5:
                         junction.tails_per_lane[vehicles[veh].startingLane][time - 1] += 1
-                        vehicles[veh].tailTimes[vehicles[veh].index] += 1
+                        vehicles[veh].tailTimes[vehicles[veh].edgeIndex] += 1
                         if schema in ['s', 'S']:
-                            traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
+                            traci.vehicle.setColor(veh, (255, 0, 0))
+                # se il veicolo non è fermo lo coloro di giallo
                 else:
                     if schema in ['s', 'S']:
-                        traci.vehicle.setColor(veh, (255, 255, 0))  # giallo
+                        traci.vehicle.setColor(veh, (255, 255, 0))
 
             # controllo se il veicolo è in una lane uscente
             elif veh_current_lane in junction.outgoingLanes:
                 if veh in junction.vehiclesEntering:
-                    vehicles[veh].startingLane = ''
-                    vehicles[veh].isEntered = 0
                     junction.vehiclesEntering.remove(veh)
                     junction.arrived[time - 1] += 1
-                    vehicles[veh].spawnDistances.append(0)
 
     return vehicles, junctions
 
 
 def saveResults(vehicles, departed, junctions):
+    """Funzione che raggruppa tutte le misure effattuate"""
+
     travelTimes = []  # lista dei tempi di percorrenza medi per ogni veicolo
     varTravelTime = 0  # varianza rispetto al tempo di percorrenza
-    headTimes = []  # lista dei tempi passati in testa medi per ogni veicolo
+    meanHeadTimes = []  # lista dei tempi passati in testa medi per ogni veicolo
     varHeadTime = 0  # varianza rispetto al tempo passato in testa
-    tailTimes = []  # lista dei tempi in coda medi per ogni veicolo
+    meanTailTimes = []  # lista dei tempi in coda medi per ogni veicolo
     varTailTime = 0  # varianza rispetto al tempo passato in coda
     meanSpeeds = []  # lista delle velocità medie assunte dai veicoli nei pressi dell'incrocio
     varSpeed = 0  # varianza rispetto alla velocità dei veicoli
@@ -251,14 +258,12 @@ def saveResults(vehicles, departed, junctions):
     for veh in vehicles:
         if int(veh[-1]) < departed:
             travelTimes.append(sum(vehicles[veh].travelTimes) / len(vehicles[veh].travelTimes))
-            headTimes.append(sum(vehicles[veh].headTimes) / len(vehicles[veh].headTimes))
-            tailTimes.append(sum(vehicles[veh].tailTimes) / len(vehicles[veh].tailTimes))
-            sps = []
-            for speeds in vehicles[veh].speeds:
-                if len(speeds) > 0:
-                    sps.append(sum(speeds) / len(speeds))
-            if len(sps) > 0:
-                meanSpeeds.append(sum(sps) / len(sps))
+            if len(vehicles[veh].headTimes) > 0:
+                meanHeadTimes.append(sum(vehicles[veh].headTimes) / len(vehicles[veh].headTimes))
+            if len(vehicles[veh].tailTimes) > 0:
+                meanTailTimes.append(sum(vehicles[veh].tailTimes) / len(vehicles[veh].tailTimes))
+            if len(vehicles[veh].speeds) > 0:
+                meanSpeeds.append(sum(vehicles[veh].speeds) / len(vehicles[veh].speeds))
 
     meanTravelTime = sum(travelTimes) / len(travelTimes)
     for travelTime in travelTimes:
@@ -266,17 +271,25 @@ def saveResults(vehicles, departed, junctions):
     stDevTravelTime = sqrt(varTravelTime / len(travelTimes))
     maxTravelTime = max(travelTimes)
 
-    meanHeadTime = sum(headTimes) / len(headTimes)
-    for headTime in headTimes:
-        varHeadTime += (headTime - meanHeadTime) ** 2
-    stDevHeadTime = sqrt(varHeadTime / len(headTimes))
-    maxHeadTime = max(headTimes)
+    if len(meanHeadTimes) > 0:
+        meanHeadTime = sum(meanHeadTimes) / len(meanHeadTimes)
+        for headTime in meanHeadTimes:
+            varHeadTime += (headTime - meanHeadTime) ** 2
+        stDevHeadTime = sqrt(varHeadTime / len(meanHeadTimes))
+        maxHeadTime = max(meanHeadTimes)
+    else:
+        meanHeadTime = -1
+        stDevHeadTime = -1
 
-    meanTailTime = sum(tailTimes) / len(tailTimes)
-    for tailTime in tailTimes:
-        varTailTime += (tailTime - meanTailTime) ** 2
-    stDevTailTime = sqrt(varTailTime / len(tailTimes))
-    maxTailTime = max(tailTimes)
+    if len(meanTailTimes) > 0:
+        meanTailTime = sum(meanTailTimes) / len(meanTailTimes)
+        for tailTime in meanTailTimes:
+            varTailTime += (tailTime - meanTailTime) ** 2
+        stDevTailTime = sqrt(varTailTime / len(meanTailTimes))
+        maxTailTime = max(meanTailTimes)
+    else:
+        meanTailTime = -1
+        stDevTailTime = -1
 
     if len(meanSpeeds) > 0:
         meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
@@ -284,8 +297,8 @@ def saveResults(vehicles, departed, junctions):
             varSpeed += (speed - meanSpeed) ** 2
         stDevSpeed = sqrt(varSpeed / len(meanSpeeds))
     else:
-        meanSpeed = 0
-        stDevSpeed = 0
+        meanSpeed = -1
+        stDevSpeed = -1
 
     meanTails = []
     stDevTails = []

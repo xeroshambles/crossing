@@ -37,8 +37,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
-        traci.simulationStep()
         totalTime += 1
+        traci.simulationStep()
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 
@@ -65,7 +65,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                         if objVeh.distanceFromEndLane() < 50:
                             if objVeh not in crossingManager.getCurrentPartecipants():
                                 crossingManager.updateVehicleStatus(objVeh)
-                            # se non è gia in una auction, non e stoppato
+                            # se non è gia in una auction, non è stoppato
                             if objVeh.distanceFromEndLane() < 15:
                                 if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
                                         crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \

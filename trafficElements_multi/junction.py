@@ -595,8 +595,8 @@ class FourWayJunction(Junction):
         self.mapNESO = {'N': self.lanes[:6], 'E': self.lanes[6:12], 'S': self.lanes[12:18], 'O': self.lanes[18:]}
 
     def getArrivalEdgesFromEdge(self, start):
-        """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-        destinazione."""
+        """Funzione che trova il posizionamento degli edge (left, front, right) da far seguire al veicolo dato l'edge
+        di partenza."""
 
         distance = -1
         i = 0
@@ -1029,7 +1029,7 @@ class FourWayJunction(Junction):
                 """Salvo le traiettorie trovate."""
                 self.possibleRoutes[lane] = {'front': frontEdge, 'right': rightEdge, 'left': leftEdge}
 
-    def findClashingRoutesForCentralStreets(self, left, front, right, base, obj):
+    def findClashingRoutesForCentralLanes(self, left, front, right, base, obj):
         """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
         all'incrocio, in particolare quelle che si hanno nell'andare diritto."""
 
@@ -1046,7 +1046,7 @@ class FourWayJunction(Junction):
                          f'e{"0" if self.nID < 10 else ""}{self.nID}_{"0" if right < 10 else ""}{right}_2')
         self.clashingEdges[base][obj].append(clashingEdge4)
 
-    def findClashingRoutesForLeftStreets(self, left, front, right, base, obj):
+    def findClashingRoutesForLeftLanes(self, left, front, right, base, obj):
         """Funzione altamente specifica per la rete utilizzata che memorizza le traiettorie incidentali interne
         all'incrocio, in particolare quelle che si hanno nello svoltare a sinistra."""
 
@@ -1078,6 +1078,6 @@ class FourWayJunction(Junction):
                 k = self.possibleRoutes[i][j]
                 left, front, right = self.getArrivalEdgesFromEdge(int(i[1:3]))
                 if i[-1] == '1':  # front
-                    self.findClashingRoutesForCentralStreets(left, front, right, i, k)
+                    self.findClashingRoutesForCentralLanes(left, front, right, i, k)
                 if i[-1] == '2':  # left
-                    self.findClashingRoutesForLeftStreets(left, front, right, i, k)
+                    self.findClashingRoutesForLeftLanes(left, front, right, i, k)

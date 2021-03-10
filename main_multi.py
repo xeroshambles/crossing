@@ -57,7 +57,7 @@ if __name__ == "__main__":
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
             [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
 
-        sumoDict = {'multi_classic_precedence_classic_tls': sumoCmd,
+        sumoDict = {'multi_classic_tls_classic_precedence': sumoCmd,
                     'multi_classic_precedence': sumoCmd,
                     'multi_auction_classic_precedence': sumoCmd,
                     'multi_reservation_classic_precedence': sumoCmd + ['--step-length', '0.050']}
@@ -102,11 +102,11 @@ if __name__ == "__main__":
 
             for j in range(0, repeat):
                 args = {
-                    'multi_classic_precedence_classic_tls': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_precedence_classic_tls'],
+                    'multi_classic_tls_classic_precedence': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls_classic_precedence'],
                         dir, j, queue, seeds[j]),
                     'multi_classic_precedence': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_precedence_classic_tls'],
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls_classic_precedence'],
                         dir, j, queue, seeds[j]),
                     'multi_auction_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_precedence'],
