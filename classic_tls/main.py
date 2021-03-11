@@ -6,25 +6,14 @@ import traci
 from sumolib import miscutils
 
 
-def intermediateRun(numberOfVehicles, schema, totalTime, departed, intermediate_departed, vehicles, tails_per_lane, main_step, mean_th_per_num, step_incr, n_step, sec, arrayAuto):
-    totalTime += step_incr
-    n_step += 1
-    # faccio avanzare la simulazione
-    traci.simulationStep(totalTime)
-    departed += traci.simulation.getDepartedNumber()
-    intermediate_departed += traci.simulation.getDepartedNumber()
+def intermediateRun(numberOfVehicles, schema, totalTime, departed, intermediate_departed, vehicles, tails_per_lane, main_step, mean_th_per_num, step_incr, n_step, sec, arrayAuto, m, steps_per_main_step):
 
+    #if n_step % sec == 0:
+    vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
 
-    if n_step % sec == 0:
-        vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
-
-        """Salvo i risultati intermedi se si conclude un main step"""
-
-        mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn,
-                                                                            numberOfVehicles, main_step, vehicles,
-                                                                            intermediate_departed, mean_th_per_num)
     # NECESSARIO PER GARANTIRE COERENZA CON LE STRUTTURE DATI DELLA RESERVATION
     arrayAuto = updateReservationArray(arrayAuto)
+
     return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step, arrayAuto
 
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
@@ -68,11 +57,14 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
 
         vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, totalTime, schema)
 
-        """Salvo i risultati intermedi se si conclude un main step"""
 
+        """
+        #Salvo i risultati intermedi se si conclude un main step
         mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
                                                                             main_step, vehicles,
                                                                             intermediate_departed, mean_th_per_num)
+        """
+
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 

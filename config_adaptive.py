@@ -11,6 +11,7 @@ seeds = [9001]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
+
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 output_redirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
 tempo_generazione = 50  # tempo di generazione dei veicoli
@@ -19,13 +20,12 @@ secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
 simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
 dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
-
 m = 60
 
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]
-projects = ["adaptive", "adaptive", "adaptive"]
+projects = ["reservation", "classic_precedence", "precedence_with_auction"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -50,7 +50,11 @@ titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', '
 
 projects_labels = []
 
-for project in projects:
+for p in range(0, len(projects) + 1):
+    if p == len(projects):
+        project = "adaptive"
+    else:
+        project = projects[p]
     if project == "classic_tls":
         projects_labels.append("Semaforo")
     elif project == "classic_precedence":

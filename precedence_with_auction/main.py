@@ -8,12 +8,8 @@ import traci
 from sumolib import miscutils
 
 def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
-                    sec, schema, main_step, mean_th_per_num, arrayAuto):
-    traci.simulationStep()
-    totalTime += step_incr
-    n_step += 1
-    departed += traci.simulation.getDepartedNumber()
-    intermediate_departed += traci.simulation.getDepartedNumber()
+                    sec, schema, main_step, mean_th_per_num, arrayAuto, m, steps_per_main_step):
+
 
     """Ciclo principale dell'applicazione"""
 
@@ -42,16 +38,8 @@ def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, in
     if len(vehAtJunction) > 0:
         crossingManager.allowCrossing()
 
-    if n_step % sec == 0:
-        vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
+    vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
 
-        """Salvo i risultati intermedi se si conclude un main step"""
-
-        # step preliminare per rendere compatibili gli id dei veicoli con la funzione
-        #vehicles_temp = {k.replace("idV", ""): v for (k, v) in vehicles.items()}
-        mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
-                                                                            main_step, vehicles,
-                                                                            intermediate_departed, mean_th_per_num)
 
     # NECESSARIO PER GARANTIRE COERENZA CON LE STRUTTURE DATI DELLA RESERVATION
     arrayAuto = updateReservationArray(arrayAuto)
@@ -73,8 +61,6 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
     departed = 0  # numero di veicoli partiti nella simulazione e considerati nel calcolo delle misure
     totalTime = 0.000  # tempo totale di simulazione
-    step_incr = 0.250  # incremento di step della simulazione
-    sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
     tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
 
     mean_th_per_num = [-1 for el in numberOfVehicles]
@@ -105,9 +91,10 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
     n_step = 0
 
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
-        traci.simulationStep()
-        totalTime += step_incr
+
+        totalTime += 1
         n_step += 1
+        traci.simulationStep(totalTime)
         departed += traci.simulation.getDepartedNumber()
         intermediate_departed += traci.simulation.getDepartedNumber()
 
@@ -138,16 +125,20 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
         if len(vehAtJunction) > 0:
             crossingManager.allowCrossing()
 
-        if n_step % sec == 0:
-            vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
 
-            """Salvo i risultati intermedi se si conclude un main step"""
+        vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, totalTime, schema)
 
-            # step preliminare per rendere compatibili gli id dei veicoli con la funzione
+        """
+        Salvo i risultati intermedi se si conclude un main step
+        mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
+                                                                            main_step, vehicles,
+                                                                            intermediate_departed, mean_th_per_num)
+        
+        """
 
-            mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn, numberOfVehicles,
-                                                                                main_step, vehicles,
-                                                                                intermediate_departed, mean_th_per_num)
+
+
+
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 

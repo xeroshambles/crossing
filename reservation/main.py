@@ -13,7 +13,11 @@ def intermediateRun(numberOfVehicles, schema,
                     vehicles, tails_per_lane, main_step, mean_th_per_num, arrayAuto,
                     lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
                     traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
-                    step_incr, passaggio_precedente, n_step, sec, incrID, isTransitioning):
+                    step_incr, passaggio_precedente, n_step, sec, incrID, isTransitioning, m, steps_per_main_step):
+
+    # inserisco nell'array le auto presenti nella simulazione
+    if isTransitioning != "true" or "waiting":
+        arrayAuto = costruzioneArray(arrayAuto)
 
     for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione
 
@@ -144,37 +148,21 @@ def intermediateRun(numberOfVehicles, schema,
                         matrice_incrocio[incrID] = info[3]
                         passaggio_cella[incrID] = info[4]
     # riaccelero i veicoli all'uscita dall'incrocio
-    if int(totalTime / step_incr) % 10 == 0:
-        for auto_uscita in passaggio_precedente[incrID]:
-            if auto_uscita not in passaggio[incrID]:
-                if auto_uscita == "idV42":
-                    print(f"presente@{totalTime}, auto_uscita\n")
-                traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
-                traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
-                traci.vehicle.setSpeedMode(auto_uscita[0], 7)
-        passaggio_precedente[incrID] = passaggio[incrID][:]
+
+    for auto_uscita in passaggio_precedente[incrID]:
+        if auto_uscita not in passaggio[incrID]:
+            if auto_uscita == "idV42":
+                print(f"presente@{totalTime}, auto_uscita\n")
+            traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
+            traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
+            traci.vehicle.setSpeedMode(auto_uscita[0], 7)
+    passaggio_precedente[incrID] = passaggio[incrID][:]
     # ogni 10 step pulisco la matrice da valori troppo vecchi
-    if int(totalTime / step_incr) % 10 == 0:
+    if totalTime % round(10 * step_incr, 2) == 0:
         matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
 
-    totalTime += step_incr
-    n_step += 1
-    # faccio avanzare la simulazione
-    traci.simulationStep(totalTime)
-    departed += traci.simulation.getDepartedNumber()
-    intermediate_departed += traci.simulation.getDepartedNumber()
-    # inserisco nell'array le auto presenti nella simulazione
-    if isTransitioning != "true" or "waiting":
-        arrayAuto = costruzioneArray(arrayAuto)
-
-    if n_step % sec == 0:
-        vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
-
-        """Salvo i risultati intermedi se si conclude un main step"""
-
-        mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn,
-                                                                            numberOfVehicles, main_step, vehicles,
-                                                                            intermediate_departed, mean_th_per_num)
+    if totalTime % 1 == 0:
+        vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(totalTime), schema)
 
     return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane,\
            arrayAuto, lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella, \
@@ -192,13 +180,12 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
 
     vehicles = {}  # dizionario contente gli id dei veicoli
     departed = 0  # numero di veicoli partiti nella simulazione e considerati nel calcolo delle misure
-    totalTime = 0.000  # tempo totale di simulazione
-    step_incr = 0.050  # incremento del numero di step della simulazione
-    sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
+    totalTime = 0.00  # tempo totale di simulazione
+    step_incr = 0.05  # incremento del numero di step della simulazione
+    #sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
     tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
 
     mean_th_per_num = [-1 for el in numberOfVehicles]
-    main_step = 0
     intermediate_departed = 0
 
     for lane in lanes:
@@ -272,6 +259,14 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
 
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
         incrID = 0
+        totalTime = round(totalTime + step_incr, 2)
+        n_step += 1
+        # faccio avanzare la simulazione
+        traci.simulationStep(totalTime)
+        departed += traci.simulation.getDepartedNumber()
+        intermediate_departed += traci.simulation.getDepartedNumber()
+        # inserisco nell'array le auto presenti nella simulazione
+        arrayAuto = costruzioneArray(arrayAuto)
 
         for auto in arrayAuto:  # scorro l'array delle auto ancora presenti nella simulazione
 
@@ -394,36 +389,33 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
                             matrice_incrocio[incrID] = info[3]
                             passaggio_cella[incrID] = info[4]
         # riaccelero i veicoli all'uscita dall'incrocio
-        if int(totalTime / step_incr) % 10 == 0:
-            for auto_uscita in passaggio_precedente[incrID]:
-                if auto_uscita not in passaggio[incrID]:
-                    if auto_uscita == "idV42":
-                        print(f"presente@{totalTime}, auto_uscita\n")
-                    traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
-                    traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
-                    traci.vehicle.setSpeedMode(auto_uscita[0], 7)
-            passaggio_precedente[incrID] = passaggio[incrID][:]
+
+        for auto_uscita in passaggio_precedente[incrID]:
+            if auto_uscita not in passaggio[incrID]:
+                if auto_uscita == "idV42":
+                    print(f"presente@{totalTime}, auto_uscita\n")
+                traci.vehicle.setMaxSpeed(auto_uscita[0], 13.888888)
+                traci.vehicle.setSpeed(auto_uscita[0], 13.888888)
+                traci.vehicle.setSpeedMode(auto_uscita[0], 7)
+        passaggio_precedente[incrID] = passaggio[incrID][:]
         # ogni 10 step pulisco la matrice da valori troppo vecchi
-        if int(totalTime / step_incr) % 10 == 0:
+        if totalTime % round(10 * step_incr, 2) == 0:
             matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
 
-        totalTime += step_incr
-        n_step += 1
-        # faccio avanzare la simulazione
-        traci.simulationStep(totalTime)
-        departed += traci.simulation.getDepartedNumber()
-        intermediate_departed += traci.simulation.getDepartedNumber()
-        # inserisco nell'array le auto presenti nella simulazione
-        arrayAuto = costruzioneArray(arrayAuto)
 
-        if n_step % sec == 0:
-            vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
 
-            """Salvo i risultati intermedi se si conclude un main step"""
+        if totalTime % 1 == 0:
+            vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, totalTime, schema)
 
+            """
+            Salvo i risultati intermedi se si conclude un main step
+            
             mean_th_per_num, main_step, intermediate_departed = checkIfMainStep(totalTime, stepsSpawn,
                                                                                 numberOfVehicles, main_step, vehicles,
                                                                                 intermediate_departed, mean_th_per_num)
+            """
+
+
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 

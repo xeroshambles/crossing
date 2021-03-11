@@ -18,18 +18,7 @@ def parseString(s):
     return split
 
 
-def runDifferentAdaptiveSimulations(train, numberOfVehicles, schema, sumoCmd, path, index, queue, seed):
-
-    for sim in train:
-        main_steps = parseString(sim)
-        for n in main_steps:
-            main_step_index = main_steps.index[n]
-            adaptiveSimulation(main_steps, train[sim][main_step_index])
-
-
-
-
-def simulate(procs, queue, project, train=None):
+def simulate(procs, queue, project, train, i, adapt=True):
     """ This function allows to simulate <repeat> times using <repeat> different seeds"""
 
 
@@ -53,14 +42,11 @@ def simulate(procs, queue, project, train=None):
             'adaptive': (
                 numberOfVehicles[i], schema, sumoDict['adaptive'], dir, j, queue, seeds[j],
                 celle_per_lato, traiettorie_matrice, secondi_di_sicurezza,
-                simulationMode, instantPay, dimensionOfGroups, train
+                simulationMode, instantPay, dimensionOfGroups, train[str(numberOfVehicles[i])]
             )
         }
-        if project == 'adaptive':
-            if train:
-                p = Process(target=module.adaptiveSimulation, args=args[project])
-            else:
-                return queue
+        if adapt:
+            p = Process(target=module.adaptiveSimulation, args=args[project])
         else:
             p = Process(target=module.run, args=args[project])
         p.start()
@@ -97,7 +83,7 @@ def trainFromCollectedMeasures(intermediate_group_measures, configs):
 
             best = max([temp[x][s] for x in temp])
             p = [temp[x][s] for x in temp].index(best)
-            if [temp[x][s] == 0 for x in temp] and s > 0:
+            if [x for x in temp if temp[x][s] == 0] and s > 0:
                 evaluation[s] = evaluation[s - 1]
             else:
                 evaluation[s] = projects[p]
@@ -109,7 +95,7 @@ def trainFromCollectedMeasures(intermediate_group_measures, configs):
 if __name__ == "__main__":
     """Main che avvia un certo numero di simulazioni in parallelo (in modalità manuale o automatica)"""
 
-    dir = f"outputs_{date.today().strftime('%d-%m-%Y')}"
+    dir = f"outputs_{date.today().strftime('%d-%m-%Y')}_substeps"
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
     intermediate_group_measures = {}
@@ -131,20 +117,32 @@ if __name__ == "__main__":
                         mode, arr=True)
 
     a = 0
-    for project in projs:
-        project_label = projects_labels[projects.index(project)]
+    sim = "adaptive"
+    for p in range(0, len(projs) + 1):
+        if p == len(projs):
+            project = sim
+            train = False
+            #s = {'[50, 100, 150, 200]': {'reservation': [[0.6153846153846154, 0.5454545454545454, 0.4444444444444444, 0.32407407407407407]], 'classic_precedence': [[0.4473684210526316, 0.4594594594594595, 0.4891304347826087, 0.6]], 'precedence_with_auction': [[0.3684210526315789, 0.2894736842105263, 0.3010752688172043, 0.36363636363636365]]}}
+            #sims_per_main_step = trainFromCollectedMeasures(s, numberOfVehicles)
+            sims_per_main_step = trainFromCollectedMeasures(intermediate_group_measures, numberOfVehicles)
+        else:
+            project = projs[p]
+            train = True
+            sims_per_main_step = {'[50, 100, 150, 200]': {0: project, 1: project, 2: project, 3: project}}
+
+        project_label = projects_labels[p]
 
         try:
-            module = importlib.import_module(".main", package=project)
+            module = importlib.import_module(".main", package=sim)
         except Exception:
             print("\nImpossibile trovare il progetto...")
             sys.exit(-1)
 
-        print(f"\nEseguo il progetto {project}...")
+        print(f"\nEseguo il progetto {project} adattativo...")
 
-        config_file = os.path.join(os.path.split(__file__)[0], project,
+        config_file = os.path.join(os.path.split(__file__)[0], sim,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
-        '''
+
         #default dati
         choice = checkChoice(['d', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
@@ -161,7 +159,7 @@ if __name__ == "__main__":
                              "\nUtilizzo la modalità dati come default...",
                              '\nInserire un carattere tra d e g!',
                              mode)
-
+        '''
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
@@ -169,9 +167,9 @@ if __name__ == "__main__":
 
         sumoDict = {'classic_tls': sumoCmd,
                     'classic_precedence': sumoCmd,
-                    'reservation': sumoCmd + ["--step-length", "0.050"],
-                    'precedence_with_auction': sumoCmd + ["--step-length", "0.250"],
-                    'adaptive': sumoCmd + ["--step-length", "0.050"]}
+                    'reservation': sumoCmd + ["--step-length", "0.05"],
+                    'precedence_with_auction': sumoCmd + ["--step-length", "0.25"],
+                    'adaptive': sumoCmd + ["--step-length", "0.05"]}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -213,28 +211,30 @@ if __name__ == "__main__":
 
 
             print(f'\nUtilizzo un set di {numberOfVehicles[i]} veicoli in {stepsSpawn} steps...')
-            p = ["precedence_with_auction", "classic_precedence", "reservation"]
+
             #dummy_train = {'0': "reservation", '1': "precedence_with_auction", '2': "classic_precedence", '3': "reservation"}
             #dummy_train = {'0': "classic_precedence", '1': "reservation", '2': "precedence_with_auction",'3': "classic_precedence"}
             #dummy_train = {'0': "reservation", '1': "classic_precedence", '2': "precedence_with_auction",'3': "classic_precedence"}
             #dummy_train = {'0': "classic_precedence", '1': "precedence_with_auction", '2': "classic_precedence", '3': "classic_precedence"}
             #dummy_train = {'0': "reservation", '1': "classic_precedence", '2': "reservation",'3': "classic_precedence"}
-            dummy_train = {'0': p[a], '1': p[a], '2': p[a], '3': p[a]}
+
             procs = []
-            queue = simulate(project=project , procs=[], queue=queue, train=dummy_train)
+            queue = simulate(project=sim, procs=[], queue=queue, train=sims_per_main_step, i=i)
 
             intermediate_group_measures = collectMeasures(queue, repeat, sum(numberOfVehicles[i]), group_measures,
                                                     single_measures, groups, titles,
                                                     head_titles, labels, numberOfVehicles,
                                                     project, f, i, intermediate_group_measures, adaptive=True)
 
-            train = trainFromCollectedMeasures(intermediate_group_measures, numberOfVehicles)
+            print(f"train: {sims_per_main_step}\n")
+            print(f"intermediate_measures: {intermediate_group_measures}\n")
+            #train = trainFromCollectedMeasures(intermediate_group_measures, numberOfVehicles)
             f.close()
 
         linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label)
 
         clearMeasures(group_measures, groups, head_titles)
-        a += 1
+
 
 
     linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
@@ -245,7 +245,6 @@ if __name__ == "__main__":
 
 
 
-    print(f"train: {train}\n")
-    print(f"intermediate_measures: {intermediate_group_measures}\n")
+
 
 

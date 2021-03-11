@@ -51,7 +51,7 @@ def updateReservationArray(arrayAuto_temp, clean=False):
 
 
 
-def mainStep(total_time, n_steps, n_vehs):
+def mainStep2(total_time, n_steps, n_vehs):
 
     r = round(total_time)
 
@@ -62,15 +62,25 @@ def mainStep(total_time, n_steps, n_vehs):
     else:
         return False
 
+def mainStep(total_time, numberOfVehicles, simulation_time):
+
+
+    #mod = n_steps % (steps_per_main_step )
+    mod = total_time % (simulation_time / len(numberOfVehicles))
+    if total_time != 0 and mod == 0 and total_time <= simulation_time:
+        return True
+    else:
+        return False
+
 def getVehiclesWithHigherDistanceFromEndLaneThan(vehicles, m=0):
     vehs_not_crossed = getVehiclesNotCrossed(getVehiclesInNet(vehicles))
     return {k:v for (k,v) in vehs_not_crossed.items() if v.distanceFromEndLane() > m}
 
-def saveIntermediateResults(n_vehs, step, vehicles, departed, m=60):
+def saveIntermediateResults(n_vehs, main_step, vehicles, departed, m=0):
 
     passed = 0
-    floor = sum(n_vehs[0: step])
-    ceil = floor + n_vehs[step]
+    floor = sum(n_vehs[0: main_step])
+    ceil = floor + n_vehs[main_step]
     #ids = {v.getID(): v for v in vehicles.values()}
     vehs_not_crossed = getVehiclesWithHigherDistanceFromEndLaneThan(vehicles, m)
     n_vehs_not_crossed = len(vehs_not_crossed)
@@ -79,13 +89,23 @@ def saveIntermediateResults(n_vehs, step, vehicles, departed, m=60):
     for v in current_main_step_vehicles_to_consider.values():
         num = v.getID().replace("idV", "")
 
-        if int(num) <= departed:
-            passed += v.hasPassed
-    mean_th = passed / (departed + 1 - n_vehs_not_crossed)
+        #if int(num) <= departed:
+        passed += v.hasPassed
+    mean_th = passed / (departed - n_vehs_not_crossed)
 
     return mean_th
 
-def checkIfMainStep(total_time, n_steps, n_vehs, step, vehicles, departed, mean_th_per_num):
+def checkIfMainStep(total_time, steps_per_main_step, n_steps, spawn_duration, numberOfVehicles, main_step, vehicles, departed, mean_th_per_num, m=0):
+
+    if total_time != 0 and mainStep(total_time, steps_per_main_step, n_steps, spawn_duration):
+            mean_th_per_num[main_step] = saveIntermediateResults(numberOfVehicles, main_step, vehicles, departed, m)
+            if main_step < (len(numberOfVehicles) - 1):
+                main_step += 1
+            departed = 0
+
+    return mean_th_per_num, main_step, departed
+
+def checkIfMainStep2(total_time, n_steps, n_vehs, step, vehicles, departed, mean_th_per_num):
 
     if mainStep(total_time, n_steps, n_vehs):
             mean_th_per_num[step] = saveIntermediateResults(n_vehs, step, vehicles, departed)
@@ -94,7 +114,6 @@ def checkIfMainStep(total_time, n_steps, n_vehs, step, vehicles, departed, mean_
             departed = 0
 
     return mean_th_per_num, step, departed
-
 
 def getLaneIndexFromEdges(start, end, node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
@@ -207,6 +226,7 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
             t = 0
             c += 1
             auto_every = (numberOfSteps / len(numberOfVehicles)) / numberOfVehicles[c]
+
         depart += auto_every
         idV = f'idV{i}'
         vehicles[idV] = Vehicle(idV, iP=instantPay)
@@ -218,6 +238,7 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
             traci.vehicle.setLaneChangeMode(idV, 512)
         if wallet:
             traci.vehicle.setParameter(idV, "wallet", str(50))
+
 
     return vehicles
 

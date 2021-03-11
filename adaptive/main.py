@@ -4,7 +4,7 @@ from inpout import redirect_output
 from reservation.main import stopXY, limiti_celle, costruzioneArray
 from classic_tls.main import intermediateRun as tlsRun
 from classic_precedence.main import intermediateRun as precedenceRun
-from precedence_with_auction.main import intermediateRun as precedenceWithAuctionRun
+from precedence_with_auction.main import intermediateRun as auctionRun
 from reservation.main import intermediateRun as reservationRun
 from precedence_with_auction.trafficElements.junction import FourWayJunction
 import traci
@@ -254,8 +254,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     """Inizializzo i veicoli assegnadogli una route generata casualmente e, in caso di schema di colori 
     non significativo, dandogli un colore diverso per distinguerli meglio all'interno della simulazione"""
 
-    """ATTENZIONE: OCCORRE FARLA ANCHE PER PRECEDENCE WITH AUCTION"""
-    vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids, allowLaneChange=False)
+    vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids, wallet=True, allowLaneChange=False)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
@@ -272,8 +271,9 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
 
     #params di reservation
-    step_incr = 0.050  # incremento di step della simulazione
-    sec = 1 / step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
+    reservation_step_incr = 0.05  # incremento di step della simulazione
+    sec = 1 / reservation_step_incr  # numero che indica ogni quanti sotto step devo calcolare le misure
+    steps_per_main_step = sec * stepsSpawn / len(numberOfVehicles)
     # istanzio le matrici [nome_incrocio, variabile]
     attesa = []  # ordine di arrivo su lista, si resetta quando le auto liberano incrocio
     passaggio = []  # auto in passaggio nell'incrocio
@@ -331,9 +331,21 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     n_step = 0
     incrID = 0
 
+    if train[len(numberOfVehicles) - 1] == "reservation":
+        end_sim = stepsSpawn + reservation_step_incr
+    else:
+        end_sim = stepsSpawn + 1
     # ////////////////////////////FOR LOOP RESPECTIVE SIM//////////////////////////////////////////
-    while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
-        # if main step
+    while traci.simulation.getMinExpectedNumber() > 0 and totalTime < end_sim:
+
+        if mainStep(totalTime, numberOfVehicles, stepsSpawn):
+
+            """Salvo i risultati intermedi se si conclude un main step"""
+            mean_th_per_num[main_step] = saveIntermediateResults(numberOfVehicles, main_step, vehicles, intermediate_departed, m)
+            if main_step < (len(numberOfVehicles) - 1):
+                main_step += 1
+            intermediate_departed = 0
+            transitioning = "true"
 
         if transitioning == "true":
             removed, vehicles, arrayAuto = removeVehiclesBetweenStopAnd(vehicles, arrayAuto, m)
@@ -379,8 +391,25 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
             transitioning = "false"
 
         """Lancio il progetto giusto per ogni step"""
-        project = train[str(main_step)]
+        project = train[main_step]
+
+        # if main step
+        if project == "reservation":
+            step_incr = reservation_step_incr
+        else:
+            step_incr = 1
+        totalTime = round(totalTime + step_incr, 2)
+        n_step += 1
+        # faccio avanzare la simulazione
+        traci.simulationStep(totalTime)
+        departed += traci.simulation.getDepartedNumber()
+        intermediate_departed += traci.simulation.getDepartedNumber()
+
         print(f"step: {totalTime}, main_step: {main_step}, project: {project}\n")
+
+
+
+
 
         '''
         if project == "classic_tls":
@@ -389,7 +418,8 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
                                                                                                                     schema, totalTime,
                                                                                                                     departed, intermediate_departed,
                                                                                                                     vehicles, tails_per_lane, main_step,
-                                                                                                                    mean_th_per_num, step_incr, n_step, sec, arrayAuto)
+                                                                                                                    mean_th_per_num, step_incr, n_step, sec, arrayAuto,
+                                                                                                                    m, steps_per_main_step)
         '''
         if project == "classic_precedence":
 
@@ -397,12 +427,13 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
                                                                                                                     schema, totalTime,
                                                                                                                     departed, intermediate_departed,
                                                                                                                     vehicles, tails_per_lane, main_step,
-                                                                                                                    mean_th_per_num, step_incr, n_step, sec, arrayAuto)
+                                                                                                                    mean_th_per_num, step_incr, n_step, sec,
+                                                                                                                    arrayAuto, m, steps_per_main_step)
         if project == "precedence_with_auction":
 
             totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
-            mean_th_per_num, arrayAuto = precedenceWithAuctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
-                    sec, schema, main_step, mean_th_per_num, arrayAuto)
+            mean_th_per_num, arrayAuto = auctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
+                    sec, schema, main_step, mean_th_per_num, arrayAuto, m, steps_per_main_step)
 
         if project == "reservation":
 
@@ -414,10 +445,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
                                                                                             vehicles, tails_per_lane, main_step, mean_th_per_num, arrayAuto,
                                                                                             lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
                                                                                             traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
-                                                                                            step_incr, passaggio_precedente, n_step, sec, incrID, transitioning)
-        if isTransitioning(main_step_old, main_step):
-            transitioning = "true"
-            main_step_old = main_step
+                                                                                            step_incr, passaggio_precedente, n_step, sec, incrID, transitioning, m, steps_per_main_step)
 
 
 
