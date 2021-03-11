@@ -9,7 +9,7 @@ from config_multi import *
 def redirect_output(path, index, mode):
     """Funzione che redireziona l'output della simulazione"""
 
-    if output_redirection:
+    if outputRedirection:
 
         origin_stdout = sys.stdout
 

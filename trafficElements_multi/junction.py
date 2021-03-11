@@ -4,6 +4,7 @@ from abc import abstractmethod, ABC
 from .auction import CompetitiveAuction, CooperativeAuction
 from .competitive import CompetitiveCrossingManager
 from .cooperative import CooperativeCrossingManager
+from .intersectionManager import IntersectionManager
 
 import traci
 
@@ -11,7 +12,9 @@ import traci
 class Junction(ABC):
     """ Classe padre di tutti i tipi di incrocio possibili (a 2, 3 o 4 vie)."""
 
-    def __init__(self, numericID, vehicles, iP, sM, bM, groupDimension=None):
+    def __init__(self, numericID, vehicles, iP=instantPay, sM=simulationMode, bM=False,
+                 groupDimension=dimensionOfGroups, cellsPerSide=cellsPerSide, matrixTrajectories=None,
+                 securitySecs=securitySecs):
         self.nID = numericID
         # self.networdDimension = netDim  # forma: X x Y, la rete sarà rettangolare o quadrata. Default: 5x5
         self.junctionID = f'n{numericID}'
@@ -33,6 +36,7 @@ class Junction(ABC):
             self.crossingManager = CompetitiveCrossingManager(self)
         else:
             self.crossingManager = CooperativeCrossingManager(self)
+        self.intersectionManager = IntersectionManager(self, cellsPerSide, matrixTrajectories, securitySecs)
 
         self.departed = []
         self.arrived = []
@@ -476,8 +480,11 @@ class Junction(ABC):
 class FourWayJunction(Junction):
     """Caso di incrocio a quattro strade, unici utilizzati nelle simulazioni finali."""
 
-    def __init__(self, numericID, vehicles, iP, sM, bM, groupDimension=None):
-        super().__init__(numericID, vehicles, iP, sM, bM, groupDimension)
+    def __init__(self, numericID, vehicles, iP=instantPay, sM=simulationMode, bM=False,
+                 groupDimension=dimensionOfGroups, cellsPerSide=cellsPerSide, matrixTrajectories=None,
+                 securitySecs=securitySecs):
+        super().__init__(numericID, vehicles, iP, sM, bM, groupDimension, cellsPerSide, matrixTrajectories,
+                         securitySecs)
 
         if self.nID in vertex_junctions_ids:
             self.edgeCalcVertex()

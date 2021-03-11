@@ -11,20 +11,20 @@ seeds = [9001]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
-config_file = "intersection.sumocfg"  # file di configurazione della simulazione
-output_redirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
-tempo_generazione = 50  # tempo di generazione dei veicoli
-celle_per_lato = 20  # numero di celle per lato nel caso della reservation
-secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
+configFile = "intersection.sumocfg"  # file di configurazione della simulazione
+outputRedirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
+genTime = 50  # tempo di generazione dei veicoli
+cellsPerSide = 20  # numero di celle per lato nel caso della reservation
+securitySecs = 0.6  # soglia tra veicoli per la reservation
 simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
-dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
+dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 
 # Variabili di configurazione per ogni simulazione (più incroci)
 
 # Progetti: ["multi_classic_tls_classic_precedence", "multi_classic_precedence", "multi_reservation_classic_precedence",
 # "multi_auction_classic_precedence"]
-projects_multi = ["multi_auction_classic_precedence"]
+projects_multi = ["multi_reservation_classic_precedence"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
 external_east_junctions_ids = [55, 60, 65, 70, 75]
 external_south_junctions_ids = [46, 47, 48, 49, 50]

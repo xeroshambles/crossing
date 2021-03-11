@@ -1,5 +1,7 @@
-from utils_multi import *
 from inpout_multi import redirect_output
+
+from trafficElements_multi.junction import FourWayJunction
+from trafficElements_multi.simulation import *
 
 import traci
 from sumolib import miscutils
@@ -21,18 +23,21 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     departed_vehicles = []  # lista dei veicoli partiti entro la fine della simulazione
     totalTime = 0  # tempo totale di simulazione
 
+    simulation = Simulation()
+
     """Con il seguente ciclo inizializzo i veicoli assegnadogli una route legale generata casualmente e, in caso di 
     schema di colori non significativo,dandogli un colore diverso per distinguerli meglio all'interno della 
     simulazione"""
 
-    generateVehicles(stepsSpawn, numberOfVehicles, vehicles, routeMode, instantPay, seed)
+    simulation.generateVehicles(stepsSpawn, numberOfVehicles, vehicles, routeMode, instantPay, seed)
 
     if schema in ['n', 'N']:
-        colorVehicles(numberOfVehicles)
+        simulation.colorVehicles(numberOfVehicles)
 
     """Di seguito inizializzo gli incroci che fanno parte della simulazione"""
 
-    junctions = createJunctions(vehicles)
+    junctions = [FourWayJunction(n, vehicles, iP=instantPay, sM=simulationMode, bM=False,
+                                 groupDimension=dimensionOfGroups) for n in range(1, 26)]
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
@@ -42,7 +47,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
         departed += traci.simulation.getDepartedNumber()
         departed_vehicles += traci.simulation.getDepartedIDList()
 
-        vehicles = checkRoute(vehicles, numberOfVehicles)
+        vehicles = simulation.checkRoute(vehicles, numberOfVehicles)
 
         """Ciclo principale dell'applicazione"""
 
@@ -75,13 +80,13 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
                 if len(vehAtJunction) > 0:
                     crossingManager.allowCrossing()
 
-        vehicles, junctions = checkVehicles(vehicles, departed_vehicles, junctions, totalTime, schema)
+        vehicles, junctions = simulation.checkVehicles(vehicles, departed_vehicles, junctions, totalTime, schema)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
     meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, \
     stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, meanTails, \
-    stDevTails, maxTails, meanThroughput = saveResults(vehicles, departed, junctions)
+    stDevTails, maxTails, meanThroughput = simulation.saveResults(vehicles, departed, junctions)
 
     traci.close()
 
