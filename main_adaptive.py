@@ -118,19 +118,17 @@ if __name__ == "__main__":
 
     a = 0
     sim = "adaptive"
-    for p in range(0, len(projs) + 1):
-        if p == len(projs):
-            project = sim
+    for project in projs:
+        if project == "adaptive":
             train = False
             #s = {'[50, 100, 150, 200]': {'reservation': [[0.6153846153846154, 0.5454545454545454, 0.4444444444444444, 0.32407407407407407]], 'classic_precedence': [[0.4473684210526316, 0.4594594594594595, 0.4891304347826087, 0.6]], 'precedence_with_auction': [[0.3684210526315789, 0.2894736842105263, 0.3010752688172043, 0.36363636363636365]]}}
             #sims_per_main_step = trainFromCollectedMeasures(s, numberOfVehicles)
             sims_per_main_step = trainFromCollectedMeasures(intermediate_group_measures, numberOfVehicles)
         else:
-            project = projs[p]
             train = True
             sims_per_main_step = {'[50, 100, 150, 200]': {0: project, 1: project, 2: project, 3: project}}
 
-        project_label = projects_labels[p]
+        project_label = projects_labels[projs.index(project)]
 
         try:
             module = importlib.import_module(".main", package=sim)

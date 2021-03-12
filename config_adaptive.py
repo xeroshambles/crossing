@@ -25,7 +25,7 @@ m = 60
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]
-projects = ["reservation", "classic_precedence", "precedence_with_auction"]
+projects = ["reservation", "classic_precedence", "precedence_with_auction", "adaptive"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -50,11 +50,7 @@ titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', '
 
 projects_labels = []
 
-for p in range(0, len(projects) + 1):
-    if p == len(projects):
-        project = "adaptive"
-    else:
-        project = projects[p]
+for project in projects:
     if project == "classic_tls":
         projects_labels.append("Semaforo")
     elif project == "classic_precedence":
