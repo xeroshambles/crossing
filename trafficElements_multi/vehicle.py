@@ -261,7 +261,9 @@ class Vehicle:
         end = int(edges[self.edgeIndex + 1][4:6])
         junctionID = int(edges[self.edgeIndex][4:6])
 
-        # if self.idVehicle == 'idV0':
+        traci.vehicle.setLaneChangeMode(self.idVehicle, 1621)
+
+        # if self.idVehicle == 'idV60':
         #     print(f"EDGES: {edges}, START: {start}, END: {end}, SUFFIX: {suffix}, INDEX: {self.edgeIndex}")
 
         # se il veicolo deve andare a destra al prossimo incrocio
@@ -272,16 +274,10 @@ class Vehicle:
                 (start - junctionID == -1 and end - junctionID == 5):
             if suffix == 1:
                 if traci.vehicle.couldChangeLane(self.idVehicle, -1):
-                    traci.vehicle.changeLane(self.idVehicle, 0, 10000.0)
-                else:
-                    traci.vehicle.setSpeed(self.idVehicle, 3)
+                    traci.vehicle.changeLane(self.idVehicle, 0, 1.0)
             elif suffix == 2:
                 if traci.vehicle.couldChangeLane(self.idVehicle, -1):
-                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
-                else:
-                    traci.vehicle.setSpeed(self.idVehicle, 2)
-            else:
-                traci.vehicle.setSpeed(self.idVehicle, 13.89)
+                    traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
 
         # se il veicolo deve andare diritto al prossimo incrocio
         elif (start - junctionID == -5 and end - junctionID == 5) or (start - junctionID == 1 and end -
@@ -291,16 +287,10 @@ class Vehicle:
                 (start - junctionID == -1 and end - junctionID == 1):
             if suffix == 0:
                 if traci.vehicle.couldChangeLane(self.idVehicle, 1):
-                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
-                else:
-                    traci.vehicle.setSpeed(self.idVehicle, 4)
+                    traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
             elif suffix == 2:
                 if traci.vehicle.couldChangeLane(self.idVehicle, -1):
-                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
-                else:
-                    traci.vehicle.setSpeed(self.idVehicle, 2)
-            else:
-                traci.vehicle.setSpeed(self.idVehicle, 13.89)
+                    traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
 
         # se il veicolo deve andare a sinistra al prossimo incrocio
         elif (start - junctionID == -5 and end - junctionID == 1) or (start - junctionID == 1 and end -
@@ -310,16 +300,10 @@ class Vehicle:
                 (start - junctionID == -1 and end - junctionID == -5):
             if suffix == 0:
                 if traci.vehicle.couldChangeLane(self.idVehicle, 1):
-                    traci.vehicle.changeLane(self.idVehicle, 1, 10000.0)
-                else:
-                    traci.vehicle.setSpeed(self.idVehicle, 4)
+                    traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
             elif suffix == 1:
                 if traci.vehicle.couldChangeLane(self.idVehicle, 1):
-                    traci.vehicle.changeLane(self.idVehicle, 2, 10000.0)
-                else:
-                    traci.vehicle.setSpeed(self.idVehicle, 3)
-            else:
-                traci.vehicle.setSpeed(self.idVehicle, 13.89)
+                    traci.vehicle.changeLane(self.idVehicle, 2, 1.0)
 
     def checkCorrectLane(self, junction):
         """Funzione che verifica se il veicolo è arrivato nella lane corretta, in caso contrario si genera una nuova
@@ -333,6 +317,8 @@ class Vehicle:
         start = int(edges[self.edgeIndex][1:3])
         end = int(edges[self.edgeIndex + 1][4:6])
         junctionID = int(edges[self.edgeIndex][4:6])
+
+        traci.vehicle.setLaneChangeMode(self.idVehicle, 512)
 
         # se il veicolo doveva andare a destra al prossimo incrocio
         if (start - junctionID == -5 and end - junctionID == -1) or (start - junctionID == 1 and end -

@@ -26,7 +26,7 @@ class Simulation:
 
         return array_vehicles_temp
 
-    def generateVehicles(self, numberOfSteps, numberOfVehicles, vehicles, routeMode, instantPay, seed):
+    def generateVehicles(self, numberOfSteps, numberOfVehicles, vehicles, instantPay, seed):
         """Genero veicoli per ogni route possibile nel caso di incrocio multiplo"""
 
         c = 0
@@ -46,12 +46,12 @@ class Simulation:
             depart += auto_every
             idV = f'idV{i}'
             vehicles[idV] = Vehicle(idV, seed, iP=instantPay)
-            # base_route = vehicles[idV].generateRoute(static=routeMode)
             base_route = vehicles[idV].getInitialRoute()
             route = traci.simulation.findRoute(base_route[0], base_route[1])
             traci.route.add(f'route_{i}', route.edges)
             vehicles[idV].setEdgeObjective(base_route[1])
             traci.vehicle.add(idV, f'route_{i}', depart=depart)
+            traci.vehicle.setLaneChangeMode(idV, 512)
 
         return vehicles
 
@@ -92,14 +92,21 @@ class Simulation:
 
         return lane_end - spawn_distance
 
-    def checkRoute(self, vehicles, numberOfVehicles):
+    def checkRoute(self, vehicles, departed_vehicles, arrived_vehicles, numberOfVehicles):
         """Controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route"""
 
         for i in range(0, sum(numberOfVehicles)):
-            vehicles[f'idV{i}'].travelTimes[vehicles[f'idV{i}'].travelIndex] += 1
-            vehicles[f'idV{i}'].changeTarget(staticRoutes=routeMode)
+            idV = f'idV{i}'
+            if idV not in arrived_vehicles:
+                vehicles[idV].travelTimes[vehicles[idV].travelIndex] += 1
+                vehicles[idV].changeTarget(staticRoutes=routeMode)
+            else:
+                try:
+                    departed_vehicles.remove(idV)
+                except:
+                    pass
 
-        return vehicles
+        return vehicles, departed_vehicles
 
     def checkVehicles(self, vehicles, departed_vehicles, junctions, time, schema):
         """Funzione che controlla il posizionamento dei veicoli e calcola le relative misure"""
@@ -107,8 +114,6 @@ class Simulation:
         for junction in junctions:
 
             # per ogni junction creo dei nuovi valori per il calcolo del throughput
-            junction.departed.append(0)
-            junction.arrived.append(0)
 
             vehs_in_junction = junction.getActualVehicles(departed_vehicles)
 
@@ -126,7 +131,7 @@ class Simulation:
                     # registro il veicolo nella gestione dell'incrocio
                     if veh not in junction.vehiclesEntering:
                         junction.vehiclesEntering.append(veh)
-                        junction.departed[time - 1] += 1
+                        junction.departed += 1
                         vehicles[veh].edgeIndex += 1
                         vehicles[veh].headTimes.append(0)
                         vehicles[veh].tailTimes.append(0)
@@ -136,14 +141,12 @@ class Simulation:
                     vehicles[veh].spawnDistances[-1] = spawn_distance
                     distance = self.getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
                                                       junction.junction_shape)
-                    # se la distanza è maggiore di 50 provo a far cambiare la lane al veicolo
-                    if distance >= 80:
-                        traci.vehicle.setLaneChangeMode(veh, 1621)
+                    # # se la distanza è compresa 115 e 70 provo a far cambiare la lane
+                    if 70 <= distance < 115:
                         vehicles[veh].tryChangeLane()
-                    # se la distanza è inferiore a 50 e il veicolo non è riuscito ad andare nella lane corretta
-                    # gli impedisco di cambiare lane e gli cambio temporaneamente la route
-                    if 60 <= distance < 80:
-                        traci.vehicle.setLaneChangeMode(veh, 512)
+                    # se la distanza è tra 70 e 50 e il veicolo non è riuscito ad andare nella lane corretta
+                    # impedisco di cambiare lane e cambio temporaneamente la route
+                    if 50 <= distance < 70:
                         vehicles[veh].checkCorrectLane(junction)
                     if distance < 15:
                         vehicles[veh].speeds.append(traci.vehicle.getSpeed(veh))
@@ -203,7 +206,7 @@ class Simulation:
                 elif veh_current_lane in junction.outgoingLanes:
                     if veh in junction.vehiclesEntering:
                         junction.vehiclesEntering.remove(veh)
-                        junction.arrived[time - 1] += 1
+                        junction.arrived += 1
 
         return vehicles, junctions
 
@@ -275,13 +278,10 @@ class Simulation:
         meanThroughput = []
 
         for junction in junctions:
-            meanTp = []
-            for i in range(0, len(junction.arrived)):
-                if junction.departed[i] == 0:
-                    meanTp.append(1)
-                else:
-                    meanTp.append(junction.arrived[i] / junction.departed[i])
-            meanThroughput.append(sum(meanTp) / len(meanTp))
+            if junction.departed == 0:
+                meanThroughput.append(1)
+            else:
+                meanThroughput.append(junction.arrived / junction.departed)
             for lane in junction.tails_per_lane:
                 meanTailLength.append(sum(junction.tails_per_lane[lane]) / len(junction.tails_per_lane[lane]))
                 lane_max = max(junction.tails_per_lane[lane])
