@@ -4,6 +4,7 @@ from abc import abstractmethod, ABC
 from .auction import CompetitiveAuction, CooperativeAuction
 from .competitive import CompetitiveCrossingManager
 from .cooperative import CooperativeCrossingManager
+from .reservationManager import ReservationManager
 
 import traci
 
@@ -12,7 +13,8 @@ class Junction(ABC):
     """ Classe padre di tutti i tipi di incrocio possibili (a 2, 3 o 4 vie)."""
 
     def __init__(self, numericID, vehicles, iP=instantPay, sM=simulationMode, bM=False,
-                 groupDimension=dimensionOfGroups):
+                 groupDimension=dimensionOfGroups, cellsPerSide=cellsPerSide, matrixTrajectories=None,
+                 securitySecs=securitySecs):
         self.nID = numericID
         # self.networdDimension = netDim  # forma: X x Y, la rete sarà rettangolare o quadrata. Default: 5x5
         self.junctionID = f'n{numericID}'
@@ -34,6 +36,7 @@ class Junction(ABC):
             self.crossingManager = CompetitiveCrossingManager(self)
         else:
             self.crossingManager = CooperativeCrossingManager(self)
+        self.reservationManager = ReservationManager(self, cellsPerSide, matrixTrajectories, securitySecs)
 
         self.departed = 0
         self.arrived = 0
@@ -478,8 +481,10 @@ class FourWayJunction(Junction):
     """Caso di incrocio a quattro strade, unici utilizzati nelle simulazioni finali."""
 
     def __init__(self, numericID, vehicles, iP=instantPay, sM=simulationMode, bM=False,
-                 groupDimension=dimensionOfGroups):
-        super().__init__(numericID, vehicles, iP, sM, bM, groupDimension)
+                 groupDimension=dimensionOfGroups, cellsPerSide=cellsPerSide, matrixTrajectories=None,
+                 securitySecs=securitySecs):
+        super().__init__(numericID, vehicles, iP, sM, bM, groupDimension, cellsPerSide, matrixTrajectories,
+                         securitySecs)
 
         if self.nID in vertex_junctions_ids:
             self.edgeCalcVertex()

@@ -6,7 +6,7 @@ from datetime import date
 from config_multi import *
 
 
-def redirect_output(path, index, mode):
+def redirectOutput(path, index, mode):
     """Funzione che redireziona l'output della simulazione"""
 
     if outputRedirection:
@@ -177,7 +177,7 @@ def checkInput(val, inp, default, err, mode='', auto_ret='', auto_value=0, min_i
     return i
 
 
-def autolabel(values, r, offset, ax):
+def autoLabel(values, r, offset, ax):
     """Funzione per mettere il numero sopra la barra dell'istogramma"""
 
     i = 0
@@ -278,7 +278,7 @@ def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_
         fig, ax = plt.subplots()
         for j in range(0, len(projects)):
             ax.plot(r, values[j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
-            # autolabel(values[j], r, 0, ax)
+            # autoLabel(values[j], r, 0, ax)
         ax.set_xticks(r)
         ax.set_title(lab)
         ax.set_xticklabels([f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])

@@ -22,7 +22,7 @@ if __name__ == "__main__":
             sys.exit(-1)
 
     print("\nCalcolo per la reservation la matrice di celle a partire da tutte le traiettorie possibili...")
-    traiettorie_matrice = traiettorie.run(False, celle_per_lato)
+    matrixTrajectories = traiettorie.run(False, cellsPerSide)
 
     projs = checkChoice(projects_multi,
                         '\nQuale progetto vuoi avviare? (classic_tls, classic_precedence, reservation, '
@@ -113,7 +113,7 @@ if __name__ == "__main__":
                         dir, j, queue, seeds[j]),
                     'multi_reservation_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation_classic_precedence'],
-                        celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, dir, j, queue, seeds[j])
+                        cellsPerSide, matrixTrajectories, securitySecs, dir, j, queue, seeds[j])
                 }
 
                 p = Process(target=module.run, args=args[project])

@@ -225,7 +225,8 @@ class CompetitiveAuction(Auction):
             # print('partecipants before removal', [p.getID() for p in self.getPartecipants()])
             for i in self.partecipantsNonGrouped:
                 if i.isAllowedLaneChange():
-                    i.forbidLaneChange()
+                    pass
+                    # i.forbidLaneChange()
             # print('partecipants', [p.getID() for p in self.getPartecipants()])
             # print('winners', [w.getID() for w in self.winners], 'losers', [l.getID() for l in self.losers])
 
@@ -276,7 +277,8 @@ class CooperativeAuction(Auction):
             self.orderedPartecipants = [i[0] for i in partecipants]
             for i in self.partecipantsNonGrouped:
                 if i.isAllowedLaneChange():
-                    i.forbidLaneChange()
+                    pass
+                    # i.forbidLaneChange()
             if not self.partecipantsNonGrouped[0].instantPay:
                 # se devono pagare solo i veicoli vincitori
                 for i in self.orderedPartecipants[0]:

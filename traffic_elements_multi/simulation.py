@@ -2,7 +2,7 @@ import random
 from math import sqrt
 from config_multi import *
 
-from trafficElements_multi.vehicle import Vehicle
+from traffic_elements_multi.vehicle import Vehicle
 
 import traci
 
@@ -10,21 +10,23 @@ import traci
 class Simulation:
     """Classe per gestire tutti gli aspetti della simulazione"""
 
-    def costructArray(self, array_vehicles_temp):
-        """Costruzione dell'array composto dal nome delle auto presenti nella simulazione"""
+    def getSimulationVehicles(self, simulation_vehicles):
+        """Costruisce la lista composta dalle auto presenti nella simulazione"""
 
-        loadedIDList = traci.simulation.getDepartedIDList()  # carica nell'array le auto partite
+        # carico nella lista le auto partite
+        loadedIDList = traci.simulation.getDepartedIDList()
         for id_vehicle in loadedIDList:
-            if id_vehicle not in array_vehicles_temp:
-                array_vehicles_temp.append(id_vehicle)
+            if id_vehicle not in simulation_vehicles:
+                simulation_vehicles.append(id_vehicle)
                 traci.vehicle.setSpeed(id_vehicle, traci.vehicle.getMaxSpeed(id_vehicle))
 
-        arrivedIDList = traci.simulation.getArrivedIDList()  # elimina nell'array le auto arrivate
+        # elimino nella lista le auto arrivate
+        arrivedIDList = traci.simulation.getArrivedIDList()
         for id_vehicle in arrivedIDList:
-            if id_vehicle in array_vehicles_temp:
-                array_vehicles_temp.pop(array_vehicles_temp.index(id_vehicle))
+            if id_vehicle in simulation_vehicles:
+                simulation_vehicles.pop(simulation_vehicles.index(id_vehicle))
 
-        return array_vehicles_temp
+        return simulation_vehicles
 
     def generateVehicles(self, numberOfSteps, numberOfVehicles, vehicles, instantPay, seed):
         """Genero veicoli per ogni route possibile nel caso di incrocio multiplo"""
@@ -92,30 +94,24 @@ class Simulation:
 
         return lane_end - spawn_distance
 
-    def checkRoute(self, vehicles, departed_vehicles, arrived_vehicles, numberOfVehicles):
+    def checkVehiclesRoute(self, vehicles, simulation_vehicles, numberOfVehicles):
         """Controllo se i veicoli hanno raggiunto l'obbiettivo e, nel caso, riassegno una nuova route"""
 
         for i in range(0, sum(numberOfVehicles)):
             idV = f'idV{i}'
-            if idV not in arrived_vehicles:
+            if idV in simulation_vehicles:
                 vehicles[idV].travelTimes[vehicles[idV].travelIndex] += 1
                 vehicles[idV].changeTarget(staticRoutes=routeMode)
-            else:
-                try:
-                    departed_vehicles.remove(idV)
-                except:
-                    pass
 
-        return vehicles, departed_vehicles
+        return vehicles
 
-    def checkVehicles(self, vehicles, departed_vehicles, junctions, time, schema):
+    def checkVehiclesState(self, vehicles, simulation_vehicles, junctions, time, schema):
         """Funzione che controlla il posizionamento dei veicoli e calcola le relative misure"""
 
         for junction in junctions:
 
             # per ogni junction creo dei nuovi valori per il calcolo del throughput
-
-            vehs_in_junction = junction.getActualVehicles(departed_vehicles)
+            vehs_in_junction = junction.getActualVehicles(simulation_vehicles)
 
             # per ogni junction creo dei nuovi valori per il calcolo delle code nelle lane entranti
             for lane in junction.tails_per_lane:
@@ -210,7 +206,7 @@ class Simulation:
 
         return vehicles, junctions
 
-    def saveResults(self, vehicles, departed, junctions):
+    def saveResults(self, vehicles, simulation_vehicles, junctions):
         """Funzione che raggruppa tutte le misure effattuate"""
 
         travelTimes = []  # lista dei tempi di percorrenza medi per ogni veicolo
@@ -226,7 +222,7 @@ class Simulation:
         maxTail = -1  # coda massima rilevata su tutte le lane entranti
 
         for veh in vehicles:
-            if int(veh[-1]) < departed:
+            if veh in simulation_vehicles:
                 travelTimes.append(sum(vehicles[veh].travelTimes) / len(vehicles[veh].travelTimes))
                 if len(vehicles[veh].headTimes) > 0:
                     meanHeadTimes.append(sum(vehicles[veh].headTimes) / len(vehicles[veh].headTimes))

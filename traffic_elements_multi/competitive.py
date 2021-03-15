@@ -216,7 +216,8 @@ class CompetitiveCrossingManager(CrossingManager):
             vehicle.resetTarget()
             vehicle.isLaneWrong = False
         if not blockAllowChange:
-            vehicle.allowLaneChange()
+            pass
+            # vehicle.allowLaneChange()
         self.partecipants.remove(vehicle)
         # ############################################################################################################ #
 

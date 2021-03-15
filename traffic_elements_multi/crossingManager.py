@@ -98,7 +98,8 @@ class CrossingManager(ABC):
                 i.isSlowed = True
                 traci.vehicle.slowDown(i.getID(), 3, 3)     # TODO: 8 o 4?
             if i.isAllowedLaneChange() and i.distanceFromEndLane() < 15:
-                i.forbidLaneChange()
+                pass
+                # i.forbidLaneChange()
             # print('control', traci.vehicle.getLaneID(i.getID())[1:3], self.junction.getNumericID())
             # se il veicolo si trova su una corsia il cui primo numero indicato è quello dell'id dell'incrocio allora
             # il veicolo si trova su di una corsia uscente e può essere rimosso dal crossing manager

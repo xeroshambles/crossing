@@ -1,7 +1,7 @@
-from inpout_multi import redirect_output
+from inpout_multi import redirectOutput
 
-from trafficElements_multi.junction import FourWayJunction
-from trafficElements_multi.simulation import *
+from traffic_elements_multi.junction import FourWayJunction
+from traffic_elements_multi.simulation import *
 
 import traci
 from sumolib import miscutils
@@ -12,17 +12,15 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     port = miscutils.getFreeSocketPort()
 
-    redirect_output(path, index, True)
+    redirectOutput(path, index, True)
 
     traci.start(sumoCmd, port=port, numRetries=1000)
 
     """Inizializzazione di alcune variabili"""
 
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
-    departed = 0  # numero di veicoli partiti entro la fine della simulazione
-    departed_vehicles = []  # lista dei veicoli partiti entro la fine della simulazione
-    arrived_vehicles = []  # lista dei veicoli che hanno lasciato la simulazione
-    totalTime = 0  # tempo totale di simulazione
+    total_time = 0  # tempo totale di simulazione
+    simulation_vehicles = []  # contiene la lista di auto presenti nella simulazione
 
     simulation = Simulation()
 
@@ -38,29 +36,32 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     junctions = [FourWayJunction(n, vehicles) for n in range(1, 26)]
 
+    """Inizializzo le auto che fanno parte della simulazione"""
+
+    simulation_vehicles = simulation.getSimulationVehicles(simulation_vehicles)
+
     """Apro il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
-    while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
-        totalTime += 1
+    while traci.simulation.getMinExpectedNumber() > 0 and total_time < numberOfSteps:
+        total_time += 1
         traci.simulationStep()
-        departed += traci.simulation.getDepartedNumber()
-        departed_vehicles += traci.simulation.getDepartedIDList()
-        arrived_vehicles += traci.simulation.getArrivedIDList()
 
-        vehicles, departed_vehicles = simulation.checkRoute(vehicles, departed_vehicles, arrived_vehicles,
-                                                            numberOfVehicles)
+        simulation_vehicles = simulation.getSimulationVehicles(simulation_vehicles)
 
-        vehicles, junctions = simulation.checkVehicles(vehicles, departed_vehicles, junctions, totalTime, schema)
+        vehicles = simulation.checkVehiclesRoute(vehicles, simulation_vehicles, numberOfVehicles)
+
+        vehicles, junctions = simulation.checkVehiclesState(vehicles, simulation_vehicles, junctions, total_time,
+                                                            schema)
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
     meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, \
     stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, meanTails, \
-    stDevTails, maxTails, meanThroughput = simulation.saveResults(vehicles, departed, junctions)
+    stDevTails, maxTails, meanThroughput = simulation.saveResults(vehicles, simulation_vehicles, junctions)
 
     traci.close()
 
-    redirect_output(path, index, False)
+    redirectOutput(path, index, False)
 
     queue.put([meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime,
                stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, meanTails,

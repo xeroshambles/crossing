@@ -13,9 +13,8 @@ diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono esse
 
 configFile = "intersection.sumocfg"  # file di configurazione della simulazione
 outputRedirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
-tempo_generazione = 50  # tempo di generazione dei veicoli
-celle_per_lato = 20  # numero di celle per lato nel caso della reservation
-secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
+cellsPerSide = 20  # numero di celle per lato nel caso della reservation
+securitySecs = 0.6  # soglia tra veicoli per la reservation
 simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
 dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)

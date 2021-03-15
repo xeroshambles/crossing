@@ -95,7 +95,8 @@ class CooperativeCrossingManager(CrossingManager):
             vehicle.resetTarget()
             vehicle.isLaneWrong = False
         if not blockAllowChange:
-            vehicle.allowLaneChange()
+            pass
+            # vehicle.allowLaneChange()
 
         # rimuovo il veicolo dalle strutture dati del crossing manager
         self.partecipants.remove(vehicle)
