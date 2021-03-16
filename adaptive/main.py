@@ -145,7 +145,7 @@ def updateStopVehicles(vehicles, vehs_to_stop, m):
 
     return vehs_to_stop
 
-def removeVehiclesBetweenStopAnd(vehicles, arrayAuto, m):
+def removeVehiclesBetweenStopAnd(removed, vehicles, arrayAuto, m):
     """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
         possano funzionare correttamente. Quando non ci sono piu veicoli nella junction i veicoli fermi vengono fatti ripartire"""
     # prendo solo i veicoli che non hanno passato l incrocio, per ogni lane identifico il veicolo in testa in base alla distanza e setto lo stop
@@ -165,11 +165,13 @@ def removeVehiclesBetweenStopAnd(vehicles, arrayAuto, m):
         #if k not in vehs_crossed.keys():
         traci.vehicle.remove(k)
         #adjust data structures to take into account vehicles removal
-        del vehicles[k]
+        removed[k] = vehicles[k]
+        #del vehicles[k]
+
         if k in arrayAuto:
             arrayAuto.pop(arrayAuto.index(k))
 
-    return vehs_to_remove, vehicles, arrayAuto
+    return removed, vehs_to_remove, vehicles, arrayAuto
 
 def stopVehicles(vehicles, m):
     """Funzione che permette di settare uno stop a distanza m su ciascun veicolo per garantire che tutti gli approcci
@@ -240,16 +242,19 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     vehicles = {}  # dizionario contente gli id dei veicoli
     departed = 0  # numero di veicoli partiti nella simulazione e considerati nel calcolo delle misure
     totalTime = 0  # tempo totale di simulazione
-    tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
+    tails_per_lane_per_step = {i: {} for i in range(0, len(numberOfVehicles))}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni main step
 
     mean_th_per_num = [-1 for el in numberOfVehicles]
-
-    intermediate_departed = 0
-
-    for lane in lanes:
-        # calcolo la lunghezza delle code e il throughput solo per le lane entranti
-        if lane[4:6] == '07':
-            tails_per_lane[lane] = []
+    #n_vehs_not_crossed_per_step = [0 for el in numberOfVehicles]
+    passed_per_step = [0 for el in numberOfVehicles]
+    considered_per_step = [0 for el in numberOfVehicles]
+    departed_per_step = [[] for i in range(0, len(numberOfVehicles))]
+    departed_not_at_safe_distance_per_step = [{} for i in range(0, len(numberOfVehicles))]
+    for s in tails_per_lane_per_step:
+        for lane in lanes:
+            # calcolo la lunghezza delle code e il throughput solo per le lane entranti
+            if lane[4:6] == '07':
+                tails_per_lane_per_step[s][lane] = []
 
     """Inizializzo i veicoli assegnadogli una route generata casualmente e, in caso di schema di colori 
     non significativo, dandogli un colore diverso per distinguerli meglio all'interno della simulazione"""
@@ -330,7 +335,8 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     n_step = 0
     incrID = 0
-
+    removed = {}
+    main_step_duration = stepsSpawn / len(numberOfVehicles)
     if train[len(numberOfVehicles) - 1] == "reservation":
         end_sim = stepsSpawn + reservation_step_incr
     else:
@@ -339,16 +345,14 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < end_sim:
 
         if mainStep(totalTime, numberOfVehicles, stepsSpawn):
-
             """Salvo i risultati intermedi se si conclude un main step"""
-            mean_th_per_num[main_step] = saveIntermediateResults(numberOfVehicles, main_step, vehicles, intermediate_departed, m)
+            mean_th_per_num[main_step], passed_per_step[main_step], considered_per_step[main_step] = saveIntermediateResults(numberOfVehicles, main_step, vehicles, departed_per_step[main_step], m, removed)
             if main_step < (len(numberOfVehicles) - 1):
                 main_step += 1
-            intermediate_departed = 0
             transitioning = "true"
 
         if transitioning == "true":
-            removed, vehicles, arrayAuto = removeVehiclesBetweenStopAnd(vehicles, arrayAuto, m)
+            removed, ff, vehicles, arrayAuto = removeVehiclesBetweenStopAnd(removed, vehicles, arrayAuto, m)
             if project == "precedence_with_auction":
                 junction = FourWayJunction(junction_id, vehicles, iP=instantPay, sM=simulationMode, bM=False,
                                            groupDimension=dimensionOfGroups)
@@ -403,7 +407,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
         # faccio avanzare la simulazione
         traci.simulationStep(totalTime)
         departed += traci.simulation.getDepartedNumber()
-        intermediate_departed += traci.simulation.getDepartedNumber()
+        departed_per_step[main_step] += traci.simulation.getDepartedIDList()
 
         print(f"step: {totalTime}, main_step: {main_step}, project: {project}\n")
 
@@ -423,43 +427,42 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
         '''
         if project == "classic_precedence":
 
-            mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step, arrayAuto = precedenceRun(numberOfVehicles,
+            mean_th_per_num, main_step, totalTime, departed, tails_per_lane_per_step[main_step], n_step, arrayAuto = precedenceRun(numberOfVehicles,
                                                                                                                     schema, totalTime,
-                                                                                                                    departed, intermediate_departed,
-                                                                                                                    vehicles, tails_per_lane, main_step,
+                                                                                                                    departed,
+                                                                                                                    vehicles, tails_per_lane_per_step[main_step], main_step,
                                                                                                                     mean_th_per_num, step_incr, n_step, sec,
-                                                                                                                    arrayAuto, m, steps_per_main_step)
+                                                                                                                    arrayAuto, m, steps_per_main_step, main_step_duration)
         if project == "precedence_with_auction":
 
-            totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
-            mean_th_per_num, arrayAuto = auctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
-                    sec, schema, main_step, mean_th_per_num, arrayAuto, m, steps_per_main_step)
+            totalTime, n_step, departed, junction, vehicles, tails_per_lane_per_step[main_step], main_step, \
+            mean_th_per_num, arrayAuto = auctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, junction, vehicles, tails_per_lane_per_step[main_step],
+                    sec, schema, main_step, mean_th_per_num, arrayAuto, m, steps_per_main_step, main_step_duration)
 
         if project == "reservation":
 
-            mean_th_per_num, main_step, intermediate_departed, totalTime,\
-            departed, tails_per_lane, arrayAuto, lista_arrivo, stop, attesa,\
+            mean_th_per_num, main_step, totalTime,\
+            departed, tails_per_lane_per_step[main_step], arrayAuto, lista_arrivo, stop, attesa,\
             ferme, passaggio, matrice_incrocio, passaggio_cella, traiettorie_matrice,\
             x_auto_in_celle, y_auto_in_celle, passaggio_precedente, n_step = reservationRun(numberOfVehicles, schema,
-                                                                                            totalTime, departed, intermediate_departed,
-                                                                                            vehicles, tails_per_lane, main_step, mean_th_per_num, arrayAuto,
+                                                                                            totalTime, departed,
+                                                                                            vehicles, tails_per_lane_per_step[main_step], main_step, mean_th_per_num, arrayAuto,
                                                                                             lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
                                                                                             traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
-                                                                                            step_incr, passaggio_precedente, n_step, sec, incrID, transitioning, m, steps_per_main_step)
+                                                                                            step_incr, passaggio_precedente, n_step, sec, incrID, transitioning, m, steps_per_main_step, main_step_duration)
 
 
 
     # ////////////////////////////FOR LOOP RESPECTIVE SIM//////////////////////////////////////////
 
     """Salvo tutti i risultati della simulazione e li ritorno"""
-
     meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, stDevTailTime, maxTailTime, \
-    meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, stoppedVehicles, throughput = saveResults(vehicles, departed,
-                                                                                                   tails_per_lane)
+    meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, stoppedVehicles, throughput = saveResultsAdaptive(vehicles, removed, numberOfVehicles, departed_per_step,
+                                                                                                   tails_per_lane_per_step, passed_per_step, considered_per_step)
 
     traci.close()
 
     redirect_output(path, index, False)
 
     queue.put([int(totalTime), meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, stDevTailTime, maxTailTime,
-               meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, stoppedVehicles, throughput, mean_th_per_num])
+               meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, stoppedVehicles, throughput])

@@ -6,12 +6,12 @@ import traci
 from sumolib import miscutils
 
 
-def intermediateRun(numberOfVehicles, schema, totalTime, departed, intermediate_departed, vehicles, tails_per_lane, main_step, mean_th_per_num, step_incr, n_step, sec, arrayAuto, m, steps_per_main_step):
+def intermediateRun(numberOfVehicles, schema, totalTime, departed, vehicles, tails_per_lane, main_step, mean_th_per_num, step_incr, n_step, sec, arrayAuto, m, steps_per_main_step, main_step_duation):
 
 
 
     #if n_step % sec == 0:
-    vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
+    vehicles, tails_per_lane = checkVehiclesAdaptive(vehicles, tails_per_lane, int(totalTime), schema, main_step_duation)
 
 
 
@@ -20,7 +20,7 @@ def intermediateRun(numberOfVehicles, schema, totalTime, departed, intermediate_
 
 
 
-    return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane, n_step, arrayAuto
+    return mean_th_per_num, main_step, totalTime, departed, tails_per_lane, n_step, arrayAuto
 
 
 def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed):

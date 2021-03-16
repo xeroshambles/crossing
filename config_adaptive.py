@@ -14,18 +14,18 @@ diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono esse
 
 config_file = "intersection.sumocfg"  # file di configurazione della simulazione
 output_redirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
-tempo_generazione = 50  # tempo di generazione dei veicoli
+tempo_generazione = 50   # tempo di generazione dei veicoli
 celle_per_lato = 20  # numero di celle per lato nel caso della reservation
 secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
 simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
 dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 m = 60
-
+spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]
-projects = ["reservation", "classic_precedence", "precedence_with_auction", "adaptive"]
+projects = ["classic_precedence", "precedence_with_auction", "reservation", "adaptive"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',

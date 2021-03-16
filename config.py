@@ -20,6 +20,8 @@ simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
 dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 
+m = 60
+spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]

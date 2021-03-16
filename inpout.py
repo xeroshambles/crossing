@@ -46,6 +46,16 @@ def getValue(title, arr_measure):
     else:
         return round(sum(arr_measure) / len(arr_measure), 2)
 
+def getValueFromList(title, arr_measure, steps):
+    """Ritorna il massimo o la media della lista di valori a seconda del titolo"""
+    ret = [0 for s in range(0, steps)]
+    for s in range(0, steps):
+        current_vals = [el[s] for el in arr_measure]
+        if title[:3] == 'max':
+            ret[s] = max(current_vals)
+        else:
+            ret[s] = round(sum(current_vals) / len(current_vals), 2)
+    return ret
 
 def clearMeasures(measures, groups, head_titles):
     """Pulisco il dizionario delle misure"""
@@ -56,6 +66,32 @@ def clearMeasures(measures, groups, head_titles):
             measures[head_titles[i]][count]['values'].clear()
             count += 1
 
+def writeMeasuresToFileAdaptive(f, i, numberOfVehicles, ret, steps):
+    """Salvo su file le misure effettuate"""
+
+    f.write('----------------------------------------------------\n')
+    f.write(f'\nSIMULAZIONE NUMERO {i}\n')
+    f.write(f'\nNUMERO DI VEICOLI: {numberOfVehicles}\n')
+    f.write(f'\nTEMPO TOTALE DI SIMULAZIONE: {ret[0]} step\n')
+    for s in range(0, steps):
+        f.write(f'\nMACRO STEP {s}\n')
+
+        f.write(f'\n    TEMPO MEDIO PASSATO IN TESTA A UNA CORSIA: {round(ret[1][s], 2)} step\n')
+        f.write(
+            f'\n    DEVIAZIONE STANDARD DEL TEMPO PASSATO IN TESTA A UNA CORSIA: {round(ret[2][s], 2)} step\n')
+        f.write(f'\n    TEMPO MASSIMO PASSATO IN TESTA A UNA CORSIA: {round(ret[3][s], 2)} step\n')
+        f.write(f'\n    TEMPO MEDIO PASSATO IN CODA: {round(ret[4][s], 2)} step\n')
+        f.write(
+            f'\n    DEVIAZIONE STANDARD DEL TEMPO PASSATO IN CODA A UNA CORSIA: {round(ret[5][s], 2)} step\n')
+        f.write(f'\n    TEMPO MASSIMO PASSATO IN CODA: {round(ret[6][s], 2)} step\n')
+        f.write(f'\n    VELOCITA MEDIA DEI VEICOLI: {round(ret[7][s], 2)} m/s\n')
+        f.write(f'\n    DEVIAZIONE STANDARD VELOCITA MEDIA DEI VEICOLI: {round(ret[8][s], 2)} m/s\n')
+        f.write(f'\n    LUNGHEZZA MEDIA DELLE CODE: {round(ret[9][s], 2)} auto\n')
+        f.write(f'\n    DEVIAZIONE STANDARD LUNGHEZZA DELLE CODE: {round(ret[10][s], 2)} m/s\n')
+        f.write(f'\n    LUNGHEZZA MASSIMA DELLE CODE: {round(ret[11][s], 2)} auto\n')
+        f.write(
+            f'\n    NUMERO DI VEICOLI FERMI: {ret[12][s]} ({round(ret[12][s] / numberOfVehicles * 100, 2)}%)\n')
+        f.write(f'\n    THROUGHPUT MEDIO: {round(ret[13][s], 2)}\n\n')
 
 def writeMeasuresToFile(f, i, numberOfVehicles, ret):
     """Salvo su file le misure effettuate"""
@@ -105,21 +141,25 @@ def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measure
             for p in range(0, len(single_measures[arr_nums[str(i)]][labels[k]])):
                 if single_measures[arr_nums[str(i)]][labels[k]][p]['project'] == project:
                     single_measures[arr_nums[str(i)]][labels[k]][p]['values'].append(ret[k])
-
-        writeMeasuresToFile(f, f'{i}:{j}', numOfVehicles, ret)
+        if adaptive:
+            writeMeasuresToFileAdaptive(f, f'{i}:{j}', numOfVehicles, ret, len(nums[i]))
+        else:
+            writeMeasuresToFile(f, f'{i}:{j}', numOfVehicles, ret)
 
     k = 0
 
-    for i in range(0, len(groups)):
+    for g in range(0, len(groups)):
         count = 0
-        while count < groups[i]:
-            title = group_measures[head_titles[i]][count]['title']
-            group_measures[head_titles[i]][count]['values'].append(getValue(title, arr_titles[title]))
+        while count < groups[g]:
+            title = group_measures[head_titles[g]][count]['title']
+            if isinstance(arr_titles[title][0], list):
+                group_measures[head_titles[g]][count]['values'].append(getValueFromList(title, arr_titles[title], len(nums[i])))
+            else:
+                group_measures[head_titles[g]][count]['values'].append(getValue(title, arr_titles[title]))
             count += 1
             k += 1
-    if intermediate_group_measures:
+    if adaptive:
         return intermediate_group_measures
-
 
 def writeMeasuresToFileMulti(f, i, ret):
     """Salvo su file le misure effettuate"""
@@ -232,6 +272,45 @@ def autolabel(values, r, offset, ax):
                     va='bottom')
         i += 1
 
+def linesPerGroupsAdaptive(group_measures, groups, stepsSpawn, dir, project_label, steps):
+    """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
+
+    sims = []
+    values = []
+    labels = []
+    titles = []
+    colors = []
+
+    for k in group_measures:
+        if k == 'sims':
+            sims = group_measures['sims']
+            continue
+        titles.append(k)
+        for i in range(0, len(group_measures[k])):
+            values.append(group_measures[k][i]['values'])
+            labels.append(group_measures[k][i]['label'])
+            colors.append(group_measures[k][i]['color'])
+
+    for s in range(0, steps):
+        j = 0
+        for i in range(0, len(groups)):
+            r = np.arange(len(values[i]))
+            count = groups[i]
+            fig, ax = plt.subplots()
+            while count > 0:
+                if isinstance(values[j][0], list):
+                    ax.plot(r, values[j][0][s], color=colors[j], label=labels[j], lw=2, marker='s')
+                else:
+                    ax.plot(r, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
+                # autolabel(values[j], r, 0, ax)
+                j += 1
+                count -= 1
+            ax.set_xticks(r)
+            ax.set_title(project_label)
+            ax.set_xticklabels([f'{round(sum(eval(sim)) / stepsSpawn)} veicoli / s' for sim in sims])
+            ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            plt.savefig(dir + "/" + titles[i] + '_' + 'step' + str(s) + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')
+            plt.close(fig)
 
 def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""

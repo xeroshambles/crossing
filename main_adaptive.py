@@ -21,8 +21,6 @@ def parseString(s):
 def simulate(procs, queue, project, train, i, adapt=True):
     """ This function allows to simulate <repeat> times using <repeat> different seeds"""
 
-
-
     for j in range(0, repeat):
 
         args = {
@@ -140,7 +138,7 @@ if __name__ == "__main__":
 
         config_file = os.path.join(os.path.split(__file__)[0], sim,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
-
+        '''
         #default dati
         choice = checkChoice(['d', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
@@ -157,7 +155,6 @@ if __name__ == "__main__":
                              "\nUtilizzo la modalità dati come default...",
                              '\nInserire un carattere tra d e g!',
                              mode)
-        '''
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
@@ -225,11 +222,11 @@ if __name__ == "__main__":
                                                     project, f, i, intermediate_group_measures, adaptive=True)
 
             print(f"train: {sims_per_main_step}\n")
-            print(f"intermediate_measures: {intermediate_group_measures}\n")
+            #print(f"intermediate_measures: {intermediate_group_measures}\n")
             #train = trainFromCollectedMeasures(intermediate_group_measures, numberOfVehicles)
             f.close()
 
-        linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label)
+        linesPerGroupsAdaptive(group_measures, groups, stepsSpawn, dir, project_label, len(numberOfVehicles[0]))
 
         clearMeasures(group_measures, groups, head_titles)
 

@@ -9,11 +9,11 @@ from sumolib import miscutils
 
 
 def intermediateRun(numberOfVehicles, schema,
-                    totalTime, departed, intermediate_departed,
+                    totalTime, departed,
                     vehicles, tails_per_lane, main_step, mean_th_per_num, arrayAuto,
                     lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella,
                     traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, limiti_celle_X, limiti_celle_Y,
-                    step_incr, passaggio_precedente, n_step, sec, incrID, isTransitioning, m, steps_per_main_step):
+                    step_incr, passaggio_precedente, n_step, sec, incrID, isTransitioning, m, steps_per_main_step, main_step_duration):
 
     # inserisco nell'array le auto presenti nella simulazione
     if isTransitioning != "true" or "waiting":
@@ -162,9 +162,9 @@ def intermediateRun(numberOfVehicles, schema,
         matrice_incrocio = pulisci_matrice(matrice_incrocio, secondi_di_sicurezza)
 
     if totalTime % 1 == 0:
-        vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(totalTime), schema)
+        vehicles, tails_per_lane = checkVehiclesAdaptive(vehicles, tails_per_lane, int(totalTime), schema, main_step_duration)
 
-    return mean_th_per_num, main_step, intermediate_departed, totalTime, departed, tails_per_lane,\
+    return mean_th_per_num, main_step, totalTime, departed, tails_per_lane,\
            arrayAuto, lista_arrivo, stop, attesa, ferme, passaggio, matrice_incrocio, passaggio_cella, \
            traiettorie_matrice, x_auto_in_celle, y_auto_in_celle, passaggio_precedente, n_step
 
@@ -405,7 +405,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
 
 
         if totalTime % 1 == 0:
-            vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, totalTime, schema)
+            vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(totalTime), schema)
 
             """
             Salvo i risultati intermedi se si conclude un main step

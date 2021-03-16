@@ -7,8 +7,8 @@ from precedence_with_auction.trafficElements.junction import FourWayJunction
 import traci
 from sumolib import miscutils
 
-def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,
-                    sec, schema, main_step, mean_th_per_num, arrayAuto, m, steps_per_main_step):
+def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, junction, vehicles, tails_per_lane,
+                    sec, schema, main_step, mean_th_per_num, arrayAuto, m, steps_per_main_step, main_step_duration):
 
 
     """Ciclo principale dell'applicazione"""
@@ -38,12 +38,12 @@ def intermediateRun(numberOfVehicles, totalTime, step_incr, n_step, departed, in
     if len(vehAtJunction) > 0:
         crossingManager.allowCrossing()
 
-    vehicles, tails_per_lane = checkVehicles(vehicles, tails_per_lane, int(n_step / sec), schema)
+    vehicles, tails_per_lane = checkVehiclesAdaptive(vehicles, tails_per_lane, int(totalTime), schema, main_step_duration)
 
 
     # NECESSARIO PER GARANTIRE COERENZA CON LE STRUTTURE DATI DELLA RESERVATION
     arrayAuto = updateReservationArray(arrayAuto)
-    return totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
+    return totalTime, n_step, departed, junction, vehicles, tails_per_lane, main_step, \
            mean_th_per_num, arrayAuto
 
 
