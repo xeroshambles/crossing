@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
 
 
-    linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
+    linesPerMeasureAdaptive(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
                     path)
 
 
