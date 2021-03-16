@@ -2,12 +2,12 @@
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
 # Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
-numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100]]
+numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
-seeds = [9001]  # semi iniziali delle simulazioni
+seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
@@ -23,7 +23,8 @@ dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per 
 
 # Progetti: ["multi_classic_tls_classic_precedence", "multi_classic_precedence", "multi_reservation_classic_precedence",
 # "multi_auction_classic_precedence"]
-projects_multi = ["multi_classic_tls_classic_precedence"]
+projects_multi = ["multi_classic_tls_classic_precedence", "multi_classic_precedence",
+                  "multi_reservation_classic_precedence", "multi_auction_classic_precedence"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
 external_east_junctions_ids = [55, 60, 65, 70, 75]
 external_south_junctions_ids = [46, 47, 48, 49, 50]
