@@ -28,8 +28,8 @@ class Simulation:
 
         return simulation_vehicles
 
-    def generateVehicles(self, numberOfSteps, numberOfVehicles, vehicles, instantPay, seed):
-        """Genero veicoli per ogni route possibile nel caso di incrocio multiplo"""
+    def generateVehicles(self, numberOfSteps, numberOfVehicles, vehicles, seed, instantPay=instantPay):
+        """Genero i veicoli a partire dagli incroci esterni della rete verso quelli interni"""
 
         c = 0
         t = 0
@@ -58,7 +58,7 @@ class Simulation:
         return vehicles
 
     def colorVehicles(self, numberOfVehicles):
-        """Assegno un colore diverso alle auto"""
+        """Assegno un colore diverso alle auto per meglio distinguerle nella simulazione"""
 
         for i in range(0, numberOfVehicles):
             if i % 8 == 1:
@@ -231,17 +231,17 @@ class Simulation:
                 if len(vehicles[veh].speeds) > 0:
                     meanSpeeds.append(sum(vehicles[veh].speeds) / len(vehicles[veh].speeds))
 
-        meanTravelTime = sum(travelTimes) / len(travelTimes)
+        meanTravelTime = round(sum(travelTimes) / len(travelTimes), 2)
         for travelTime in travelTimes:
             varTravelTime += (travelTime - meanTravelTime) ** 2
-        stDevTravelTime = sqrt(varTravelTime / len(travelTimes))
+        stDevTravelTime = round(sqrt(varTravelTime / len(travelTimes)), 2)
         maxTravelTime = max(travelTimes)
 
         if len(meanHeadTimes) > 0:
-            meanHeadTime = sum(meanHeadTimes) / len(meanHeadTimes)
+            meanHeadTime = round(sum(meanHeadTimes) / len(meanHeadTimes), 2)
             for headTime in meanHeadTimes:
                 varHeadTime += (headTime - meanHeadTime) ** 2
-            stDevHeadTime = sqrt(varHeadTime / len(meanHeadTimes))
+            stDevHeadTime = round(sqrt(varHeadTime / len(meanHeadTimes)), 2)
             maxHeadTime = max(meanHeadTimes)
         else:
             meanHeadTime = -1
@@ -249,10 +249,10 @@ class Simulation:
             maxHeadTime = -1
 
         if len(meanTailTimes) > 0:
-            meanTailTime = sum(meanTailTimes) / len(meanTailTimes)
+            meanTailTime = round(sum(meanTailTimes) / len(meanTailTimes), 2)
             for tailTime in meanTailTimes:
                 varTailTime += (tailTime - meanTailTime) ** 2
-            stDevTailTime = sqrt(varTailTime / len(meanTailTimes))
+            stDevTailTime = round(sqrt(varTailTime / len(meanTailTimes)), 2)
             maxTailTime = max(meanTailTimes)
         else:
             meanTailTime = -1
@@ -260,10 +260,10 @@ class Simulation:
             maxTailTime = -1
 
         if len(meanSpeeds) > 0:
-            meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
+            meanSpeed = round(sum(meanSpeeds) / len(meanSpeeds), 2)
             for speed in meanSpeeds:
                 varSpeed += (speed - meanSpeed) ** 2
-            stDevSpeed = sqrt(varSpeed / len(meanSpeeds))
+            stDevSpeed = round(sqrt(varSpeed / len(meanSpeeds)), 2)
         else:
             meanSpeed = -1
             stDevSpeed = -1
@@ -277,17 +277,17 @@ class Simulation:
             if junction.departed == 0:
                 meanThroughput.append(1)
             else:
-                meanThroughput.append(junction.arrived / junction.departed)
+                meanThroughput.append(round(junction.arrived / junction.departed, 2))
             for lane in junction.tails_per_lane:
-                meanTailLength.append(sum(junction.tails_per_lane[lane]) / len(junction.tails_per_lane[lane]))
+                meanTailLength.append(round(sum(junction.tails_per_lane[lane]) / len(junction.tails_per_lane[lane]), 2))
                 lane_max = max(junction.tails_per_lane[lane])
                 if lane_max > maxTail:
                     maxTail = lane_max
-            meanTail = sum(meanTailLength) / len(meanTailLength)
+            meanTl = round(sum(meanTailLength) / len(meanTailLength), 2)
             for tail in meanTailLength:
-                varTail += (tail - meanTail) ** 2
-            meanTails.append(meanTail)
-            stDevTails.append(sqrt(varTail / len(meanTailLength)))
+                varTail += (tail - meanTl) ** 2
+            meanTails.append(meanTl)
+            stDevTails.append(round(sqrt(varTail / len(meanTailLength)), 2))
             maxTails.append(maxTail)
             maxTail = -1
 

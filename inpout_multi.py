@@ -189,7 +189,7 @@ def autoLabel(values, r, offset, ax):
 
 
 def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
-    """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
+    """Salvo su immagini le misure di un progetto per ogni scenario di traffico"""
 
     sims = []
     values = []
@@ -215,7 +215,8 @@ def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
                     means = [0 for i in range(0, len(group_measures[k][i]['values'][0]))]
                     for j in range(0, len(group_measures[k][i]['values'])):
                         for h in range(0, len(group_measures[k][i]['values'][j])):
-                            means[h] += group_measures[k][i]['values'][j][h] / len(group_measures[k][i]['values'])
+                            means[h] += round(group_measures[k][i]['values'][j][h] /
+                                              len(group_measures[k][i]['values']), 2)
                     values.append(means)
             else:
                 values.append(group_measures[k][i]['values'])
@@ -259,7 +260,7 @@ def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
 
 def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
                     dir):
-    """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
+    """Salvo su immagini le misure di tutti i progetti per ogni scenario di traffico"""
 
     values = []
     vehs = [str(i) for i in numberOfVehicles]

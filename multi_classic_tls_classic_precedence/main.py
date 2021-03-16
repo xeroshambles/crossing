@@ -27,7 +27,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     """Inizializzo i veicoli assegnadogli una route generata casualmente e, in caso di schema di colori 
     non significativo, dandogli un colore diverso per distinguerli meglio all'interno della simulazione"""
 
-    vehicles = simulation.generateVehicles(stepsSpawn, numberOfVehicles, vehicles, instantPay, seed)
+    vehicles = simulation.generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed)
 
     if schema in ['n', 'N']:
         simulation.colorVehicles(numberOfVehicles)
