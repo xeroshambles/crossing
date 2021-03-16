@@ -15,7 +15,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, cellsPerSide, matrixTr
 
     redirectOutput(path, index, True)
 
-    traci.start(sumoCmd, port=port, numRetries=1000)
+    traci.start(sumoCmd, port=port, numRetries=200)
 
     """Inizializzazione di alcune variabili"""
 

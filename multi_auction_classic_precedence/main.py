@@ -14,7 +14,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     redirectOutput(path, index, True)
 
-    traci.start(sumoCmd, port=port, numRetries=1000)
+    traci.start(sumoCmd, port=port, numRetries=100)
 
     """Inizializzazione di alcune variabili"""
 
