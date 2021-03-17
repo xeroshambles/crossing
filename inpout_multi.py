@@ -24,6 +24,7 @@ def redirectOutput(path, index, mode):
                     os.mkdir(dir)
                 except OSError:
                     print(f"\nCreazione della cartella {dir} fallita...")
+                    sys.exit(-1)
 
             sys.stdout = open(os.path.join(dir, f"{index}.txt"), "w")
 
