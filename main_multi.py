@@ -101,16 +101,17 @@ if __name__ == "__main__":
             queue = Queue()
 
             for j in range(0, repeat):
+
                 args = {
                     'multi_classic_tls_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls_classic_precedence'],
                         dir, j, queue, seeds[j]),
                     'multi_classic_precedence': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_tls_classic_precedence'],
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_precedence'],
                         dir, j, queue, seeds[j]),
                     'multi_auction_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_precedence'],
-                        dir, j, queue, seeds[j]),
+                        instantPay, simulationMode, dimensionOfGroups, dir, j, queue, seeds[j]),
                     'multi_reservation_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation_classic_precedence'],
                         cellsPerSide, matrixTrajectories, securitySecs, dir, j, queue, seeds[j])
