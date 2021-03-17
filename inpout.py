@@ -131,7 +131,7 @@ def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measure
 
         ret = queue.get()
 
-        if adaptive and len(ret) > len(arr_titles):
+        if adaptive:
             print(f"valori intermedi sim {i}:{j} : {ret[-1]}\n")
             intermediate_group_measures[arr_nums[str(i)]][project].append(ret[-1])
 
@@ -349,7 +349,6 @@ def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
         plt.savefig(dir + "/" + titles[i] + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')
         plt.close(fig)
 
-
 def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
                     dir):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
@@ -377,6 +376,47 @@ def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_
         plt.savefig(dir + "/" + titles[i] + "_" + date.today().strftime("%d-%m-%Y") + '.png',
                     bbox_inches='tight')
         plt.close(fig)
+
+        i += 1
+
+        values = []
+
+def linesPerMeasureAdaptive(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
+                    dir):
+    """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
+
+    values = []
+    vehs = [str(i) for i in numberOfVehicles]
+
+    i = 0
+
+    for lab in labels:
+        conf_index = 0
+        for k in single_measures:
+            for z in range(0, len(projects)):
+                values.append([])
+                if len(single_measures[k][lab][z]['values']) > 0:
+                    if isinstance(single_measures[k][lab][z]['values'][0], list):
+                        values[z].append(getValueFromList(titles[i], single_measures[k][lab][z]['values'], len(numberOfVehicles[conf_index])))
+                    else:
+                        values[z].append(getValue(titles[i], single_measures[k][lab][z]['values']))
+            conf_index += 1
+        for s in range(0, len(numberOfVehicles[0])):
+            r = np.arange(len(vehs))
+            fig, ax = plt.subplots()
+            for j in range(0, len(projects)):
+                if isinstance(values[j][0], list):
+                    ax.plot(r, values[j][0][s], color=colors[j], label=projects_labels[j], lw=2, marker='s')
+                else:
+                    ax.plot(r, values[j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
+                # autolabel(values[j], r, 0, ax)
+            ax.set_xticks(r)
+            ax.set_title(lab)
+            ax.set_xticklabels([f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])
+            ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            plt.savefig(dir + "/" + titles[i] + "_" + 'step' + str(s) + '_' + date.today().strftime("%d-%m-%Y") + '.png',
+                        bbox_inches='tight')
+            plt.close(fig)
 
         i += 1
 
