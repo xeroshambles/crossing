@@ -64,6 +64,7 @@ class Vehicle:
         self.spawnDistances = []
         self.startingLane = ''
         self.precEdgeObjective = ''
+        self.hasDiverted = False
 
         random.seed(self.numericID + self.seed)
 
@@ -385,6 +386,7 @@ class Vehicle:
             # cambia momentaneamente la corsia obiettivo in modo da poter far muovere il veicolo attraverso l'incrocio
             junction: Junction
             self.isLaneWrong = True
+            self.hasDiverted = True
             self.precEdgeObjective = traci.vehicle.getRoute(self.getID())[-1]
             suffix = self.getCurrentLane()[-1]
             lane = ''

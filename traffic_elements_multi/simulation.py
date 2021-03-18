@@ -220,9 +220,12 @@ class Simulation:
         meanTailLength = []  # lista delle lunghezze medie delle code rilevate sulle lane entranti
         varTail = 0  # varianza rispetto alla coda
         maxTail = -1  # coda massima rilevata su tutte le lane entranti
+        diverted_vehicles = 0  # numero di veicoli che hanno deviato nel percorrere la propria route
 
         for veh in vehicles:
             if veh in simulation_vehicles:
+                if vehicles[veh].hasDiverted:
+                    diverted_vehicles += 1
                 travelTimes.append(sum(vehicles[veh].travelTimes) / len(vehicles[veh].travelTimes))
                 if len(vehicles[veh].headTimes) > 0:
                     meanHeadTimes.append(sum(vehicles[veh].headTimes) / len(vehicles[veh].headTimes))
@@ -297,5 +300,5 @@ class Simulation:
         meanTp = round(sum(meanThroughput) / len(meanThroughput), 2)
 
         return meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, \
-               stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, meanTails, \
-               stDevTails, maxTails, meanThroughput
+               stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, \
+               diverted_vehicles, meanTails, stDevTails, maxTails, meanThroughput

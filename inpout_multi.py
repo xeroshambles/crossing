@@ -80,11 +80,12 @@ def writeMeasuresToFile(f, i, ret):
     f.write(f'\nLUNGHEZZA MEDIA DELLE CODE: {round(ret[11], 2)} auto\n')
     f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE: {round(ret[12], 2)} auto\n')
     f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(ret[13], 2)} auto\n')
-    f.write(f'\nTHROUGHPUT MEDIO: {round(ret[14], 2)}\n\n')
-    f.write(f'\nLUNGHEZZA MEDIA DELLE CODE (PIU INCROCI): {ret[15]} auto\n')
-    f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE (PIU INCROCI): {ret[16]} auto\n')
-    f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE (PIU INCROCI): {ret[17]} auto\n')
-    f.write(f'\nTHROUGHPUT MEDI (PIU INCROCI): {ret[18]}\n\n')
+    f.write(f'\nTHROUGHPUT MEDIO: {round(ret[14], 2)}\n')
+    f.write(f'\nNUMERO MEDIO DI VEICOLI DEVIATI: {round(ret[15], 2)}\n')
+    f.write(f'\nLUNGHEZZA MEDIA DELLE CODE (PIU INCROCI): {ret[16]} auto\n')
+    f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE (PIU INCROCI): {ret[17]} auto\n')
+    f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE (PIU INCROCI): {ret[18]} auto\n')
+    f.write(f'\nTHROUGHPUT MEDI (PIU INCROCI): {ret[19]}\n\n')
 
 
 def collectMeasures(queue, repeat, group_measures, single_measures, groups, titles, head_titles,

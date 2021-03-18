@@ -15,7 +15,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, instantPay, simulation
 
     redirectOutput(path, index, True)
 
-    traci.start(sumoCmd, port=port, numRetries=100)
+    traci.start(sumoCmd, port=port, numRetries=1000)
 
     """Inizializzazione di alcune variabili"""
 
@@ -92,13 +92,13 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, instantPay, simulation
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
     meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, \
-    stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, meanTails, \
-    stDevTails, maxTails, meanThroughput = simulation.saveResults(vehicles, simulation_vehicles, junctions)
+    stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, diverted_vehicles, \
+    meanTails, stDevTails, maxTails, meanThroughput = simulation.saveResults(vehicles, simulation_vehicles, junctions)
 
     traci.close()
 
     redirectOutput(path, index, False)
 
     queue.put([meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime,
-               stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, meanTails,
-               stDevTails, maxTails, meanThroughput])
+               stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp,
+               diverted_vehicles, meanTails, stDevTails, maxTails, meanThroughput])
