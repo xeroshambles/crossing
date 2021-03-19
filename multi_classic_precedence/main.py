@@ -61,8 +61,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     traci.close()
 
-    print(f"Terminato: {index}")
-
     queue.put([meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime,
                stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp,
                divertedVehicles, meanTails, stDevTails, maxTails, meanThroughput])
