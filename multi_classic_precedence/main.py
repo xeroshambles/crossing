@@ -16,8 +16,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     traci.start(sumoCmd, port=port, numRetries=1000)
 
-    print(f"Partito: {index}")
-
     """Inizializzazione di alcune variabili"""
 
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
@@ -64,8 +62,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     traci.close()
 
     print(f"Terminato: {index}")
-
-    redirectOutput(path, index, False)
 
     queue.put([meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime,
                stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp,

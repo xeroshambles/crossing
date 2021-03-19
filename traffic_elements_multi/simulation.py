@@ -126,12 +126,12 @@ class Simulation:
                     vehicles[veh].startingLane = veh_current_lane
                     # registro il veicolo nella gestione dell'incrocio
                     if veh not in junction.vehiclesEntering:
-                        junction.vehiclesEntering.append(veh)
-                        junction.departed += 1
-                        vehicles[veh].edgeIndex += 1
+                        vehicles[veh].isNextEdge = True
                         vehicles[veh].headTimes.append(0)
                         vehicles[veh].tailTimes.append(0)
                         vehicles[veh].spawnDistances.append(0)
+                        junction.vehiclesEntering.append(veh)
+                        junction.departed += 1
                     # calcolo la distanza tra il veicolo e l'inizio dell'incrocio
                     spawn_distance = traci.vehicle.getDistance(veh) - sum(vehicles[veh].spawnDistances[:-1])
                     vehicles[veh].spawnDistances[-1] = spawn_distance
@@ -139,6 +139,9 @@ class Simulation:
                                                       junction.junction_shape)
                     # # se la distanza è compresa 115 e 70 provo a far cambiare la lane
                     if 70 <= distance < 115:
+                        if vehicles[veh].isNextEdge:
+                            vehicles[veh].edgeIndex += 1
+                            vehicles[veh].isNextEdge = False
                         vehicles[veh].tryChangeLane()
                     # se la distanza è tra 70 e 50 e il veicolo non è riuscito ad andare nella lane corretta
                     # impedisco di cambiare lane e cambio temporaneamente la route
@@ -154,14 +157,14 @@ class Simulation:
                         # verifico se il veicolo è in testa e nel caso lo coloro di blu
                         if check >= distance and ((leader and leader[1] < 0) or not leader):
                             junction.tails_per_lane[veh_current_lane][time - 1] += 1
-                            vehicles[veh].headTimes[vehicles[veh].edgeIndex] += 1
+                            vehicles[veh].headTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))
                         # verifico se il veicolo è in coda e nel caso lo color di rosso
                         elif leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane \
                                 and traci.vehicle.getColor(leader[0]) != (255, 255, 0, 255):
                             junction.tails_per_lane[veh_current_lane][time - 1] += 1
-                            vehicles[veh].tailTimes[vehicles[veh].edgeIndex] += 1
+                            vehicles[veh].tailTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (255, 0, 0))
                     # se il veicolo non è fermo lo coloro di giallo
@@ -184,13 +187,13 @@ class Simulation:
                         # verifico se il veicolo è in testa e nel caso lo coloro di blu
                         if (leader and leader_lane != veh_current_lane) or not leader:
                             junction.tails_per_lane[vehicles[veh].startingLane][time - 1] += 1
-                            vehicles[veh].headTimes[vehicles[veh].edgeIndex] += 1
+                            vehicles[veh].headTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))
                         # verifico se il veicolo è in coda e nel caso lo coloro di rosso
                         elif leader and leader[1] <= 0.5:
                             junction.tails_per_lane[vehicles[veh].startingLane][time - 1] += 1
-                            vehicles[veh].tailTimes[vehicles[veh].edgeIndex] += 1
+                            vehicles[veh].tailTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (255, 0, 0))
                     # se il veicolo non è fermo lo coloro di giallo

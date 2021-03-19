@@ -17,8 +17,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, instantPay, simulation
 
     traci.start(sumoCmd, port=port, numRetries=1000)
 
-    print(f"Partito: {index}")
-
     """Inizializzazione di alcune variabili"""
 
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
@@ -98,8 +96,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, instantPay, simulation
     meanTails, stDevTails, maxTails, meanThroughput = simulation.saveResults(vehicles, simulation_vehicles, junctions)
 
     traci.close()
-
-    print(f"Terminato: {index}")
 
     redirectOutput(path, index, False)
 

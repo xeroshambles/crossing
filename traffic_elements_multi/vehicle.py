@@ -56,6 +56,7 @@ class Vehicle:
 
         self.seed = seed
         self.travelIndex = 0
+        self.isNextEdge = True
         self.edgeIndex = -1
         self.travelTimes = [0]
         self.headTimes = []
@@ -263,9 +264,6 @@ class Vehicle:
         junctionID = int(edges[self.edgeIndex][4:6])
 
         traci.vehicle.setLaneChangeMode(self.idVehicle, 1621)
-
-        # if self.idVehicle == 'idV60':
-        #     print(f"EDGES: {edges}, START: {start}, END: {end}, SUFFIX: {suffix}, INDEX: {self.edgeIndex}")
 
         # se il veicolo deve andare a destra al prossimo incrocio
         if (start - junctionID == -5 and end - junctionID == -1) or (start - junctionID == 1 and end -
