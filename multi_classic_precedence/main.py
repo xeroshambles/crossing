@@ -58,7 +58,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
     """Salvo tutti i risultati della simulazione e li ritorno"""
 
     meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, \
-    stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, diverted_vehicles, \
+    stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, divertedVehicles, \
     meanTails, stDevTails, maxTails, meanThroughput = simulation.saveResults(vehicles, simulation_vehicles, junctions)
 
     traci.close()
@@ -69,4 +69,4 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     queue.put([meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime,
                stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp,
-               diverted_vehicles, meanTails, stDevTails, maxTails, meanThroughput])
+               divertedVehicles, meanTails, stDevTails, maxTails, meanThroughput])
