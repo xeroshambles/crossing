@@ -55,7 +55,7 @@ if __name__ == "__main__":
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
-            [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q"]
+            [sumoBinary, "-c", config_file, "--time-to-teleport", "-1", "-S", "-Q", "--log", "logfile.txt"]
 
         sumoDict = {'multi_classic_tls_classic_precedence': sumoCmd,
                     'multi_classic_precedence': sumoCmd,
