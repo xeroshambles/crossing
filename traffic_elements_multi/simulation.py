@@ -249,7 +249,8 @@ class Simulation:
                 if maxTailT > maxTailTime:
                     maxTailTime = maxTailT
 
-                meanSpeeds.append(round(sum(vehicles[veh].speeds) / len(vehicles[veh].speeds), 2))
+                if len(vehicles[veh].speeds):
+                    meanSpeeds.append(round(sum(vehicles[veh].speeds) / len(vehicles[veh].speeds), 2))
 
         meanTravelTime = round(sum(travelTimes) / len(travelTimes), 2)
         for travelTime in travelTimes:
