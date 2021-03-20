@@ -48,6 +48,7 @@ class Simulation:
             depart += auto_every
             idV = f'idV{i}'
             vehicles[idV] = Vehicle(idV, seed, iP=instantPay)
+            vehicles[idV].travelTimes.append(0)
             base_route = vehicles[idV].getInitialRoute()
             route = traci.simulation.findRoute(base_route[0], base_route[1])
             traci.route.add(f'route_{i}', route.edges)
@@ -114,8 +115,8 @@ class Simulation:
             vehs_in_junction = junction.getActualVehicles(simulation_vehicles)
 
             # per ogni junction creo dei nuovi valori per il calcolo delle code nelle lane entranti
-            for lane in junction.tails_per_lane:
-                junction.tails_per_lane[lane].append(0)
+            for lane in junction.tailsPerLane:
+                junction.tailsPerLane[lane].append(0)
 
             # loop per tutti i veicoli della junction corrente
             for veh in vehs_in_junction:
@@ -156,14 +157,13 @@ class Simulation:
                     if traci.vehicle.getSpeed(veh) <= 1:
                         # verifico se il veicolo è in testa e nel caso lo coloro di blu
                         if check >= distance and ((leader and leader[1] < 0) or not leader):
-                            junction.tails_per_lane[veh_current_lane][time - 1] += 1
+                            junction.tailsPerLane[veh_current_lane][time - 1] += 1
                             vehicles[veh].headTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))
-                        # verifico se il veicolo è in coda e nel caso lo color di rosso
-                        elif leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane \
-                                and traci.vehicle.getColor(leader[0]) != (255, 255, 0, 255):
-                            junction.tails_per_lane[veh_current_lane][time - 1] += 1
+                        # verifico se il veicolo è in coda e nel caso lo coloro di rosso
+                        elif leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane:
+                            junction.tailsPerLane[veh_current_lane][time - 1] += 1
                             vehicles[veh].tailTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (255, 0, 0))
@@ -186,13 +186,13 @@ class Simulation:
                     if traci.vehicle.getSpeed(veh) <= 1:
                         # verifico se il veicolo è in testa e nel caso lo coloro di blu
                         if (leader and leader_lane != veh_current_lane) or not leader:
-                            junction.tails_per_lane[vehicles[veh].startingLane][time - 1] += 1
+                            junction.tailsPerLane[vehicles[veh].startingLane][time - 1] += 1
                             vehicles[veh].headTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))
                         # verifico se il veicolo è in coda e nel caso lo coloro di rosso
                         elif leader and leader[1] <= 0.5:
-                            junction.tails_per_lane[vehicles[veh].startingLane][time - 1] += 1
+                            junction.tailsPerLane[vehicles[veh].startingLane][time - 1] += 1
                             vehicles[veh].tailTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (255, 0, 0))
@@ -214,10 +214,13 @@ class Simulation:
 
         travelTimes = []  # lista dei tempi di percorrenza medi per ogni veicolo
         varTravelTime = 0  # varianza rispetto al tempo di percorrenza
+        maxTravelTime = -1  # tempo massimo di percorrenza di un veicolo
         meanHeadTimes = []  # lista dei tempi passati in testa medi per ogni veicolo
         varHeadTime = 0  # varianza rispetto al tempo passato in testa
+        maxHeadTime = -1  # tempo in testa massimp di un veicolo
         meanTailTimes = []  # lista dei tempi in coda medi per ogni veicolo
         varTailTime = 0  # varianza rispetto al tempo passato in coda
+        maxTailTime = -1  # tempo in coda massimo di un veicolo
         meanSpeeds = []  # lista delle velocità medie assunte dai veicoli nei pressi dell'incrocio
         varSpeed = 0  # varianza rispetto alla velocità dei veicoli
         meanTailLength = []  # lista delle lunghezze medie delle code rilevate sulle lane entranti
@@ -227,52 +230,46 @@ class Simulation:
 
         for veh in vehicles:
             if veh in simulation_vehicles:
+
                 if vehicles[veh].hasDiverted:
                     diverted_vehicles += 1
-                travelTimes.append(sum(vehicles[veh].travelTimes) / len(vehicles[veh].travelTimes))
-                if len(vehicles[veh].headTimes) > 0:
-                    meanHeadTimes.append(sum(vehicles[veh].headTimes) / len(vehicles[veh].headTimes))
-                if len(vehicles[veh].tailTimes) > 0:
-                    meanTailTimes.append(sum(vehicles[veh].tailTimes) / len(vehicles[veh].tailTimes))
-                if len(vehicles[veh].speeds) > 0:
-                    meanSpeeds.append(sum(vehicles[veh].speeds) / len(vehicles[veh].speeds))
+
+                travelTimes.append(round(sum(vehicles[veh].travelTimes) / len(vehicles[veh].travelTimes), 2))
+                maxTravT = max(vehicles[veh].travelTimes)
+                if maxTravT > maxTravelTime:
+                    maxTravelTime = maxTravT
+
+                meanHeadTimes.append(round(sum(vehicles[veh].headTimes) / len(vehicles[veh].headTimes), 2))
+                maxHT = max(vehicles[veh].headTimes)
+                if maxHT > maxHeadTime:
+                    maxHeadTime = maxHT
+
+                meanTailTimes.append(round(sum(vehicles[veh].tailTimes) / len(vehicles[veh].tailTimes), 2))
+                maxTailT = max(vehicles[veh].tailTimes)
+                if maxTailT > maxTailTime:
+                    maxTailTime = maxTailT
+
+                meanSpeeds.append(round(sum(vehicles[veh].speeds) / len(vehicles[veh].speeds), 2))
 
         meanTravelTime = round(sum(travelTimes) / len(travelTimes), 2)
         for travelTime in travelTimes:
             varTravelTime += (travelTime - meanTravelTime) ** 2
         stDevTravelTime = round(sqrt(varTravelTime / len(travelTimes)), 2)
-        maxTravelTime = max(travelTimes)
 
-        if len(meanHeadTimes) > 0:
-            meanHeadTime = round(sum(meanHeadTimes) / len(meanHeadTimes), 2)
-            for headTime in meanHeadTimes:
-                varHeadTime += (headTime - meanHeadTime) ** 2
-            stDevHeadTime = round(sqrt(varHeadTime / len(meanHeadTimes)), 2)
-            maxHeadTime = max(meanHeadTimes)
-        else:
-            meanHeadTime = -1
-            stDevHeadTime = -1
-            maxHeadTime = -1
+        meanHeadTime = round(sum(meanHeadTimes) / len(meanHeadTimes), 2)
+        for headTime in meanHeadTimes:
+            varHeadTime += (headTime - meanHeadTime) ** 2
+        stDevHeadTime = round(sqrt(varHeadTime / len(meanHeadTimes)), 2)
 
-        if len(meanTailTimes) > 0:
-            meanTailTime = round(sum(meanTailTimes) / len(meanTailTimes), 2)
-            for tailTime in meanTailTimes:
-                varTailTime += (tailTime - meanTailTime) ** 2
-            stDevTailTime = round(sqrt(varTailTime / len(meanTailTimes)), 2)
-            maxTailTime = max(meanTailTimes)
-        else:
-            meanTailTime = -1
-            stDevTailTime = -1
-            maxTailTime = -1
+        meanTailTime = round(sum(meanTailTimes) / len(meanTailTimes), 2)
+        for tailTime in meanTailTimes:
+            varTailTime += (tailTime - meanTailTime) ** 2
+        stDevTailTime = round(sqrt(varTailTime / len(meanTailTimes)), 2)
 
-        if len(meanSpeeds) > 0:
-            meanSpeed = round(sum(meanSpeeds) / len(meanSpeeds), 2)
-            for speed in meanSpeeds:
-                varSpeed += (speed - meanSpeed) ** 2
-            stDevSpeed = round(sqrt(varSpeed / len(meanSpeeds)), 2)
-        else:
-            meanSpeed = -1
-            stDevSpeed = -1
+        meanSpeed = round(sum(meanSpeeds) / len(meanSpeeds), 2)
+        for speed in meanSpeeds:
+            varSpeed += (speed - meanSpeed) ** 2
+        stDevSpeed = round(sqrt(varSpeed / len(meanSpeeds)), 2)
 
         meanTails = []
         stDevTails = []
@@ -284,11 +281,11 @@ class Simulation:
                 meanThroughput.append(1)
             else:
                 meanThroughput.append(round(junction.arrived / junction.departed, 2))
-            for lane in junction.tails_per_lane:
-                meanTailLength.append(round(sum(junction.tails_per_lane[lane]) / len(junction.tails_per_lane[lane]), 2))
-                lane_max = max(junction.tails_per_lane[lane])
-                if lane_max > maxTail:
-                    maxTail = lane_max
+            for lane in junction.tailsPerLane:
+                meanTailLength.append(round(sum(junction.tailsPerLane[lane]) / len(junction.tailsPerLane[lane]), 2))
+                maxTL = max(junction.tailsPerLane[lane])
+                if maxTL > maxTail:
+                    maxTail = maxTL
             meanTl = round(sum(meanTailLength) / len(meanTailLength), 2)
             for tail in meanTailLength:
                 varTail += (tail - meanTl) ** 2

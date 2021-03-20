@@ -58,7 +58,7 @@ class Vehicle:
         self.travelIndex = 0
         self.isNextEdge = True
         self.edgeIndex = -1
-        self.travelTimes = [0]
+        self.travelTimes = []
         self.headTimes = []
         self.tailTimes = []
         self.speeds = []

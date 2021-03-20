@@ -508,7 +508,7 @@ class FourWayJunction(Junction):
 
         self.findClashingEdges()
 
-        self.tails_per_lane = {lane: [] for lane in self.incomingLanes}
+        self.tailsPerLane = {lane: [] for lane in self.incomingLanes}
 
     def edgeCalcVertex(self):
         """Funzione utilizzata per calcolare le strade entranti ed uscenti dagli incroci ai vertici.

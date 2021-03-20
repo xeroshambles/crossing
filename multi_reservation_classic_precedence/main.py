@@ -53,7 +53,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, cellsPerSide, matrixTr
 
         simulation_vehicles = simulation.getSimulationVehicles(simulation_vehicles)
 
-        vehicles = simulation.checkVehiclesRoute(vehicles, simulation_vehicles, numberOfVehicles)
+        if total_time % 1 == 0:
+            vehicles = simulation.checkVehiclesRoute(vehicles, simulation_vehicles, numberOfVehicles)
 
         for junction in junctions_list:  # scorro la lista incroci
             rM = junction.reservationManager
