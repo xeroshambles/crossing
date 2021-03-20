@@ -135,7 +135,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, cellsPerSide, matrixTr
                 for x in rM.cellPassageList:
                     route = traci.vehicle.getRouteID(x[0])
                     edges = traci.route.getEdges(route)
-                    lane = rM.getLaneIndexFromEdges(edges, vehicles[x[0]])
+                    lane = vehicles[x[0]].getLaneIndexFromEdges(edges, junction)
                     if lane != 0:
                         # se l'auto non gira a destra
                         if x[1] is None and x[2] is None:

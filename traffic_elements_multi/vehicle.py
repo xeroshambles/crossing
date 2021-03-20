@@ -252,28 +252,78 @@ class Vehicle:
         traci.vehicle.setLaneChangeMode(self.getID(), 512)
         self.canChangeLane = False
 
-    def tryChangeLane(self):
-        """Funzione che setta la lane corretta da far seguire al veicolo."""
-        route = traci.vehicle.getRouteID(self.idVehicle)
-        edges = traci.route.getEdges(route)
-        lane = traci.vehicle.getLaneID(self.idVehicle)
-        suffix = int(lane[-1])
-
+    def getLaneIndexFromEdges(self, edges, junction):
+        """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
+        destinazione correnti."""
+        distance = -1
+        i = 0
+        found = False
         start = int(edges[self.edgeIndex][1:3])
         end = int(edges[self.edgeIndex + 1][4:6])
-        junctionID = int(edges[self.edgeIndex][4:6])
 
+        while True:
+            if junction.node_ids[i % 4] == start:
+                found = True
+            if found:
+                distance += 1
+                if junction.node_ids[i % 4] == end:
+                    break
+            i += 1
+
+        lane = 0
+
+        if distance == 1:
+            lane = 2
+        if distance == 2:
+            lane = 1
+        if distance == 3:
+            lane = 0
+
+        return lane, start, end
+
+    def getRoute(self, junction):
+        """Funzione che restituisce l'identificativo della route corretta calcolata in fase di pre-processing."""
+        route = traci.vehicle.getRouteID(self.idVehicle)
+        edges = traci.route.getEdges(route)
+        suffix, start, end = self.getLaneIndexFromEdges(edges, junction)
+
+        if suffix == 0:
+            if start - end == -55 or (start - end == -25 and end == 51) or start - end == -4 or start - end == 26:
+                return 'route_2'
+            if start - end == -24 or start - end == 6 or (start - end == 25 and start == 55) or start - end == 55:
+                return 'route_3'
+            if start - end == -45 or (start - end == -25 and end == 75) or start - end == 4 or start - end == 24:
+                return 'route_7'
+            if start - end == -26 or start - end == -6 or (start - end == 25 and start == 71) or start - end == 45:
+                return 'route_11'
+        if suffix == 1:
+            if start - end == -30 or start - end == -10 or start - end == 20:
+                return 'route_1'
+            if start - end == -49 or start - end == 2 or start - end == 51:
+                return 'route_5'
+            if start - end == -20 or start - end == 10 or start - end == 30:
+                return 'route_6'
+            if start - end == -51 or start - end == -2 or start - end == 49:
+                return 'route_10'
+        if suffix == 2:
+            if start - end == -55 or (start - end == -25 and end == 55) or start - end == -6 or start - end == 24:
+                return 'route_0'
+            if start - end == -24 or start - end == -4 or (start - end == 25 and start == 75) or start - end == 45:
+                return 'route_4'
+            if (start - end == -25 and end == 71) or start - end == 6 or start - end == 26 or start - end == 45:
+                return 'route_8'
+            if start - end == -26 or start - end == 4 or (start - end == 25 and start == 51) or start - end == 55:
+                return 'route_9'
+
+    def tryChangeLane(self, junction):
+        """Funzione che setta la lane corretta da far seguire al veicolo."""
+        lane = traci.vehicle.getLaneID(self.idVehicle)
+        suffix = int(lane[-1])
         traci.vehicle.setLaneChangeMode(self.idVehicle, 1621)
+        route = self.getRoute(junction)
 
         # se il veicolo deve andare a destra al prossimo incrocio
-        if ((start - junctionID == -5 or start - junctionID == 25) and
-            (end - junctionID == -1 or end - junctionID == 50)) or \
-                ((start - junctionID == 1 or start - junctionID == 50) and
-                 (end - junctionID == -5 or end - junctionID == 25)) or \
-                ((start - junctionID == 5 or start - junctionID == 25) and
-                 (end - junctionID == 1 or end - junctionID == 50)) or \
-                ((start - junctionID == -1 or start - junctionID == 50) and
-                 (end - junctionID == 5 or end - junctionID == 25)):
+        if route == 'route_2' or route == 'route_3' or route == 'route_7' or route == 'route_11':
             if suffix == 1:
                 if traci.vehicle.couldChangeLane(self.idVehicle, -1):
                     traci.vehicle.changeLane(self.idVehicle, 0, 1.0)
@@ -282,14 +332,7 @@ class Vehicle:
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
 
         # se il veicolo deve andare diritto al prossimo incrocio
-        elif ((start - junctionID == -5 or start - junctionID == 25) and
-              (end - junctionID == 5 or end - junctionID == 25)) or \
-                ((start - junctionID == 1 or start - junctionID == 50) and
-                 (end - junctionID == -1 or end - junctionID == 50)) or \
-                ((start - junctionID == 5 or start - junctionID == 25) and
-                 (end - junctionID == -5 or end - junctionID == 25)) or \
-                ((start - junctionID == -1 or start - junctionID == 50) and
-                 (end - junctionID == 1 or end - junctionID == 50)):
+        if route == 'route_1' or route == 'route_5' or route == 'route_6' or route == 'route_10':
             if suffix == 0:
                 if traci.vehicle.couldChangeLane(self.idVehicle, 1):
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
@@ -298,14 +341,7 @@ class Vehicle:
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
 
         # se il veicolo deve andare a sinistra al prossimo incrocio
-        elif ((start - junctionID == -5 or start - junctionID == 25) and
-              (end - junctionID == 1 or end - junctionID == 50)) or \
-                ((start - junctionID == 1 or start - junctionID == 50) and
-                 (end - junctionID == 5 or end - junctionID == 25)) or \
-                ((start - junctionID == 5 or start - junctionID == 25) and
-                 (end - junctionID == -1 or end - junctionID == 50)) or \
-                ((start - junctionID == -1 or start - junctionID == 50) and
-                 (end - junctionID == -5 or end - junctionID == 25)):
+        if route == 'route_0' or route == 'route_4' or route == 'route_8' or route == 'route_9':
             if suffix == 0:
                 if traci.vehicle.couldChangeLane(self.idVehicle, 1):
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
@@ -316,49 +352,21 @@ class Vehicle:
     def checkCorrectLane(self, junction):
         """Funzione che verifica se il veicolo è arrivato nella lane corretta, in caso contrario si genera una nuova
         route."""
-
-        route = traci.vehicle.getRouteID(self.idVehicle)
-        edges = traci.route.getEdges(route)
         lane = traci.vehicle.getLaneID(self.idVehicle)
         suffix = int(lane[-1])
-
-        start = int(edges[self.edgeIndex][1:3])
-        end = int(edges[self.edgeIndex + 1][4:6])
-        junctionID = int(edges[self.edgeIndex][4:6])
-
         traci.vehicle.setLaneChangeMode(self.idVehicle, 512)
+        route = self.getRoute(junction)
 
         # se il veicolo doveva andare a destra al prossimo incrocio
-        if ((start - junctionID == -5 or start - junctionID == 25) and
-            (end - junctionID == -1 or end - junctionID == 50)) or \
-                ((start - junctionID == 1 or start - junctionID == 50) and
-                 (end - junctionID == -5 or end - junctionID == 25)) or \
-                ((start - junctionID == 5 or start - junctionID == 25) and
-                 (end - junctionID == 1 or end - junctionID == 50)) or \
-                ((start - junctionID == -1 or start - junctionID == 50) and
-                 (end - junctionID == 5 or end - junctionID == 25)):
+        if route == 'route_2' or route == 'route_3' or route == 'route_7' or route == 'route_11':
             if suffix == 1 or suffix == 2:
                 self.changeTarget(momentaryChange=True, junction=junction)
         # se il veicolo doveva andare dritto al prossimo incrocio
-        elif ((start - junctionID == -5 or start - junctionID == 25) and
-              (end - junctionID == 5 or end - junctionID == 25)) or \
-                ((start - junctionID == 1 or start - junctionID == 50) and
-                 (end - junctionID == -1 or end - junctionID == 50)) or \
-                ((start - junctionID == 5 or start - junctionID == 25) and
-                 (end - junctionID == -5 or end - junctionID == 25)) or \
-                ((start - junctionID == -1 or start - junctionID == 50) and
-                 (end - junctionID == 1 or end - junctionID == 50)):
+        if route == 'route_1' or route == 'route_5' or route == 'route_6' or route == 'route_10':
             if suffix == 0 or suffix == 2:
                 self.changeTarget(momentaryChange=True, junction=junction)
         # se il veicolo doveva andare a sinistra al prossimo incrocio
-        elif ((start - junctionID == -5 or start - junctionID == 25) and
-              (end - junctionID == 1 or end - junctionID == 50)) or \
-                ((start - junctionID == 1 or start - junctionID == 50) and
-                 (end - junctionID == 5 or end - junctionID == 25)) or \
-                ((start - junctionID == 5 or start - junctionID == 25) and
-                 (end - junctionID == -1 or end - junctionID == 50)) or \
-                ((start - junctionID == -1 or start - junctionID == 50) and
-                 (end - junctionID == -5 or end - junctionID == 25)):
+        if route == 'route_0' or route == 'route_4' or route == 'route_8' or route == 'route_9':
             if suffix == 0 or suffix == 1:
                 self.changeTarget(momentaryChange=True, junction=junction)
 

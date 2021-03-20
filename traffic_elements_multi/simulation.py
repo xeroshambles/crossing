@@ -142,7 +142,7 @@ class Simulation:
                         if vehicles[veh].isNextEdge:
                             vehicles[veh].edgeIndex += 1
                             vehicles[veh].isNextEdge = False
-                        vehicles[veh].tryChangeLane()
+                        vehicles[veh].tryChangeLane(junction)
                     # se la distanza è tra 70 e 50 e il veicolo non è riuscito ad andare nella lane corretta
                     # impedisco di cambiare lane e cambio temporaneamente la route
                     if 50 <= distance < 70:

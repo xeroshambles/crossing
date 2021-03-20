@@ -47,73 +47,6 @@ class ReservationManager:
         self.xVehiclesInCells = float(x_vehicle_m) / float(x_cell_m)
         self.yVehiclesInCells = float(y_vehicle_m) / float(y_cell_m)
 
-    def getLaneIndexFromEdges(self, edges, vehicle):
-        """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
-        destinazione correnti"""
-
-        distance = -1
-        i = 0
-        found = False
-
-        start = int(edges[vehicle.edgeIndex][1:3])
-        end = int(edges[vehicle.edgeIndex + 1][4:6])
-
-        while True:
-            if self.junction.node_ids[i % 4] == start:
-                found = True
-            if found:
-                distance += 1
-                if self.junction.node_ids[i % 4] == end:
-                    break
-            i += 1
-
-        lane = 0
-
-        if distance == 1:
-            lane = 2
-        if distance == 2:
-            lane = 1
-        if distance == 3:
-            lane = 0
-
-        return lane, start, end
-
-    def getRoute(self, vehicle):
-        """Funzione che restituisce l'identificativo della route corretta calcolata in fase di pre-processing"""
-
-        route = traci.vehicle.getRouteID(vehicle.idVehicle)
-        edges = traci.route.getEdges(route)
-
-        suffix, start, end = self.getLaneIndexFromEdges(edges, vehicle)
-
-        if suffix == 0:
-            if start - end == -55 or (start - end == -25 and end == 51) or start - end == -4 or start - end == 26:
-                return 'route_2'
-            if start - end == -24 or start - end == 6 or (start - end == 25 and start == 55) or start - end == 55:
-                return 'route_3'
-            if start - end == -45 or (start - end == -25 and end == 75) or start - end == 4 or start - end == 24:
-                return 'route_7'
-            if start - end == -26 or start - end == -6 or (start - end == 25 and start == 71) or start - end == 45:
-                return 'route_11'
-        if suffix == 1:
-            if start - end == -30 or start - end == -10 or start - end == 20:
-                return 'route_1'
-            if start - end == -49 or start - end == 2 or start - end == 51:
-                return 'route_5'
-            if start - end == -20 or start - end == 10 or start - end == 30:
-                return 'route_6'
-            if start - end == -51 or start - end == -2 or start - end == 49:
-                return 'route_10'
-        if suffix == 2:
-            if start - end == -55 or (start - end == -25 and end == 55) or start - end == -6 or start - end == 24:
-                return 'route_0'
-            if start - end == -24 or start - end == -4 or (start - end == 25 and start == 75) or start - end == 45:
-                return 'route_4'
-            if (start - end == -25 and end == 71) or start - end == 6 or start - end == 26 or start - end == 45:
-                return 'route_8'
-            if start - end == -26 or start - end == 4 or (start - end == 25 and start == 51) or start - end == 55:
-                return 'route_9'
-
     def stopCoordinates(self, shape):
         """Calcolo gli estremi dell'incrocio, dove sono presenti gli stop"""
 
@@ -276,7 +209,7 @@ class ReservationManager:
 
             route = traci.vehicle.getRouteID(vehicle.idVehicle)
             edges = traci.route.getEdges(route)
-            lane = self.getLaneIndexFromEdges(edges, vehicle)
+            lane = vehicle.getLaneIndexFromEdges(edges, self.junction)
             # se l'auto non gira a destra
             if lane != 0:
                 self.cellPassageList.append([vehicle.idVehicle, None, None])
@@ -287,7 +220,7 @@ class ReservationManager:
     def setInCrossingMatrix(self, vehicle):
         """Segna sulla matrice_incrocio l'occupazione delle celle toccate dall'auto durante l'attraversamento"""
 
-        rou = self.getRoute(vehicle)
+        rou = vehicle.getRoute(self.junction)
 
         for route in self.matrixTrajectories:
             if route[0] == rou:
@@ -309,7 +242,7 @@ class ReservationManager:
         """Data l'auto e la matrice dell'incrocio restituisce True se non sono state rilevate collisioni
         dall'attuale situazione di passaggio rilevata all'interno della matrice, False se sono rilevate collisioni"""
 
-        rou = self.getRoute(vehicle)
+        rou = vehicle.getRoute(self.junction)
 
         free = True
 
@@ -343,7 +276,7 @@ class ReservationManager:
 
             route = traci.vehicle.getRouteID(x[0])
             edges = traci.route.getEdges(route)
-            lane = self.getLaneIndexFromEdges(edges, vehicles[x[0]])
+            lane = vehicles[x[0]].getLaneIndexFromEdges(edges, self.junction)
             # se l'auto non gira a destra
             if lane != 0:
                 for y in self.cellPassageList:
