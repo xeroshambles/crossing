@@ -398,13 +398,15 @@ class Vehicle:
                 if self.precEdgeObjective == '':
                     self.travelIndex += 1
                     self.travelTimes.append(0)
+                    j = re.search('e(.*)_(.*)', dest).group(1)
+                    target = self.generateRoute(int(j), staticRoutes)
+                    traci.vehicle.changeTarget(self.getID(), target)
+                    self.setEdgeObjective(target)
                 else:
                     dest = self.precEdgeObjective
                     self.precEdgeObjective = ''
-                j = re.search('e(.*)_(.*)', dest).group(1)
-                target = self.generateRoute(int(j), staticRoutes)
-                traci.vehicle.changeTarget(self.getID(), target)
-                self.setEdgeObjective(target)
+                    traci.vehicle.changeTarget(self.getID(), dest)
+                    self.setEdgeObjective(dest)
                 self.isLaneWrong = False
         else:
             # cambia momentaneamente la corsia obiettivo in modo da poter far muovere il veicolo attraverso l'incrocio
