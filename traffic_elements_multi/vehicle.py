@@ -266,11 +266,14 @@ class Vehicle:
         traci.vehicle.setLaneChangeMode(self.idVehicle, 1621)
 
         # se il veicolo deve andare a destra al prossimo incrocio
-        if (start - junctionID == -5 and end - junctionID == -1) or (start - junctionID == 1 and end -
-                                                                     junctionID == -5) or (start -
-                                                                                           junctionID == 5 and end
-                                                                                           - junctionID == 1) or \
-                (start - junctionID == -1 and end - junctionID == 5):
+        if ((start - junctionID == -5 or start - junctionID == 25) and
+            (end - junctionID == -1 or end - junctionID == 50)) or \
+                ((start - junctionID == 1 or start - junctionID == 50) and
+                 (end - junctionID == -5 or end - junctionID == 25)) or \
+                ((start - junctionID == 5 or start - junctionID == 25) and
+                 (end - junctionID == 1 or end - junctionID == 50)) or \
+                ((start - junctionID == -1 or start - junctionID == 50) and
+                 (end - junctionID == 5 or end - junctionID == 25)):
             if suffix == 1:
                 if traci.vehicle.couldChangeLane(self.idVehicle, -1):
                     traci.vehicle.changeLane(self.idVehicle, 0, 1.0)
@@ -279,11 +282,14 @@ class Vehicle:
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
 
         # se il veicolo deve andare diritto al prossimo incrocio
-        elif (start - junctionID == -5 and end - junctionID == 5) or (start - junctionID == 1 and end -
-                                                                    junctionID == -1) or (start -
-                                                                                          junctionID == 5 and end
-                                                                                          - junctionID == -5) or \
-                (start - junctionID == -1 and end - junctionID == 1):
+        elif ((start - junctionID == -5 or start - junctionID == 25) and
+              (end - junctionID == 5 or end - junctionID == 25)) or \
+                ((start - junctionID == 1 or start - junctionID == 50) and
+                 (end - junctionID == -1 or end - junctionID == 50)) or \
+                ((start - junctionID == 5 or start - junctionID == 25) and
+                 (end - junctionID == -5 or end - junctionID == 25)) or \
+                ((start - junctionID == -1 or start - junctionID == 50) and
+                 (end - junctionID == 1 or end - junctionID == 50)):
             if suffix == 0:
                 if traci.vehicle.couldChangeLane(self.idVehicle, 1):
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
@@ -292,11 +298,14 @@ class Vehicle:
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
 
         # se il veicolo deve andare a sinistra al prossimo incrocio
-        elif (start - junctionID == -5 and end - junctionID == 1) or (start - junctionID == 1 and end -
-                                                                    junctionID == 5) or (start -
-                                                                                         junctionID == 5 and end
-                                                                                         - junctionID == -1) or \
-                (start - junctionID == -1 and end - junctionID == -5):
+        elif ((start - junctionID == -5 or start - junctionID == 25) and
+              (end - junctionID == 1 or end - junctionID == 50)) or \
+                ((start - junctionID == 1 or start - junctionID == 50) and
+                 (end - junctionID == 5 or end - junctionID == 25)) or \
+                ((start - junctionID == 5 or start - junctionID == 25) and
+                 (end - junctionID == -1 or end - junctionID == 50)) or \
+                ((start - junctionID == -1 or start - junctionID == 50) and
+                 (end - junctionID == -5 or end - junctionID == 25)):
             if suffix == 0:
                 if traci.vehicle.couldChangeLane(self.idVehicle, 1):
                     traci.vehicle.changeLane(self.idVehicle, 1, 1.0)
@@ -320,27 +329,36 @@ class Vehicle:
         traci.vehicle.setLaneChangeMode(self.idVehicle, 512)
 
         # se il veicolo doveva andare a destra al prossimo incrocio
-        if (start - junctionID == -5 and end - junctionID == -1) or (start - junctionID == 1 and end -
-                                                                     junctionID == -5) or (start -
-                                                                                           junctionID == 5 and end
-                                                                                           - junctionID == 1) or \
-                (start - junctionID == -1 and end - junctionID == 5):
+        if ((start - junctionID == -5 or start - junctionID == 25) and
+            (end - junctionID == -1 or end - junctionID == 50)) or \
+                ((start - junctionID == 1 or start - junctionID == 50) and
+                 (end - junctionID == -5 or end - junctionID == 25)) or \
+                ((start - junctionID == 5 or start - junctionID == 25) and
+                 (end - junctionID == 1 or end - junctionID == 50)) or \
+                ((start - junctionID == -1 or start - junctionID == 50) and
+                 (end - junctionID == 5 or end - junctionID == 25)):
             if suffix == 1 or suffix == 2:
                 self.changeTarget(momentaryChange=True, junction=junction)
         # se il veicolo doveva andare dritto al prossimo incrocio
-        elif (start - junctionID == -5 and end - junctionID == 5) or (start - junctionID == 1 and end -
-                                                                      junctionID == -1) or (start -
-                                                                                            junctionID == 5 and end
-                                                                                            - junctionID == -5) or \
-                (start - junctionID == -1 and end - junctionID == 1):
+        elif ((start - junctionID == -5 or start - junctionID == 25) and
+              (end - junctionID == 5 or end - junctionID == 25)) or \
+                ((start - junctionID == 1 or start - junctionID == 50) and
+                 (end - junctionID == -1 or end - junctionID == 50)) or \
+                ((start - junctionID == 5 or start - junctionID == 25) and
+                 (end - junctionID == -5 or end - junctionID == 25)) or \
+                ((start - junctionID == -1 or start - junctionID == 50) and
+                 (end - junctionID == 1 or end - junctionID == 50)):
             if suffix == 0 or suffix == 2:
                 self.changeTarget(momentaryChange=True, junction=junction)
         # se il veicolo doveva andare a sinistra al prossimo incrocio
-        elif (start - junctionID == -5 and end - junctionID == 1) or (start - junctionID == 1 and end -
-                                                                      junctionID == 5) or (start -
-                                                                                           junctionID == 5 and end
-                                                                                           - junctionID == -1) or \
-             (start - junctionID == -1 and end - junctionID == -5):
+        elif ((start - junctionID == -5 or start - junctionID == 25) and
+              (end - junctionID == 1 or end - junctionID == 50)) or \
+                ((start - junctionID == 1 or start - junctionID == 50) and
+                 (end - junctionID == 5 or end - junctionID == 25)) or \
+                ((start - junctionID == 5 or start - junctionID == 25) and
+                 (end - junctionID == -1 or end - junctionID == 50)) or \
+                ((start - junctionID == -1 or start - junctionID == 50) and
+                 (end - junctionID == -5 or end - junctionID == 25)):
             if suffix == 0 or suffix == 1:
                 self.changeTarget(momentaryChange=True, junction=junction)
 

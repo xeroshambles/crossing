@@ -644,8 +644,8 @@ class FourWayJunction(Junction):
                 bsE2S5 = f'{"0" if e2 - 5 <= 9 else ""}'  # come bs, ma sottrae 5
                 bsE1A5 = f'{"0" if e1 + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
                 bsE2A5 = f'{"0" if e2 + 5 <= 9 else ""}'  # come bs, ma aggiunge 5
-                bsE1S25 = f'{"0" if e2 - 25 <= 9 else ""}'  # come bs, ma sottrae 25
-                bsE1S50 = f'{"0" if e2 - 50 <= 9 else ""}'  # come bs, ma sottrae 25
+                bsE1S25 = f'{"0" if e1 - 25 <= 9 else ""}'  # come bs, ma sottrae 25
+                bsE1S50 = f'{"0" if e1 - 50 <= 9 else ""}'  # come bs, ma sottrae 25
 
                 frontEdge = rightEdge = leftEdge = ''
 
