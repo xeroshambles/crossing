@@ -130,6 +130,7 @@ class Simulation:
                         vehicles[veh].isNextEdge = True
                         vehicles[veh].headTimes.append(0)
                         vehicles[veh].tailTimes.append(0)
+                        vehicles[veh].speeds.append([])
                         vehicles[veh].spawnDistances.append(0)
                         junction.vehiclesEntering.append(veh)
                         junction.departed += 1
@@ -149,7 +150,7 @@ class Simulation:
                     if 50 <= distance < 70:
                         vehicles[veh].checkCorrectLane(junction)
                     if distance < 15:
-                        vehicles[veh].speeds.append(traci.vehicle.getSpeed(veh))
+                        vehicles[veh].speeds[-1].append(traci.vehicle.getSpeed(veh))
                     veh_length = traci.vehicle.getLength(veh)
                     check = veh_length / 2 + 0.2
                     leader = traci.vehicle.getLeader(veh)
@@ -181,7 +182,7 @@ class Simulation:
                     leader_lane = ''
                     if leader:
                         leader_lane = traci.vehicle.getLaneID(leader[0])
-                    vehicles[veh].speeds.append(traci.vehicle.getSpeed(veh))
+                    vehicles[veh].speeds[-1].append(traci.vehicle.getSpeed(veh))
                     # se il veicolo è fermo
                     if traci.vehicle.getSpeed(veh) <= 1:
                         # verifico se il veicolo è in testa e nel caso lo coloro di blu
@@ -212,7 +213,7 @@ class Simulation:
     def saveResults(self, vehicles, simulation_vehicles, junctions):
         """Funzione che raggruppa tutte le misure effattuate"""
 
-        travelTimes = []  # lista dei tempi di percorrenza medi per ogni veicolo
+        meanTravelTimes = []  # lista dei tempi di percorrenza medi per ogni veicolo
         varTravelTime = 0  # varianza rispetto al tempo di percorrenza
         maxTravelTime = -1  # tempo massimo di percorrenza di un veicolo
         meanHeadTimes = []  # lista dei tempi passati in testa medi per ogni veicolo
@@ -224,38 +225,47 @@ class Simulation:
         meanSpeeds = []  # lista delle velocità medie assunte dai veicoli nei pressi dell'incrocio
         varSpeed = 0  # varianza rispetto alla velocità dei veicoli
         meanTailLength = []  # lista delle lunghezze medie delle code rilevate sulle lane entranti
-        varTail = 0  # varianza rispetto alla coda
-        maxTail = -1  # coda massima rilevata su tutte le lane entranti
-        diverted_vehicles = 0  # numero di veicoli che hanno deviato nel percorrere la propria route
+        varTailLength = 0  # varianza rispetto alla coda
+        maxTailLength = -1  # coda massima rilevata su tutte le lane entranti
+        divertedVehicles = 0  # numero di veicoli che hanno deviato nel percorrere la propria route
 
         for veh in vehicles:
             if veh in simulation_vehicles:
 
                 if vehicles[veh].hasDiverted:
-                    diverted_vehicles += 1
+                    divertedVehicles += 1
 
-                travelTimes.append(round(sum(vehicles[veh].travelTimes) / len(vehicles[veh].travelTimes), 2))
-                maxTravT = max(vehicles[veh].travelTimes)
-                if maxTravT > maxTravelTime:
-                    maxTravelTime = maxTravT
+                if len(vehicles[veh].travelTimes) >= 2:
+                    meanTravelTimes.append(round(sum(vehicles[veh].travelTimes[:-1]) /
+                                                 len(vehicles[veh].travelTimes[:-1]), 2))
+                    maxTravT = max(vehicles[veh].travelTimes[:-1])
+                    if maxTravT > maxTravelTime:
+                        maxTravelTime = maxTravT
 
-                meanHeadTimes.append(round(sum(vehicles[veh].headTimes) / len(vehicles[veh].headTimes), 2))
-                maxHT = max(vehicles[veh].headTimes)
-                if maxHT > maxHeadTime:
-                    maxHeadTime = maxHT
+                if len(vehicles[veh].headTimes) >= 2:
+                    meanHeadTimes.append(round(sum(vehicles[veh].headTimes[:-1]) /
+                                               len(vehicles[veh].headTimes[:-1]), 2))
+                    maxHT = max(vehicles[veh].headTimes[:-1])
+                    if maxHT > maxHeadTime:
+                        maxHeadTime = maxHT
 
-                meanTailTimes.append(round(sum(vehicles[veh].tailTimes) / len(vehicles[veh].tailTimes), 2))
-                maxTailT = max(vehicles[veh].tailTimes)
-                if maxTailT > maxTailTime:
-                    maxTailTime = maxTailT
+                if len(vehicles[veh].tailTimes) >= 2:
+                    meanTailTimes.append(round(sum(vehicles[veh].tailTimes[:-1]) /
+                                               len(vehicles[veh].tailTimes[:-1]), 2))
+                    maxTailT = max(vehicles[veh].tailTimes[:-1])
+                    if maxTailT > maxTailTime:
+                        maxTailTime = maxTailT
 
-                if len(vehicles[veh].speeds):
-                    meanSpeeds.append(round(sum(vehicles[veh].speeds) / len(vehicles[veh].speeds), 2))
+                if len(vehicles[veh].speeds) >= 2:
+                    meanSpds = []
+                    for speeds in vehicles[veh].speeds[:-1]:
+                        meanSpds.append(round(sum(speeds) / len(speeds), 2))
+                    meanSpeeds.append(round(sum(meanSpds) / len(meanSpds), 2))
 
-        meanTravelTime = round(sum(travelTimes) / len(travelTimes), 2)
-        for travelTime in travelTimes:
+        meanTravelTime = round(sum(meanTravelTimes) / len(meanTravelTimes), 2)
+        for travelTime in meanTravelTimes:
             varTravelTime += (travelTime - meanTravelTime) ** 2
-        stDevTravelTime = round(sqrt(varTravelTime / len(travelTimes)), 2)
+        stDevTravelTime = round(sqrt(varTravelTime / len(meanTravelTimes)), 2)
 
         meanHeadTime = round(sum(meanHeadTimes) / len(meanHeadTimes), 2)
         for headTime in meanHeadTimes:
@@ -272,34 +282,34 @@ class Simulation:
             varSpeed += (speed - meanSpeed) ** 2
         stDevSpeed = round(sqrt(varSpeed / len(meanSpeeds)), 2)
 
-        meanTails = []
-        stDevTails = []
-        maxTails = []
-        meanThroughput = []
+        meanTailsLength = []
+        stDevTailsLength = []
+        maxTailsLength = []
+        meanThroughputs = []
 
         for junction in junctions:
             if junction.departed == 0:
-                meanThroughput.append(1)
+                meanThroughputs.append(1)
             else:
-                meanThroughput.append(round(junction.arrived / junction.departed, 2))
+                meanThroughputs.append(round(junction.arrived / junction.departed, 2))
             for lane in junction.tailsPerLane:
                 meanTailLength.append(round(sum(junction.tailsPerLane[lane]) / len(junction.tailsPerLane[lane]), 2))
                 maxTL = max(junction.tailsPerLane[lane])
-                if maxTL > maxTail:
-                    maxTail = maxTL
+                if maxTL > maxTailLength:
+                    maxTailLength = maxTL
             meanTl = round(sum(meanTailLength) / len(meanTailLength), 2)
             for tail in meanTailLength:
-                varTail += (tail - meanTl) ** 2
-            meanTails.append(meanTl)
-            stDevTails.append(round(sqrt(varTail / len(meanTailLength)), 2))
-            maxTails.append(maxTail)
-            maxTail = -1
+                varTailLength += (tail - meanTl) ** 2
+            meanTailsLength.append(meanTl)
+            stDevTailsLength.append(round(sqrt(varTailLength / len(meanTailLength)), 2))
+            maxTailsLength.append(maxTailLength)
+            maxTailLength = -1
 
-        meanTail = round(sum(meanTails) / len(meanTails), 2)
-        stDevTail = round(sum(stDevTails) / len(stDevTails), 2)
-        maxTail = max(maxTails)
-        meanTp = round(sum(meanThroughput) / len(meanThroughput), 2)
+        meanTail = round(sum(meanTailsLength) / len(meanTailsLength), 2)
+        stDevTail = round(sum(stDevTailsLength) / len(stDevTailsLength), 2)
+        maxTail = max(maxTailsLength)
+        meanThroughput = round(sum(meanThroughputs) / len(meanThroughputs), 2)
 
         return meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, \
-               stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp, \
-               diverted_vehicles, meanTails, stDevTails, maxTails, meanThroughput
+               stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanThroughput, \
+               divertedVehicles, meanTailsLength, stDevTailsLength, maxTailsLength, meanThroughputs

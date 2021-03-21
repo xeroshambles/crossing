@@ -189,40 +189,8 @@ def autoLabel(values, r, offset, ax):
         i += 1
 
 
-def linesPerGroups(group_measures, groups, stepsSpawn, dir, project_label):
+def linesPerGroups(sims, values, labels, titles, colors, groups, stepsSpawn, dir, project_label):
     """Salvo su immagini le misure di un progetto per ogni scenario di traffico"""
-
-    sims = []
-    values = []
-    labels = []
-    titles = []
-    colors = []
-
-    for k in group_measures:
-        if k == 'sims':
-            sims = group_measures['sims']
-            continue
-        titles.append(k)
-        for i in range(0, len(group_measures[k])):
-            if "tutti" in group_measures[k][i]['label']:
-                if "Massima" in group_measures[k][i]['label']:
-                    maxs = [-1 for i in range(0, len(group_measures[k][i]['values'][0]))]
-                    for j in range(0, len(group_measures[k][i]['values'])):
-                        for h in range(0, len(group_measures[k][i]['values'][j])):
-                            if maxs[h] < group_measures[k][i]['values'][j][h]:
-                                maxs[h] = group_measures[k][i]['values'][j][h]
-                    values.append(maxs)
-                else:
-                    means = [0 for i in range(0, len(group_measures[k][i]['values'][0]))]
-                    for j in range(0, len(group_measures[k][i]['values'])):
-                        for h in range(0, len(group_measures[k][i]['values'][j])):
-                            means[h] += round(group_measures[k][i]['values'][j][h] /
-                                              len(group_measures[k][i]['values']), 2)
-                    values.append(means)
-            else:
-                values.append(group_measures[k][i]['values'])
-            labels.append(group_measures[k][i]['label'])
-            colors.append(group_measures[k][i]['color'])
 
     j = 0
 

@@ -129,7 +129,39 @@ if __name__ == "__main__":
 
             f.close()
 
-        linesPerGroups(group_measures_multi, groups_multi, stepsSpawn, dir, project_label)
+        sims = []
+        values = []
+        labels = []
+        titles = []
+        colors = []
+
+        for k in group_measures_multi:
+            if k == 'sims':
+                sims = group_measures_multi['sims']
+                continue
+            titles.append(k)
+            for i in range(0, len(group_measures_multi[k])):
+                if "tutti" in group_measures_multi[k][i]['label']:
+                    if "Massima" in group_measures_multi[k][i]['label']:
+                        maxs = [-1 for i in range(0, len(group_measures_multi[k][i]['values'][0]))]
+                        for j in range(0, len(group_measures_multi[k][i]['values'])):
+                            for h in range(0, len(group_measures_multi[k][i]['values'][j])):
+                                if maxs[h] < group_measures_multi[k][i]['values'][j][h]:
+                                    maxs[h] = group_measures_multi[k][i]['values'][j][h]
+                        values.append(maxs)
+                    else:
+                        means = [0 for i in range(0, len(group_measures_multi[k][i]['values'][0]))]
+                        for j in range(0, len(group_measures_multi[k][i]['values'])):
+                            for h in range(0, len(group_measures_multi[k][i]['values'][j])):
+                                means[h] += round(group_measures_multi[k][i]['values'][j][h] /
+                                                  len(group_measures_multi[k][i]['values']), 2)
+                        values.append(means)
+                else:
+                    values.append(group_measures_multi[k][i]['values'])
+                labels.append(group_measures_multi[k][i]['label'])
+                colors.append(group_measures_multi[k][i]['color'])
+
+        linesPerGroups(sims, values, labels, titles, colors, groups_multi, stepsSpawn, dir, project_label)
 
         clearMeasures(group_measures_multi, groups_multi, head_titles_multi)
 
