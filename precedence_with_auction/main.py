@@ -60,7 +60,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
 
     vehicles = {}  # dizionario contente dei riferimenti ad oggetto: idVx: Vehicle(x)
     departed = 0  # numero di veicoli partiti nella simulazione e considerati nel calcolo delle misure
-    totalTime = 0.000  # tempo totale di simulazione
+    totalTime = 0  # tempo totale di simulazione
     tails_per_lane = {}  # dizionario contenente le lunghezze delle code per ogni lane ad ogni step
 
     mean_th_per_num = [-1 for el in numberOfVehicles]
@@ -88,12 +88,9 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
 
     """Di seguito il ciclo entro cui avviene tutta la simulazione, una volta usciti la simulazione è conclusa"""
 
-    n_step = 0
-
     while traci.simulation.getMinExpectedNumber() > 0 and totalTime < numberOfSteps:
 
         totalTime += 1
-        n_step += 1
         traci.simulationStep(totalTime)
         departed += traci.simulation.getDepartedNumber()
         intermediate_departed += traci.simulation.getDepartedNumber()
@@ -115,12 +112,15 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, simulationM
                 if objVeh.distanceFromEndLane() < 50:
                     if objVeh not in crossingManager.getCurrentPartecipants():
                         crossingManager.updateVehicleStatus(objVeh)
-                    # se non è gia in una auction, non e stoppato
-                    if objVeh.distanceFromEndLane() < 15:
+                    # se non è gia in una auction, non è stoppato
+                    if objVeh.distanceFromEndLane() < 25:
+                        traci.vehicle.setSpeed(idVeh, 6.945)
                         if objVeh in crossingManager.getCrossingStatus().values() and objVeh not in \
                                 crossingManager.getVehiclesInAuction() and objVeh.checkPosition(junction) \
                                 and objVeh not in crossingManager.nonStoppedVehicles:
                             junction.createAuction(objVeh, vehicles)
+                else:
+                    traci.vehicle.setSpeed(idVeh, 13.89)
 
         if len(vehAtJunction) > 0:
             crossingManager.allowCrossing()
