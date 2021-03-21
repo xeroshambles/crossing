@@ -7,7 +7,7 @@ numberOfVehicles = [[50, 100, 150, 200]]
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = 200  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
-seeds = [9001]  # semi iniziali delle simulazioni
+seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
@@ -21,7 +21,7 @@ simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
 dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 m = 60
-spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
+spawn_balancing = [33, 33, 34] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]
