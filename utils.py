@@ -372,10 +372,10 @@ def checkVehicles(vehicles, tails_per_lane, time, schema):
             check = veh_length / 2 + 0.2
             leader = traci.vehicle.getLeader(veh)
             if traci.vehicle.getSpeed(veh) <= 1:
+                tails_per_lane[veh_current_lane][time - 1] += 1
                 # verifico se il veicolo è in testa
                 if check >= distance and ((leader and leader[1] < 0) or not leader):
                     vehicles[veh].hasStopped = 1
-                    tails_per_lane[veh_current_lane][time - 1] += 1
                     vehicles[veh].headTime += 1
                     if schema in ['s', 'S']:
                         traci.vehicle.setColor(veh, (0, 0, 255))  # blu
@@ -384,7 +384,6 @@ def checkVehicles(vehicles, tails_per_lane, time, schema):
                 if leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane \
                         and traci.vehicle.getSpeed(leader[0]) <= 1:
                     vehicles[veh].hasStopped = 1
-                    tails_per_lane[veh_current_lane][time - 1] += 1
                     vehicles[veh].tailTime += 1
                     if schema in ['s', 'S']:
                         traci.vehicle.setColor(veh, (255, 0, 0))  # rosso

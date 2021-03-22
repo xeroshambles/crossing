@@ -138,7 +138,7 @@ class Simulation:
                     spawn_distance = traci.vehicle.getDistance(veh) - sum(vehicles[veh].spawnDistances[:-1])
                     vehicles[veh].spawnDistances[-1] = spawn_distance
                     distance = self.getDistanceFromLaneEnd(spawn_distance, traci.lane.getLength(veh_current_lane),
-                                                      junction.junction_shape)
+                                                           junction.junction_shape)
                     # # se la distanza è compresa 115 e 70 provo a far cambiare la lane
                     if 70 <= distance < 115:
                         if vehicles[veh].isNextEdge:
@@ -156,28 +156,28 @@ class Simulation:
                     leader = traci.vehicle.getLeader(veh)
                     # se il veicolo è fermo
                     if traci.vehicle.getSpeed(veh) <= 1:
+                        junction.tailsPerLane[veh_current_lane][time - 1] += 1
                         # verifico se il veicolo è in testa e nel caso lo coloro di blu
                         if check >= distance and ((leader and leader[1] < 0) or not leader):
-                            junction.tailsPerLane[veh_current_lane][time - 1] += 1
                             vehicles[veh].headTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))
+                            continue
                         # verifico se il veicolo è in coda e nel caso lo coloro di rosso
                         if leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane \
                                 and traci.vehicle.getSpeed(leader[0]) <= 1:
-                            junction.tailsPerLane[veh_current_lane][time - 1] += 1
                             vehicles[veh].tailTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (255, 0, 0))
+                            continue
                     # se il veicolo non è fermo lo coloro di giallo
                     else:
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 255, 0))
 
                 # controllo se il veicolo è all'interno della junction
-                elif veh_current_lane in junction.crossingLanes:
-                    spawn_distance = traci.vehicle.getDistance(veh) - \
-                                     sum(vehicles[veh].spawnDistances[:-1])
+                if junction.junctionID + '_' in veh_current_lane:
+                    spawn_distance = traci.vehicle.getDistance(veh) - sum(vehicles[veh].spawnDistances[:-1])
                     vehicles[veh].spawnDistances[-1] = spawn_distance
                     leader = traci.vehicle.getLeader(veh)
                     leader_lane = ''
@@ -186,25 +186,26 @@ class Simulation:
                     vehicles[veh].speeds[-1].append(traci.vehicle.getSpeed(veh))
                     # se il veicolo è fermo
                     if traci.vehicle.getSpeed(veh) <= 1:
+                        junction.tailsPerLane[vehicles[veh].startingLane][time - 1] += 1
                         # verifico se il veicolo è in testa e nel caso lo coloro di blu
                         if (leader and leader_lane != veh_current_lane) or not leader:
-                            junction.tailsPerLane[vehicles[veh].startingLane][time - 1] += 1
                             vehicles[veh].headTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (0, 0, 255))
+                            continue
                         # verifico se il veicolo è in coda e nel caso lo coloro di rosso
-                        if leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane:
-                            junction.tailsPerLane[vehicles[veh].startingLane][time - 1] += 1
+                        if leader and leader[1] <= 0.5:
                             vehicles[veh].tailTimes[-1] += 1
                             if schema in ['s', 'S']:
                                 traci.vehicle.setColor(veh, (255, 0, 0))
+                            continue
                     # se il veicolo non è fermo lo coloro di giallo
                     else:
                         if schema in ['s', 'S']:
                             traci.vehicle.setColor(veh, (255, 255, 0))
 
                 # controllo se il veicolo è in una lane uscente
-                elif veh_current_lane in junction.outgoingLanes:
+                if veh_current_lane in junction.outgoingLanes:
                     if veh in junction.vehiclesEntering:
                         junction.vehiclesEntering.remove(veh)
                         junction.arrived += 1
