@@ -381,7 +381,8 @@ def checkVehicles(vehicles, tails_per_lane, time, schema):
                         traci.vehicle.setColor(veh, (0, 0, 255))  # blu
                     continue
                 # verifico se il veicolo è in coda
-                if leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane:
+                if leader and leader[1] <= 0.5 and vehicles[leader[0]].startingLane == veh_current_lane \
+                        and traci.vehicle.getSpeed(leader[0]) <= 1:
                     vehicles[veh].hasStopped = 1
                     tails_per_lane[veh_current_lane][time - 1] += 1
                     vehicles[veh].tailTime += 1
@@ -408,7 +409,7 @@ def checkVehicles(vehicles, tails_per_lane, time, schema):
                         traci.vehicle.setColor(veh, (0, 0, 255))  # blu
                     continue
                 # verifico se il veicolo è in coda
-                if leader and leader[1] <= 0.5 and leader_lane == veh_current_lane:
+                if leader and leader[1] <= 0.5:
                     vehicles[veh].tailTime += 1
                     if schema in ['s', 'S']:
                         traci.vehicle.setColor(veh, (255, 0, 0))  # rosso
