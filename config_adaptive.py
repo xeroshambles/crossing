@@ -24,8 +24,9 @@ m = 60
 spawn_balancing = [33, 33, 34] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
-# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]
-projects = ["classic_precedence", "precedence_with_auction", "reservation", "adaptive"]
+# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction_comp",
+# "multi_auction_classic_tls"]
+projects = ["classic_precedence", "precedence_with_auction_comp", "reservation", "adaptive"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -57,8 +58,8 @@ for project in projects:
         projects_labels.append("Precedenza")
     elif project == "reservation":
         projects_labels.append("Prenotazione")
-    if project == "precedence_with_auction":
-        projects_labels.append("Precedenza + asta")
+    if project == "precedence_with_auction_comp":
+        projects_labels.append("Precedenza + asta competitiva")
     if project == "adaptive":
         projects_labels.append("Adattativo")
 

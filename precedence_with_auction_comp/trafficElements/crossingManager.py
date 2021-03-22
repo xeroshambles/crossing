@@ -29,7 +29,7 @@ class CrossingManager(ABC):
         pass
 
     # @abstractmethod
-    # def saveAuctionResult(self, precedence_with_auction: CompetitiveAuction):
+    # def saveAuctionResult(self, precedence_with_auction_comp: CompetitiveAuction):
     #     """Funzione che salva lo stato dei permessi di passaggio in seguito allo svolgimento di un'asta"""
     #     pass
 

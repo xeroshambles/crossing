@@ -93,11 +93,11 @@ class Auction(ABC):
         #     g1 = pls[0]
         #     print(f'\ngroup of partecipants of lane {g1[0].getCurrentLane()}')
         #     for i in g1:
-        #         print(i.getID(), f'n auction lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
+        #         print(i.getID(), f'n precedence_with_auction_comp lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
         #     g2 = pls[1]
         #     print('\ngroup of sponsors')
         #     for i in g2:
-        #         print(i.getID(), f'n auction lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
+        #         print(i.getID(), f'n precedence_with_auction_comp lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
         #     print('total offer: ', pls[2])
         # number of partecipants without winners
         """Con il seguente blocco di codice ricarico il budget dei veicoli in modo proporzionale all'offerta che hanno 
@@ -225,8 +225,7 @@ class CompetitiveAuction(Auction):
             # print('partecipants before removal', [p.getID() for p in self.getPartecipants()])
             for i in self.partecipantsNonGrouped:
                 if i.isAllowedLaneChange():
-                    pass
-                    # i.forbidLaneChange()
+                    i.forbidLaneChange()
             # print('partecipants', [p.getID() for p in self.getPartecipants()])
             # print('winners', [w.getID() for w in self.winners], 'losers', [l.getID() for l in self.losers])
 
@@ -277,8 +276,7 @@ class CooperativeAuction(Auction):
             self.orderedPartecipants = [i[0] for i in partecipants]
             for i in self.partecipantsNonGrouped:
                 if i.isAllowedLaneChange():
-                    pass
-                    # i.forbidLaneChange()
+                    i.forbidLaneChange()
             if not self.partecipantsNonGrouped[0].instantPay:
                 # se devono pagare solo i veicoli vincitori
                 for i in self.orderedPartecipants[0]:

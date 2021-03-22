@@ -18,14 +18,16 @@ celle_per_lato = 20  # numero di celle per lato nel caso della reservation
 secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
 simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
-dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
+dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 
 m = 60
 spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
-# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction", "multi_auction_classic_tls"]
-projects = ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction"]
+# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction_comp",
+# "precedence_with_auction_coop"]
+projects = ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction_comp",
+            "precedence_with_auction_coop"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -40,7 +42,7 @@ labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard t
           'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
           'Massima lunghezza delle code', 'Veicoli fermi', 'Throughput medio']
 
-colors = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33']
+colors = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', '#33FFE3']
 
 head_titles = ['total_time', 'head_time', 'tail_time', 'speed', 'tail_length', 'stopped_vehicles', 'throughput']
 
@@ -53,12 +55,14 @@ projects_labels = []
 for project in projects:
     if project == "classic_tls":
         projects_labels.append("Semaforo")
-    elif project == "classic_precedence":
+    if project == "classic_precedence":
         projects_labels.append("Precedenza")
-    elif project == "reservation":
+    if project == "reservation":
         projects_labels.append("Prenotazione")
-    if project == "precedence_with_auction":
-        projects_labels.append("Precedenza + asta")
+    if project == "precedence_with_auction_comp":
+        projects_labels.append("Precedenza + asta competitiva")
+    if project == "precedence_with_auction_coop":
+        projects_labels.append("Precedenza + asta cooperativa")
     if project == "adaptive":
         projects_labels.append("Adattativo")
 

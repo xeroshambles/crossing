@@ -29,7 +29,7 @@ class CrossingManager(ABC):
         pass
 
     # @abstractmethod
-    # def saveAuctionResult(self, auction: CompetitiveAuction):
+    # def saveAuctionResult(self, precedence_with_auction_comp: CompetitiveAuction):
     #     """Funzione che salva lo stato dei permessi di passaggio in seguito allo svolgimento di un'asta"""
     #     pass
 
@@ -98,8 +98,7 @@ class CrossingManager(ABC):
                 i.isSlowed = True
                 traci.vehicle.slowDown(i.getID(), 3, 3)     # TODO: 8 o 4?
             if i.isAllowedLaneChange() and i.distanceFromEndLane() < 15:
-                pass
-                # i.forbidLaneChange()
+                i.forbidLaneChange()
             # print('control', traci.vehicle.getLaneID(i.getID())[1:3], self.junction.getNumericID())
             # se il veicolo si trova su una corsia il cui primo numero indicato è quello dell'id dell'incrocio allora
             # il veicolo si trova su di una corsia uscente e può essere rimosso dal crossing manager
@@ -111,18 +110,18 @@ class CrossingManager(ABC):
             # print(i.getID())
             self.removeVehicleFromPartecipants(i)
 
-            # """codice utilizzato per la distribuzione del traffico."""
-            # if self.junction.isFrontalTrajectory(i):
-            #     currentLane = int(i.getCurrentLane()[-1])
-            #     newLane = 0 if currentLane == 1 else 1
-            #     nlaneID = list(i.getCurrentLane())
-            #     nlaneID[-1] = str(newLane)
-            #     nlaneID = ''.join(nlaneID)
-            #     if len(traci.lane.getLastStepVehicleIDs(i.getCurrentLane())) >= 2*len(traci.lane.getLastStepVehicleIDs(nlaneID)):
-            #         currentLane = int(i.getCurrentLane()[-1])
-            #         newLane = 0 if currentLane == 1 else 1
-            #         traci.vehicle.changeLane(i.getID(), newLane, 10)
-            #         i.forbidLaneChange()
+            """codice utilizzato per la distribuzione del traffico."""
+            if self.junction.isFrontalTrajectory(i):
+                currentLane = int(i.getCurrentLane()[-1])
+                newLane = 0 if currentLane == 1 else 1
+                nlaneID = list(i.getCurrentLane())
+                nlaneID[-1] = str(newLane)
+                nlaneID = ''.join(nlaneID)
+                if len(traci.lane.getLastStepVehicleIDs(i.getCurrentLane())) >= 2*len(traci.lane.getLastStepVehicleIDs(nlaneID)):
+                    currentLane = int(i.getCurrentLane()[-1])
+                    newLane = 0 if currentLane == 1 else 1
+                    traci.vehicle.changeLane(i.getID(), newLane, 10)
+                    i.forbidLaneChange()
 
         for i in self.getCurrentPartecipants():
             if traci.vehicle.getLaneID(i.getID())[0] == 'e':

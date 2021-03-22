@@ -1,7 +1,7 @@
 import random
 from math import sqrt
 from config import *
-from precedence_with_auction.trafficElements.vehicle import Vehicle
+from precedence_with_auction_comp.trafficElements.vehicle import Vehicle
 from config_adaptive import *
 import traci
 

@@ -4,9 +4,9 @@ from inpout import redirect_output
 from reservation.main import stopXY, limiti_celle, costruzioneArray
 from classic_tls.main import intermediateRun as tlsRun
 from classic_precedence.main import intermediateRun as precedenceRun
-from precedence_with_auction.main import intermediateRun as precedenceWithAuctionRun
+from precedence_with_auction_comp.main import intermediateRun as precedenceWithAuctionRun
 from reservation.main import intermediateRun as reservationRun
-from precedence_with_auction.trafficElements.junction import FourWayJunction
+from precedence_with_auction_comp.trafficElements.junction import FourWayJunction
 import traci
 from sumolib import miscutils
 
@@ -227,7 +227,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
 
 
-    #params di precedence_with_auction
+    #params di precedence_with_auction_comp
 
     """Di seguito inizializzo l'incrocio che fa parte della simulazione, assegnandogli una classe che ne descriva
         il comportamento specifico"""
@@ -339,7 +339,7 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
                                                                                                                     departed, intermediate_departed,
                                                                                                                     vehicles, tails_per_lane, main_step,
                                                                                                                     mean_th_per_num, step_incr, n_step, sec, arrayAuto)
-        if project == "precedence_with_auction":
+        if project == "precedence_with_auction_comp":
 
             totalTime, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane, main_step, \
             mean_th_per_num, arrayAuto = precedenceWithAuctionRun(numberOfVehicles, totalTime, step_incr, n_step, departed, intermediate_departed, junction, vehicles, tails_per_lane,

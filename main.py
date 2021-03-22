@@ -25,8 +25,8 @@ if __name__ == "__main__":
 
     projs = checkChoice(projects,
                         '\nQuale progetto vuoi avviare? (classic_tls, classic_precedence, reservation, '
-                        'precedence_with_auction): ', "\nUtilizzo il semaforo classico come default...",
-                        '\nInserire un nome di progetto valido!',
+                        'precedence_with_auction_comp, precedence_with_auction_coop): ',
+                        "\nUtilizzo il semaforo classico come default...", '\nInserire un nome di progetto valido!',
                         mode, arr=True)
 
     for project in projs:
@@ -59,7 +59,8 @@ if __name__ == "__main__":
         sumoDict = {'classic_tls': sumoCmd,
                     'classic_precedence': sumoCmd,
                     'reservation': sumoCmd + ["--step-length", "0.050"],
-                    'precedence_with_auction': sumoCmd + ["--step-length", "0.050"]}
+                    'precedence_with_auction_comp': sumoCmd,
+                    'precedence_with_auction_coop': sumoCmd}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -109,9 +110,12 @@ if __name__ == "__main__":
                     'reservation': (
                         numberOfVehicles[i], schema, sumoDict['reservation'], dir, j, queue, seeds[j], celle_per_lato,
                         traiettorie_matrice, secondi_di_sicurezza),
-                    'precedence_with_auction': (
-                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction'], dir, j, queue, seeds[j],
-                        simulationMode, instantPay, dimensionOfGroups)
+                    'precedence_with_auction_comp': (
+                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction_comp'], dir, j, queue, seeds[j],
+                        simulationMode if simulationMode else not simulationMode, instantPay, dimensionOfGroups),
+                    'precedence_with_auction_coop': (
+                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction_comp'], dir, j, queue, seeds[j],
+                        simulationMode if not simulationMode else not simulationMode, instantPay, dimensionOfGroups)
                 }
 
                 p = Process(target=module.run, args=args[project])
