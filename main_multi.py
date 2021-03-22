@@ -25,8 +25,10 @@ if __name__ == "__main__":
     matrixTrajectories = traiettorie.run(False, cellsPerSide)
 
     projs = checkChoice(projects_multi,
-                        '\nQuale progetto vuoi avviare? (classic_tls, classic_precedence, reservation, '
-                        'precedence_with_auction): ', "\nUtilizzo il semaforo classico come default...",
+                        '\nQuale progetto vuoi avviare? (multi_classic_tls_classic_precedence, '
+                        'multi_classic_precedence, multi_reservation_classic_precedence, '
+                        'multi_comp_auction_classic_precedence, multi_coop_auction_classic_precedence): ',
+                        "\nUtilizzo il semaforo classico come default...",
                         '\nInserire un nome di progetto valido!',
                         mode, arr=True)
 
@@ -59,8 +61,9 @@ if __name__ == "__main__":
 
         sumoDict = {'multi_classic_tls_classic_precedence': sumoCmd,
                     'multi_classic_precedence': sumoCmd,
-                    'multi_auction_classic_precedence': sumoCmd,
-                    'multi_reservation_classic_precedence': sumoCmd + ['--step-length', '0.05']}
+                    'multi_reservation_classic_precedence': sumoCmd + ['--step-length', '0.05'],
+                    'multi_comp_auction_classic_precedence': sumoCmd,
+                    'multi_coop_auction_classic_precedence': sumoCmd}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -109,12 +112,17 @@ if __name__ == "__main__":
                     'multi_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_precedence'],
                         dir, j, queue, seeds[j]),
-                    'multi_auction_classic_precedence': (
-                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_auction_classic_precedence'],
-                        instantPay, simulationMode, dimensionOfGroups, dir, j, queue, seeds[j]),
                     'multi_reservation_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation_classic_precedence'],
-                        cellsPerSide, matrixTrajectories, securitySecs, dir, j, queue, seeds[j])
+                        cellsPerSide, matrixTrajectories, securitySecs, dir, j, queue, seeds[j]),
+                    'multi_comp_auction_classic_precedence': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_comp_auction_classic_precedence'],
+                        simulationMode if simulationMode else not simulationMode, instantPay, dimensionOfGroups, dir,
+                        j, queue, seeds[j]),
+                    'multi_coop_auction_classic_precedence': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_coop_auction_classic_precedence'],
+                        simulationMode if not simulationMode else not simulationMode, instantPay, dimensionOfGroups,
+                        dir, j, queue, seeds[j]),
                 }
 
                 p = Process(target=module.run, args=args[project])

@@ -93,11 +93,11 @@ class Auction(ABC):
         #     g1 = pls[0]
         #     print(f'\ngroup of partecipants of lane {g1[0].getCurrentLane()}')
         #     for i in g1:
-        #         print(i.getID(), f'n precedence_with_auction_comp lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
+        #         print(i.getID(), f'n precedence_with_comp_auction lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
         #     g2 = pls[1]
         #     print('\ngroup of sponsors')
         #     for i in g2:
-        #         print(i.getID(), f'n precedence_with_auction_comp lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
+        #         print(i.getID(), f'n precedence_with_comp_auction lost {i.numberOfAuctionAtJunction}', f'{(self.bids[i], self.bidsInc[i])}', end=', ')
         #     print('total offer: ', pls[2])
         # number of partecipants without winners
         """Con il seguente blocco di codice ricarico il budget dei veicoli in modo proporzionale all'offerta che hanno 

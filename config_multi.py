@@ -24,9 +24,10 @@ dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per 
 # Variabili di configurazione per ogni simulazione (più incroci)
 
 # Progetti: ["multi_classic_tls_classic_precedence", "multi_classic_precedence", "multi_reservation_classic_precedence",
-# "multi_auction_classic_precedence"]
+# "multi_comp_auction_classic_precedence", "multi_coop_auction_classic_precedence"]
 projects_multi = ["multi_classic_tls_classic_precedence", "multi_classic_precedence",
-                  "multi_reservation_classic_precedence", "multi_auction_classic_precedence"]
+                  "multi_reservation_classic_precedence", "multi_comp_auction_classic_precedence",
+                  "multi_coop_auction_classic_precedence"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
 external_east_junctions_ids = [55, 60, 65, 70, 75]
 external_south_junctions_ids = [46, 47, 48, 49, 50]
@@ -46,7 +47,7 @@ labels_multi = ['Tempo medio di percorrenza (s)', 'Deviazione standard tempo di 
                 'Deviazione standard lunghezza delle code (tutti gli incroci)',
                 'Massima lunghezza delle code (tutti gli incroci)', 'Throughput medio (tutti gli incroci)']
 
-colors_multi = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33']
+colors_multi = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', '#33FFE3']
 
 head_titles_multi = ['trip_time', 'head_time', 'tail_time', 'speed', 'tail_length', 'throughput', 'diverted_vehicles',
                      'tail_lengths', 'throughputs']
@@ -66,10 +67,12 @@ for project in projects_multi:
         projects_labels_multi.append("Precedenza esterna, semafori interni")
     if project == "multi_classic_precedence":
         projects_labels_multi.append("Solo precedenza")
-    if project == "multi_auction_classic_precedence":
-        projects_labels_multi.append("Precedenza esterna, aste interne")
     if project == "multi_reservation_classic_precedence":
         projects_labels_multi.append("Precedenza esterna, prenotazioni interne")
+    if project == "multi_comp_auction_classic_precedence":
+        projects_labels_multi.append("Precedenza esterna, aste competitive interne")
+    if project == "multi_coop_auction_classic_precedence":
+        projects_labels_multi.append("Precedenza esterna, aste cooperative interne")
 
 group_measures_multi = {}
 

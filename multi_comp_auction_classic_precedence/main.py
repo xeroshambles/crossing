@@ -7,7 +7,7 @@ import traci
 from sumolib import miscutils
 
 
-def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, instantPay, simulationMode, dimensionOfGroups, path, index,
+def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instantPay, dimensionOfGroups, path, index,
         queue, seed):
     """Funzione che avvia la simulazione dato un certo numero di veicoli"""
 

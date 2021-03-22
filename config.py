@@ -24,10 +24,10 @@ m = 60
 spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
-# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction_comp",
-# "precedence_with_auction_coop"]
-projects = ["classic_tls", "classic_precedence", "reservation", "precedence_with_auction_comp",
-            "precedence_with_auction_coop"]
+# Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_comp_auction",
+# "precedence_with_coop_auction"]
+projects = ["classic_tls", "classic_precedence", "reservation", "precedence_with_comp_auction",
+            "precedence_with_coop_auction"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -59,9 +59,9 @@ for project in projects:
         projects_labels.append("Precedenza")
     if project == "reservation":
         projects_labels.append("Prenotazione")
-    if project == "precedence_with_auction_comp":
+    if project == "precedence_with_comp_auction":
         projects_labels.append("Precedenza + asta competitiva")
-    if project == "precedence_with_auction_coop":
+    if project == "precedence_with_coop_auction":
         projects_labels.append("Precedenza + asta cooperativa")
     if project == "adaptive":
         projects_labels.append("Adattativo")

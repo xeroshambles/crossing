@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     projs = checkChoice(projects,
                         '\nQuale progetto vuoi avviare? (classic_tls, classic_precedence, reservation, '
-                        'precedence_with_auction_comp, precedence_with_auction_coop): ',
+                        'precedence_with_comp_auction, precedence_with_coop_auction): ',
                         "\nUtilizzo il semaforo classico come default...", '\nInserire un nome di progetto valido!',
                         mode, arr=True)
 
@@ -59,8 +59,8 @@ if __name__ == "__main__":
         sumoDict = {'classic_tls': sumoCmd,
                     'classic_precedence': sumoCmd,
                     'reservation': sumoCmd + ["--step-length", "0.050"],
-                    'precedence_with_auction_comp': sumoCmd,
-                    'precedence_with_auction_coop': sumoCmd}
+                    'precedence_with_comp_auction': sumoCmd,
+                    'precedence_with_coop_auction': sumoCmd}
 
         schema = ''
         if choice in ['g', 'G']:
@@ -110,11 +110,11 @@ if __name__ == "__main__":
                     'reservation': (
                         numberOfVehicles[i], schema, sumoDict['reservation'], dir, j, queue, seeds[j], celle_per_lato,
                         traiettorie_matrice, secondi_di_sicurezza),
-                    'precedence_with_auction_comp': (
-                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction_comp'], dir, j, queue, seeds[j],
+                    'precedence_with_comp_auction': (
+                        numberOfVehicles[i], schema, sumoDict['precedence_with_comp_auction'], dir, j, queue, seeds[j],
                         simulationMode if simulationMode else not simulationMode, instantPay, dimensionOfGroups),
-                    'precedence_with_auction_coop': (
-                        numberOfVehicles[i], schema, sumoDict['precedence_with_auction_comp'], dir, j, queue, seeds[j],
+                    'precedence_with_coop_auction': (
+                        numberOfVehicles[i], schema, sumoDict['precedence_with_comp_auction'], dir, j, queue, seeds[j],
                         simulationMode if not simulationMode else not simulationMode, instantPay, dimensionOfGroups)
                 }
 
