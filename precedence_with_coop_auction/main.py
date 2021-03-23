@@ -2,7 +2,7 @@ from utils import *
 from config import *
 from inpout import redirect_output
 
-from precedence_with_comp_auction.trafficElements.junction import FourWayJunction
+from precedence_with_coop_auction.trafficElements.junction import FourWayJunction
 
 import traci
 from sumolib import miscutils

@@ -9,7 +9,7 @@ stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simu
 numberOfSteps = stepsSpawn + 50  # numero di step entro cui ogni simulazione deve terminare
 # (sempre maggiore di stepsSpawn)
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
-seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
+seeds = [9001]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
