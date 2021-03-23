@@ -172,8 +172,6 @@ class Junction(ABC):
     def isClashing(self, route1, route2):
         """funzione che prende in ingresso 2 coppie del tipo: lane attuale e lane obbiettivo, ritornando True se le
         route sono in collisione, False altrimenti"""
-        if self.nID == 14 and route2[0] == 'e09_14_0':
-            print(route2)
         if route1 in self.clashingEdges[route2[0]][route2[1]]:
             return True
         return False
