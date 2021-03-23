@@ -13,8 +13,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
 
     port = miscutils.getFreeSocketPort()
 
-    print(f"Partito: {index}")
-
     redirectOutput(path, index, True)
 
     traci.start(sumoCmd, port=port, numRetries=1000)
@@ -100,8 +98,6 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, simulationMode, instan
     traci.close()
 
     redirectOutput(path, index, False)
-
-    print(f"Terminato: {index}")
 
     queue.put([meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime,
                stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp,

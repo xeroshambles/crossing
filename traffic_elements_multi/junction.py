@@ -173,7 +173,7 @@ class Junction(ABC):
         """funzione che prende in ingresso 2 coppie del tipo: lane attuale e lane obbiettivo, ritornando True se le
         route sono in collisione, False altrimenti"""
         if self.nID == 14:
-            print(route1, route2, self.clashingEdges)
+            print(route2)
         if route1 in self.clashingEdges[route2[0]][route2[1]]:
             return True
         return False
