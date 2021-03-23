@@ -19,9 +19,10 @@ celle_per_lato = 20  # numero di celle per lato nel caso della reservation
 secondi_di_sicurezza = 0.6  # soglia tra veicoli per la reservation
 simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
-dimensionOfGroups = -1  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
+dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 m = 60
 spawn_balancing = [33, 33, 34] #spawn dx, spawn c, spawn sx
+#spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_comp_auction",
@@ -41,7 +42,7 @@ labels = ['Tempo totale (s)', 'Tempo medio in testa (s)', 'Deviazione standard t
           'Lunghezza media delle code', 'Deviazione standard lunghezza delle code',
           'Massima lunghezza delle code', 'Veicoli fermi', 'Throughput medio']
 
-colors = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33']
+colors = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', '#33FFE3']
 
 head_titles = ['total_time', 'head_time', 'tail_time', 'speed', 'tail_length', 'stopped_vehicles', 'throughput']
 
@@ -54,14 +55,17 @@ projects_labels = []
 for project in projects:
     if project == "classic_tls":
         projects_labels.append("Semaforo")
-    elif project == "classic_precedence":
+    if project == "classic_precedence":
         projects_labels.append("Precedenza")
-    elif project == "reservation":
+    if project == "reservation":
         projects_labels.append("Prenotazione")
     if project == "precedence_with_comp_auction":
         projects_labels.append("Precedenza + asta competitiva")
+    if project == "precedence_with_coop_auction":
+        projects_labels.append("Precedenza + asta cooperativa")
     if project == "adaptive":
         projects_labels.append("Adattativo")
+
 
 x_labels = [sum(vehicles) / len(vehicles) for vehicles in numberOfVehicles]
 
