@@ -2,7 +2,7 @@
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
 # Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
-numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
+numberOfVehicles = [[200, 200, 200, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 divertedPercent = 0.5  # percentuale di veicoli entro la quale considerare valida una simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
@@ -14,7 +14,7 @@ repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve ess
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
 configFile = "intersection.sumocfg"  # file di configurazione della simulazione
-outputRedirection = True  # variabile che redireziona l'output su file (True) o su terminale (False)
+outputRedirection = False  # variabile che redireziona l'output su file (True) o su terminale (False)
 cellsPerSide = 20  # numero di celle per lato nel caso della reservation
 securitySecs = 0.6  # soglia tra veicoli per la reservation
 simulationMode = True  # asta competitiva (True) o cooperativa (False)
@@ -25,9 +25,7 @@ dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per 
 
 # Progetti: ["multi_classic_tls_classic_precedence", "multi_classic_precedence", "multi_reservation_classic_precedence",
 # "multi_comp_auction_classic_precedence", "multi_coop_auction_classic_precedence"]
-projects_multi = ["multi_classic_tls_classic_precedence", "multi_classic_precedence",
-                  "multi_reservation_classic_precedence", "multi_comp_auction_classic_precedence",
-                  "multi_coop_auction_classic_precedence"]
+projects_multi = ["multi_coop_auction_classic_precedence"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
 external_east_junctions_ids = [55, 60, 65, 70, 75]
 external_south_junctions_ids = [46, 47, 48, 49, 50]
