@@ -22,6 +22,7 @@ instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori de
 dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 m = 60
 spawn_balancing = [33, 33, 34] #spawn dx, spawn c, spawn sx
+
 #spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
