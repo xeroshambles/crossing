@@ -81,7 +81,7 @@ def writeMeasuresToFile(f, i, ret):
     f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE: {round(ret[12], 2)} auto\n')
     f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE: {round(ret[13], 2)} auto\n')
     f.write(f'\nTHROUGHPUT MEDIO: {round(ret[14], 2)}\n')
-    f.write(f'\nNUMERO MEDIO DI VEICOLI DEVIATI: {round(ret[15], 2)}\n')
+    f.write(f'\nNUMERO DI VEICOLI DEVIATI: {round(ret[15], 2)}\n')
     f.write(f'\nLUNGHEZZA MEDIA DELLE CODE (PIU INCROCI): {ret[16]} auto\n')
     f.write(f'\nDEVIAZIONE STANDARD LUNGHEZZA DELLE CODE (PIU INCROCI): {ret[17]} auto\n')
     f.write(f'\nLUNGHEZZA MASSIMA DELLE CODE (PIU INCROCI): {ret[18]} auto\n')
@@ -100,7 +100,7 @@ def collectMeasures(queue, repeat, group_measures, single_measures, groups, titl
 
         ret = queue.get()
 
-        if ret[15] / nums[i] > divPercs[i]:
+        if ret[15] / sum(nums[i]) > divPercs[i]:
             continue
 
         for k in range(0, len(arr_titles)):
