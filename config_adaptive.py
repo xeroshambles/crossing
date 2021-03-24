@@ -51,7 +51,7 @@ titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', '
           'max_tail_length', 'stopped_vehicles', 'throughput']
 
 train_index = titles.index('mean_tail_time')
-
+comparation = "min" # deve essere o min o max
 projects_labels = []
 
 for project in projects:
