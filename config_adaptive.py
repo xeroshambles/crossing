@@ -5,7 +5,7 @@ mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale 
 numberOfVehicles = [[50, 100, 150, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
-numberOfSteps = 200  # numero di step entro cui ogni simulazione deve terminare
+numberOfSteps = stepsSpawn  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
 seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
@@ -49,6 +49,8 @@ head_titles = ['total_time', 'head_time', 'tail_time', 'speed', 'tail_length', '
 titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', 'mean_tail_time', 'st_dev_tail_time',
           'max_tail_time', 'mean_speed', 'st_dev_mean_speed', 'mean_tail_length', 'st_dev_tail_length',
           'max_tail_length', 'stopped_vehicles', 'throughput']
+
+train_index = titles.index('mean_tail_time')
 
 projects_labels = []
 
