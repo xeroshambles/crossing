@@ -78,8 +78,10 @@ def trainFromCollectedMeasures(intermediate_group_measures, configs):
                     temp[p][s] = 0
         index = 0
         for s in range(0, n_main_steps):
-
-            best = max([temp[x][s] for x in temp])
+            if comparation == "min":
+                best = min([temp[x][s] for x in temp])
+            if comparation == "max":
+                best = max([temp[x][s] for x in temp])
             p = [temp[x][s] for x in temp].index(best)
             if [x for x in temp if temp[x][s] == 0] and s > 0:
                 evaluation[s] = evaluation[s - 1]

@@ -5,7 +5,7 @@ mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale 
 numberOfVehicles = [[50, 100, 150, 200]]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
-numberOfSteps = 200  # numero di step entro cui ogni simulazione deve terminare
+numberOfSteps = stepsSpawn  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
 seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
@@ -22,6 +22,7 @@ instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori de
 dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 m = 60
 spawn_balancing = [33, 33, 34] #spawn dx, spawn c, spawn sx
+
 #spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
@@ -50,6 +51,8 @@ titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', '
           'max_tail_time', 'mean_speed', 'st_dev_mean_speed', 'mean_tail_length', 'st_dev_tail_length',
           'max_tail_length', 'stopped_vehicles', 'throughput']
 
+train_index = titles.index('mean_tail_time')
+comparation = "min" # deve essere o min o max
 projects_labels = []
 
 for project in projects:
