@@ -89,7 +89,7 @@ def writeMeasuresToFile(f, i, ret):
 
 
 def collectMeasures(queue, repeat, group_measures, single_measures, groups, titles, head_titles,
-                    labels, nums, project, f, i):
+                    labels, nums, divPercs, project, f, i):
     """Scrivo le misure delle simulazioni ripetute"""
 
     arr_titles = {k: [] for k in titles}
@@ -99,6 +99,9 @@ def collectMeasures(queue, repeat, group_measures, single_measures, groups, titl
     for j in range(0, repeat):
 
         ret = queue.get()
+
+        if ret[15] / nums[i] > divPercs[i]:
+            continue
 
         for k in range(0, len(arr_titles)):
 

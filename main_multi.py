@@ -133,7 +133,7 @@ if __name__ == "__main__":
                 p.join()
 
             collectMeasures(queue, repeat, group_measures_multi, single_measures_multi, groups_multi, titles_multi,
-                            head_titles_multi, labels_multi, numberOfVehicles, project, f, i)
+                            head_titles_multi, labels_multi, numberOfVehicles, divertedPercents, project, f, i)
 
             f.close()
 
