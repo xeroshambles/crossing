@@ -74,6 +74,14 @@ for project in projects_multi:
         projects_labels_multi.append("Precedenza esterna, aste competitive interne")
     if project == "multi_coop_auction_classic_precedence":
         projects_labels_multi.append("Precedenza esterna, aste cooperative interne")
+    if project == "multi_classic_precedence_classic_tls":
+        projects_labels_multi.append("Semafori esterni, precedenza interna")
+    if project == "multi_classic_precedence_reservation":
+        projects_labels_multi.append("Prenotazioni esterne, precedenza interna")
+    if project == "multi_classic_precedence_comp_auction":
+        projects_labels_multi.append("Aste competitive esterne, precedenza interna")
+    if project == "multi_classic_precedence_coop_auction":
+        projects_labels_multi.append("Aste cooperative esterne, precedenza interna")
 
 group_measures_multi = {}
 
