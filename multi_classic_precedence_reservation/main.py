@@ -13,7 +13,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, cellsPerSide, matrixTr
 
     port = miscutils.getFreeSocketPort()
 
-    redirectOutput(path, index, True)
+    # redirectOutput(path, index, True)
 
     traci.start(sumoCmd, port=port, numRetries=2000)
 
@@ -51,6 +51,8 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, cellsPerSide, matrixTr
     while traci.simulation.getMinExpectedNumber() > 0 and total_time < numberOfSteps:
         total_time = round(total_time + step_incr, 2)
         traci.simulationStep()
+
+        print(total_time)
 
         simulation_vehicles = simulation.getSimulationVehicles(simulation_vehicles)
 
@@ -180,7 +182,7 @@ def run(numberOfSteps, numberOfVehicles, schema, sumoCmd, cellsPerSide, matrixTr
 
     traci.close()
 
-    redirectOutput(path, index, False)
+    # redirectOutput(path, index, False)
 
     queue.put([meanTravelTime, stDevTravelTime, maxTravelTime, meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime,
                stDevTailTime, maxTailTime, meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, meanTp,

@@ -1,15 +1,15 @@
 # Variabili di configurazione comuni
 
 mode = 'auto'  # stringa che imposta la modalità automatica ('auto') o manuale (qualsiasi stringa) per le simulazioni
-# Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
-numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150], [200, 200, 200, 200]]
+# Numero di veicoli: [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150]]
+numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150]]
 # lista contenente il numero di veicoli generati per ogni simulazione
-divertedPercents = [0.47, 0.57, 0.58, 0.56]  # percentuali di veicoli deviati sotto le quali considerare valida una
+divertedPercents = [0.47, 0.57, 0.58]  # percentuali di veicoli deviati sotto le quali considerare valida una
 # simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = stepsSpawn + 50  # numero di step entro cui ogni simulazione deve terminare
 # (sempre maggiore di stepsSpawn)
-# Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
+# Semi: [9000, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
 seeds = [9000, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
