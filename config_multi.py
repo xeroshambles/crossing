@@ -26,9 +26,9 @@ dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per 
 
 # Progetti: ["multi_classic_tls_classic_precedence", "multi_classic_precedence", "multi_reservation_classic_precedence",
 # "multi_comp_auction_classic_precedence", "multi_coop_auction_classic_precedence"]
-projects_multi = ["multi_classic_precedence_classic_tls", "multi_classic_precedence",
-                  "multi_classic_precedence_reservation", "multi_classic_precedence_comp_auction",
-                  "multi_classic_precedence_coop_auction"]
+projects_multi = ["multi_classic_tls_classic_precedence", "multi_classic_precedence",
+                  "multi_reservation_classic_precedence", "multi_comp_auction_classic_precedence",
+                  "multi_coop_auction_classic_precedence"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
 external_east_junctions_ids = [55, 60, 65, 70, 75]
 external_south_junctions_ids = [46, 47, 48, 49, 50]
@@ -65,23 +65,23 @@ projects_labels_multi = []
 
 for project in projects_multi:
     if project == "multi_classic_tls_classic_precedence":
-        projects_labels_multi.append("Precedenza esterna, semafori interni")
-    if project == "multi_classic_precedence":
-        projects_labels_multi.append("Solo precedenza")
-    if project == "multi_reservation_classic_precedence":
-        projects_labels_multi.append("Precedenza esterna, prenotazioni interne")
-    if project == "multi_comp_auction_classic_precedence":
-        projects_labels_multi.append("Precedenza esterna, aste competitive interne")
-    if project == "multi_coop_auction_classic_precedence":
-        projects_labels_multi.append("Precedenza esterna, aste cooperative interne")
+        projects_labels_multi.append("Precedenze esterne, semafori interni")
     if project == "multi_classic_precedence_classic_tls":
-        projects_labels_multi.append("Semafori esterni, precedenza interna")
+        projects_labels_multi.append("Semafori esterni, precedenze interne")
+    if project == "multi_classic_precedence":
+        projects_labels_multi.append("Solo precedenze")
+    if project == "multi_reservation_classic_precedence":
+        projects_labels_multi.append("Precedenze esterne, prenotazioni interne")
     if project == "multi_classic_precedence_reservation":
-        projects_labels_multi.append("Prenotazioni esterne, precedenza interna")
+        projects_labels_multi.append("Prenotazioni esterne, precedenze interne")
+    if project == "multi_comp_auction_classic_precedence":
+        projects_labels_multi.append("Precedenze esterne, aste competitive interne")
     if project == "multi_classic_precedence_comp_auction":
-        projects_labels_multi.append("Aste competitive esterne, precedenza interna")
+        projects_labels_multi.append("Aste competitive esterne, precedenze interne")
+    if project == "multi_coop_auction_classic_precedence":
+        projects_labels_multi.append("Precedenze esterne, aste cooperative interne")
     if project == "multi_classic_precedence_coop_auction":
-        projects_labels_multi.append("Aste cooperative esterne, precedenza interna")
+        projects_labels_multi.append("Aste cooperative esterne, precedenze interne")
 
 group_measures_multi = {}
 
