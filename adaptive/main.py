@@ -224,7 +224,7 @@ def isTransitioning(old, new):
         return False
     return True
 
-def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, simulationMode, instantPay, dimensionOfGroups, train):
+def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, seed, celle_per_lato, traiettorie_matrice, secondi_di_sicurezza, simulationMode, instantPay, dimensionOfGroups, train, spawn_config):
     """ Param1: Array of number of vehicles to be spawned for each main step
         Param2: Array of projects names to be used on each main step
         NON considero precedence with auction per il momento
@@ -259,7 +259,8 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
     """Inizializzo i veicoli assegnadogli una route generata casualmente e, in caso di schema di colori 
     non significativo, dandogli un colore diverso per distinguerli meglio all'interno della simulazione"""
 
-    vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids, wallet=True, allowLaneChange=False)
+    vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids,
+                                spawn_balancing=spawn_config, wallet=True, allowLaneChange=False)
 
     if schema in ['n', 'N']:
         colorVehicles(numberOfVehicles)
@@ -464,5 +465,5 @@ def adaptiveSimulation(numberOfVehicles, schema, sumoCmd, path, index, queue, se
 
     redirect_output(path, index, False)
 
-    queue.put([int(totalTime), meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, stDevTailTime, maxTailTime,
+    queue.put([[stepsSpawn/len(numberOfVehicles) for s in numberOfVehicles], meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, stDevTailTime, maxTailTime,
                meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, stoppedVehicles, throughput])

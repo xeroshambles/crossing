@@ -205,7 +205,7 @@ def generateLaneSequence(conf, numberOfVehicles, seed):
     return sequence
 
 
-def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, wallet=False, allowLaneChange=True):
+def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, spawn_balancing=spawn_balancing, wallet=False, allowLaneChange=True):
     """Genero veicoli per ogni route possibile"""
 
     c = 0

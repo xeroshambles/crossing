@@ -21,14 +21,16 @@ simulationMode = True  # asta competitiva (True) o cooperativa (False)
 instantPay = True  # i veicoli pagano subito (True) o pagano solo i vincitori delle aste (False)
 dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per una dimensione variabile)
 m = 60
-spawn_balancing = [33, 33, 34] #spawn dx, spawn c, spawn sx
+# spawn config declaration: [% dx, % central, % sx]
+spawn_configs = {"balanced": [33, 33, 34], "unbalanced": [10, 33, 57]}
+#spawn_balancing = [33, 33, 34] #
 
 #spawn_balancing = [10, 33, 57] #spawn dx, spawn c, spawn sx
 # Variabili di configurazione per ogni simulazione (incrocio singolo)
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_comp_auction",
 # "multi_auction_classic_tls"]
-projects = ["classic_precedence", "precedence_with_comp_auction", "reservation", "adaptive"]
+projects = ["classic_precedence", "reservation", "precedence_with_comp_auction", "adaptive"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -51,8 +53,8 @@ titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', '
           'max_tail_time', 'mean_speed', 'st_dev_mean_speed', 'mean_tail_length', 'st_dev_tail_length',
           'max_tail_length', 'stopped_vehicles', 'throughput']
 
-train_index = titles.index('mean_tail_time')
-comparation = "min" # deve essere o min o max
+training_comps = ["min", "min", "min", "min", "min", "min", "min", "max", "min", "min", "min", "min", "min", "max"]
+
 projects_labels = []
 
 for project in projects:

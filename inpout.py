@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date
 from config import output_redirection
-from config_adaptive import train_index
+from config_adaptive import training_comps
 
 
 def redirect_output(path, index, mode):
@@ -133,15 +133,20 @@ def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measure
         ret = queue.get()
 
         if adaptive:
-            print(f"valori intermedi sim {i}:{j} : {ret[-1]}\n")
-            intermediate_group_measures[arr_nums[str(i)]][project].append(ret[train_index])
+            for m in range(0, len(training_comps)):
+                print(f"valori intermedi sim {i}:{j} : {ret[m]}\n")
+                intermediate_group_measures[arr_nums[str(i)]][m][project].append(ret[m])
 
         for k in range(0, len(arr_titles)):
             arr_titles[titles[k]].append(ret[k])
 
             for p in range(0, len(single_measures[arr_nums[str(i)]][labels[k]])):
-                if single_measures[arr_nums[str(i)]][labels[k]][p]['project'] == project:
-                    single_measures[arr_nums[str(i)]][labels[k]][p]['values'].append(ret[k])
+                considered_project = single_measures[arr_nums[str(i)]][labels[k]][p]['project']
+                if considered_project == project:
+                    if len(single_measures[arr_nums[str(i)]][labels[k]][p]['values']) == repeat:
+                        single_measures[arr_nums[str(i)]][labels[k]][p]['values'][0] = ret[k]
+                    else:
+                        single_measures[arr_nums[str(i)]][labels[k]][p]['values'].append(ret[k])
         if adaptive:
             writeMeasuresToFileAdaptive(f, f'{i}:{j}', numOfVehicles, ret, len(nums[i]))
         else:
