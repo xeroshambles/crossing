@@ -101,7 +101,7 @@ if __name__ == "__main__":
     dir = f"adaptive_{date.today().strftime('%d-%m-%Y')}"
     root = os.path.abspath(os.path.split(__file__)[0])
     path = os.path.join(root, dir)
-    intermediate_group_measures = {}
+
 
     if not os.path.exists(path):
         try:
@@ -122,7 +122,9 @@ if __name__ == "__main__":
 
     sim = "adaptive"
     repeat_train = 1
+
     for spawn_config in spawn_configs:
+        intermediate_group_measures = {}
         for project in projs:
             if project == "adaptive":
                 train = False
