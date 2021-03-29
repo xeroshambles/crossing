@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date
 from config import output_redirection
-from config_adaptive import training_comps
+from config_adaptive import training_comps, spawn_configs
 
 
 def redirect_output(path, index, mode):
@@ -147,6 +147,53 @@ def collectMeasures(queue, repeat, numOfVehicles, group_measures, single_measure
                         single_measures[arr_nums[str(i)]][labels[k]][p]['values'][0] = ret[k]
                     else:
                         single_measures[arr_nums[str(i)]][labels[k]][p]['values'].append(ret[k])
+        if adaptive:
+            writeMeasuresToFileAdaptive(f, f'{i}:{j}', numOfVehicles, ret, len(nums[i]))
+        else:
+            writeMeasuresToFile(f, f'{i}:{j}', numOfVehicles, ret)
+
+    k = 0
+
+    for g in range(0, len(groups)):
+        count = 0
+        while count < groups[g]:
+            title = group_measures[head_titles[g]][count]['title']
+            if isinstance(arr_titles[title][0], list):
+                group_measures[head_titles[g]][count]['values'].append(getValueFromList(title, arr_titles[title], len(nums[i])))
+            else:
+                group_measures[head_titles[g]][count]['values'].append(getValue(title, arr_titles[title]))
+            count += 1
+            k += 1
+    if adaptive:
+        return intermediate_group_measures
+
+
+
+def collectMeasuresAdaptive(queue, repeat, numOfVehicles, group_measures, single_measures, groups, titles, head_titles,
+                    labels, nums, project, f, i, spawn_config, intermediate_group_measures=None, adaptive=False):
+    """Scrivo le misure delle simulazioni ripetute per la fimulazione adattiva"""
+
+    arr_titles = {k: [] for k in titles}
+
+    arr_nums = {str(i): str(nums[i]) for i in range(0, len(nums))}
+    for j in range(0, repeat):
+
+        ret = queue.get()
+
+        if adaptive:
+            for m in range(0, len(training_comps)):
+                print(f"valori intermedi sim {i}:{j} : {ret[m]}\n")
+                intermediate_group_measures[arr_nums[str(i)]][spawn_config][m][project].append(ret[m])
+
+        for k in range(0, len(arr_titles)):
+            arr_titles[titles[k]].append(ret[k])
+            for p in range(0, len(single_measures[arr_nums[str(i)]][spawn_config][labels[k]])):
+                considered_project = single_measures[arr_nums[str(i)]][spawn_config][labels[k]][p]['project']
+                if considered_project == project:
+                    if len(single_measures[arr_nums[str(i)]][spawn_config][labels[k]][p]['values']) == repeat:
+                        single_measures[arr_nums[str(i)]][spawn_config][labels[k]][p]['values'][j] = ret[k]
+                    else:
+                        single_measures[arr_nums[str(i)]][spawn_config][labels[k]][p]['values'].append(ret[k])
         if adaptive:
             writeMeasuresToFileAdaptive(f, f'{i}:{j}', numOfVehicles, ret, len(nums[i]))
         else:
@@ -391,40 +438,46 @@ def linesPerMeasureAdaptive(single_measures, labels, titles, colors, projects, p
                     dir):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
-    values = []
-    vehs = [str(i) for i in numberOfVehicles]
 
+    vehs = [str(i) for i in numberOfVehicles]
+    spawn_confs_names = [sb for sb in spawn_configs.keys()]
     i = 0
 
     for lab in labels:
         conf_index = 0 # [p0, p1,...     ]
+        values = {sb: [] for sb in spawn_configs}
         for k in single_measures:
-
-            for z in range(0, len(projects)):
-                values.append([])
-                if isinstance(single_measures[k][lab][z]['values'][0], list):
-                    values[z] = getValueFromList(titles[i], single_measures[k][lab][z]['values'], len(numberOfVehicles[conf_index]))
-                else:
-                    values[z].append(getValue(titles[i], single_measures[k][lab][z]['values']))
+            for spawn_config in spawn_configs:
+                for z in range(0, len(projects)):
+                    values[spawn_config].append([])
+                    if isinstance(single_measures[k][spawn_config][lab][z]['values'][0], list):
+                        values[spawn_config][z] = getValueFromList(titles[i], single_measures[k][spawn_config][lab][z]['values'], len(numberOfVehicles[conf_index]))
+                    else:
+                        values[spawn_config][z].append(getValue(titles[i], single_measures[k][spawn_config][lab][z]['values']))
             conf_index += 1
         #for s in range(0, len(numberOfVehicles[0])):
-        r = np.arange(len(values[0]))
-        fig, ax = plt.subplots()
-        for j in range(0, len(projects)):
-            if isinstance(values[j], list):
-                ax.plot(r, values[j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
-            else:
-                ax.plot(r, values[j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
-            # autolabel(values[j], r, 0, ax)
-        ax.set_xticks(r)
-        ax.set_title(lab)
-        if len(values[0]) > 1:
-            ax.set_xticklabels([s for s in range(0, len(numberOfVehicles[0]))])#f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])
-        ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        r = np.arange(len(values[spawn_confs_names[0]][0]))
+        fig, axes = plt.subplots(len(spawn_configs), sharex=True, sharey=True)
+        fig.suptitle(lab)
+        sc_index = 0
+        for spawn_config in spawn_configs:
+            for j in range(0, len(projects)):
+                if isinstance(values[spawn_config][j], list):
+                    axes[sc_index].plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
+                else:
+                    axes[sc_index].plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
+                # autolabel(values[j], r, 0, ax)
+
+            axes[sc_index].set_xticks(r)
+            axes[sc_index].set_title(spawn_config)
+            if len(values[spawn_confs_names[0]][0]) > 1:
+                x_labels = [f"{int(numberOfVehicles[0][s]/(stepsSpawn/len(numberOfVehicles[0])))} v / s" for s in range(0, len(numberOfVehicles[0]))]
+                axes[sc_index].set_xticklabels(x_labels)#f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])
+            axes[sc_index].legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            sc_index += 1
         plt.savefig(dir + "/" + titles[i] + "_" + date.today().strftime("%d-%m-%Y") + '.png',
                     bbox_inches='tight')
         plt.close(fig)
 
         i += 1
 
-        values = []
