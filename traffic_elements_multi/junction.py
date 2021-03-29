@@ -127,7 +127,11 @@ class Junction(ABC):
         currentLane = traci.vehicle.getLaneID(vehicle.getID())[-1]
         currentEdge = (int(route[0][1:3]), int(route[0][4:6]))
         nextEdge = (int(route[1][1:3]), int(route[1][4:6]))
-        if abs(currentEdge[0] - currentEdge[1]) == abs(nextEdge[0] - nextEdge[1]):  # front
+        if abs(currentEdge[0] - currentEdge[1]) == abs(nextEdge[0] - nextEdge[1]) or \
+                (abs(currentEdge[0] - currentEdge[1]) == 50 and abs(nextEdge[0] - nextEdge[1]) == 1) or \
+                (abs(currentEdge[0] - currentEdge[1]) == 1 and abs(nextEdge[0] - nextEdge[1]) == 50) or \
+                (abs(currentEdge[0] - currentEdge[1]) == 25 and abs(nextEdge[0] - nextEdge[1]) == 5) or \
+                (abs(currentEdge[0] - currentEdge[1]) == 5 and abs(nextEdge[0] - nextEdge[1]) == 25):  # front
             return f'{route[0]}_{currentLane}', f'{route[1]}_{currentLane}'
         lane0 = f'{route[0]}_0'
         lane4 = f'{route[0]}_2'
@@ -673,7 +677,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 leftEdge = f'e{bsE1S50}{e1 - 50}_{e2 + 25}_{suffix}'
 
-                elif self.nID == 5:
+                if self.nID == 5:
                     """Determino se sono presenti curve a destra e ne calcolo l'id"""
                     if suffix == '0':
                         if self.mapNESO[neso[(c - 1) % 4]]:
@@ -710,7 +714,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 leftEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
 
-                elif self.nID == 21:
+                if self.nID == 21:
                     """Determino se sono presenti curve a destra e ne calcolo l'id"""
                     if suffix == '0':
                         if self.mapNESO[neso[(c - 1) % 4]]:
@@ -747,7 +751,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 leftEdge = f'e{bsE1S50}{e1 - 50}_{bsE2S5}{e2 - 5}_{suffix}'
 
-                elif self.nID == 25:
+                if self.nID == 25:
                     """Determino se sono presenti curve a destra e ne calcolo l'id"""
                     if suffix == '0':
                         if self.mapNESO[neso[(c - 1) % 4]]:
@@ -851,7 +855,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 25:
                                 leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2A1}{e2 + 1}_{suffix}'
 
-                elif self.nID in [10, 15, 20]:
+                if self.nID in [10, 15, 20]:
                     """Determino se sono presenti curve a destra e ne calcolo l'id"""
                     if suffix == '0':
                         if self.mapNESO[neso[(c - 1) % 4]]:
@@ -888,7 +892,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 50:
                                 leftEdge = f'e{bsE1S50}{e1 - 50}_{bsE2A5}{e2 + 5}_{suffix}'
 
-                elif self.nID in range(22, 25):
+                if self.nID in range(22, 25):
                     """Determino se sono presenti curve a destra e ne calcolo l'id"""
                     if suffix == '0':
                         if self.mapNESO[neso[(c - 1) % 4]]:
@@ -925,7 +929,7 @@ class FourWayJunction(Junction):
                             if e1 - e2 == 25:
                                 leftEdge = f'e{bsE1S25}{e1 - 25}_{bsE2S1}{e2 - 1}_{suffix}'
 
-                elif self.nID in [6, 11, 16]:
+                if self.nID in [6, 11, 16]:
                     """Determino se sono presenti curve a destra e ne calcolo l'id"""
                     if suffix == '0':
                         if self.mapNESO[neso[(c - 1) % 4]]:

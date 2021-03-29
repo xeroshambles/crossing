@@ -213,7 +213,7 @@ class CompetitiveCrossingManager(CrossingManager):
         vehicle.numberOfAuctionAtJunction = 1
         vehicle.isSlowed = False
         if vehicle.isLaneWrong:
-            vehicle.resetTarget()
+            # vehicle.resetTarget()
             vehicle.isLaneWrong = False
         if not blockAllowChange:
             pass
