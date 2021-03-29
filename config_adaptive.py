@@ -98,7 +98,9 @@ single_measures = {}
 
 for vehs in numberOfVehicles:
     single_measures[str(vehs)] = {}
-    for i in range(0, len(labels)):
-        single_measures[str(vehs)][labels[i]] = []
-        for j in range(0, len(projects)):
-            single_measures[str(vehs)][labels[i]].append({'project': projects[j], 'color': colors[j], 'values': []})
+    for spawn_config in spawn_configs:
+        single_measures[str(vehs)][spawn_config] = {}
+        for i in range(0, len(labels)):
+            single_measures[str(vehs)][spawn_config][labels[i]] = []
+            for j in range(0, len(projects)):
+                single_measures[str(vehs)][spawn_config][labels[i]].append({'project': projects[j], 'color': colors[j], 'values': []})
