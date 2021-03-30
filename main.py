@@ -73,7 +73,7 @@ if __name__ == "__main__":
         diff = checkInput(diffSim, f'\nInserire il numero di simulazioni diverse: ',
                           f'\nUtilizzo come default {diffSim} run diverse...',
                           '\nInserire un numero di simulazioni positivo!', mode,
-                          f'\nEseguo {diffSim} simulazioni differenti...', diffSim)
+                          f'\nEseguo {diffSim} scenari di traffico differenti...', diffSim)
 
         dir = os.path.join(path, project)
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
             repeat = checkInput(repeatSim, f'\nInserire il numero di ripetizioni della simulazione {i}: ',
                                 f'\nUtilizzo come default {repeatSim} stesse run...',
                                 '\nInserire un numero di simulazioni positivo!', mode,
-                                f'\nEseguo {repeatSim} simulazioni identiche in parallelo...', repeatSim,
+                                f'\nEseguo {repeatSim} simulazioni in parallelo...', repeatSim,
                                 max_inp=repeatSim)
 
             procs = []

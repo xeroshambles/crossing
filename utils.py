@@ -567,14 +567,10 @@ def saveResults(vehicles, departed, tails_per_lane):
     stDevTailTime = sqrt(varTailTime / len(tailTimes))
     maxTailTime = max(tailTimes)
 
-    if len(meanSpeeds) > 0:
-        meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
-        for speed in meanSpeeds:
-            varSpeed += (speed - meanSpeed) ** 2
-        stDevSpeed = sqrt(varSpeed / len(meanSpeeds))
-    else:
-        meanSpeed = 0
-        stDevSpeed = 0
+    meanSpeed = sum(meanSpeeds) / len(meanSpeeds)
+    for speed in meanSpeeds:
+        varSpeed += (speed - meanSpeed) ** 2
+    stDevSpeed = sqrt(varSpeed / len(meanSpeeds))
 
     for lane in tails_per_lane:
         meanTailLength.append(sum(tails_per_lane[lane]) / len(tails_per_lane[lane]))
