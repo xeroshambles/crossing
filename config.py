@@ -6,8 +6,8 @@ numberOfVehicles = [[50, 50, 50, 50], [100, 100, 100, 100], [150, 150, 150, 150]
 # lista contenente il numero di veicoli generati per ogni simulazione
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare
-# Semi: [9000, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
-seeds = [9000, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
+# Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
+seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
