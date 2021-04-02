@@ -100,8 +100,8 @@ def collectMeasures(queue, repeat, group_measures, single_measures, groups, titl
 
         ret = queue.get()
 
-        # if ret[15] / sum(nums[i]) > divPercs[i]:
-        #     continue
+        if ret[15] / sum(nums[i]) > divPercs[i]:
+            continue
 
         for k in range(0, len(arr_titles)):
 

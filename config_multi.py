@@ -7,7 +7,8 @@ numberOfVehicles = [[25, 25, 25, 25], [50, 50, 50, 50], [75, 75, 75, 75], [100, 
 # Percentuali di veicoli deviati sotto le quali considerare valida una simulazione:
 # [0.38, 0.49, 0.55, 0.57] (precedenze esterne)
 # [0.38, 0.48, 0.51, 0.51] (precedenze interne)
-divertedPercents = [0.38, 0.48, 0.51, 0.51]
+# [0.38, 0.49, 0.56, 0.61] (precedenze e prenotazioni)
+divertedPercents = [0.38, 0.49, 0.56, 0.61]
 stepsSpawn = 100  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = stepsSpawn + 100  # numero di step entro cui ogni simulazione deve terminare
 # (sempre maggiore di stepsSpawn)
