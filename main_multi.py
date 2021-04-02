@@ -61,8 +61,11 @@ if __name__ == "__main__":
 
         sumoDict = {'multi_classic_tls_classic_precedence': sumoCmd,
                     'multi_classic_precedence': sumoCmd,
+                    'multi_reservation': sumoCmd + ['--step-length', '0.05'],
                     'multi_reservation_classic_precedence': sumoCmd + ['--step-length', '0.05'],
+                    'multi_comp_auction': sumoCmd,
                     'multi_comp_auction_classic_precedence': sumoCmd,
+                    'multi_coop_auction': sumoCmd,
                     'multi_coop_auction_classic_precedence': sumoCmd,
                     'multi_classic_precedence_classic_tls': sumoCmd,
                     'multi_classic_precedence_reservation': sumoCmd + ['--step-length', '0.05'],
@@ -116,13 +119,24 @@ if __name__ == "__main__":
                     'multi_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_classic_precedence'],
                         dir, j, queue, seeds[j]),
+                    'multi_reservation': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation'],
+                        cellsPerSide, matrixTrajectories, securitySecs, dir, j, queue, seeds[j]),
                     'multi_reservation_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_reservation_classic_precedence'],
                         cellsPerSide, matrixTrajectories, securitySecs, dir, j, queue, seeds[j]),
+                    'multi_comp_auction': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_comp_auction'],
+                        simulationMode if simulationMode else not simulationMode, instantPay, dimensionOfGroups, dir,
+                        j, queue, seeds[j]),
                     'multi_comp_auction_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_comp_auction_classic_precedence'],
                         simulationMode if simulationMode else not simulationMode, instantPay, dimensionOfGroups, dir,
                         j, queue, seeds[j]),
+                    'multi_coop_auction': (
+                        numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_coop_auction'],
+                        simulationMode if not simulationMode else not simulationMode, instantPay, dimensionOfGroups,
+                        dir, j, queue, seeds[j]),
                     'multi_coop_auction_classic_precedence': (
                         numberOfSteps, numberOfVehicles[i], schema, sumoDict['multi_coop_auction_classic_precedence'],
                         simulationMode if not simulationMode else not simulationMode, instantPay, dimensionOfGroups,
