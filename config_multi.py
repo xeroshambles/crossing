@@ -32,8 +32,8 @@ dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per 
 # "multi_coop_auction", "multi_coop_auction_classic_precedence", "multi_classic_precedence_classic_tls",
 # "multi_classic_precedence_reservation", "multi_classic_precedence_comp_auction",
 # "multi_classic_precedence_coop_auction"]
-projects_multi = ["multi_classic_precedence", "multi_reservation_classic_precedence",
-                  "multi_classic_precedence_reservation", "multi_reservation"]
+projects_multi = ["multi_classic_precedence", "multi_comp_auction_classic_precedence",
+                  "multi_classic_precedence_comp_auction", "multi_comp_auction"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
 external_east_junctions_ids = [55, 60, 65, 70, 75]
 external_south_junctions_ids = [46, 47, 48, 49, 50]
