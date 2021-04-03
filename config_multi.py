@@ -6,9 +6,9 @@ numberOfVehicles = [[25, 25, 25, 25], [50, 50, 50, 50], [75, 75, 75, 75], [100, 
 # lista contenente il numero di veicoli generati per ogni simulazione
 # Percentuali di veicoli deviati sotto le quali considerare valida una simulazione:
 # [0.38, 0.49, 0.55, 0.57] (precedenze esterne)
-# [0.38, 0.48, 0.51, 0.51] (precedenze interne)
-# [0.38, 0.49, 0.56, 0.61] (precedenze e prenotazioni)
-divertedPercents = [0.38, 0.49, 0.56, 0.61]
+# [0.38, 0.48, 0.51, 0.51] (precedenze interne o precedenze + aste competitive)
+# [0.38, 0.49, 0.56, 0.61] (precedenze + prenotazioni)
+divertedPercents = [0.38, 0.48, 0.51, 0.51]
 stepsSpawn = 100  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = stepsSpawn + 100  # numero di step entro cui ogni simulazione deve terminare
 # (sempre maggiore di stepsSpawn)
@@ -27,11 +27,17 @@ dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per 
 
 # Variabili di configurazione per ogni simulazione (più incroci)
 
-# Progetti: ["multi_classic_tls_classic_precedence", "multi_classic_precedence", "multi_reservation",
-# "multi_reservation_classic_precedence", "multi_comp_auction", "multi_comp_auction_classic_precedence",
-# "multi_coop_auction", "multi_coop_auction_classic_precedence", "multi_classic_precedence_classic_tls",
+# Progetti:
+# ["multi_classic_tls_classic_precedence", "multi_classic_precedence",
+# "multi_reservation_classic_precedence", "multi_comp_auction_classic_precedence",
+# "multi_coop_auction_classic_precedence"]
+# ["multi_classic_precedence_classic_tls", "multi_classic_precedence"
 # "multi_classic_precedence_reservation", "multi_classic_precedence_comp_auction",
 # "multi_classic_precedence_coop_auction"]
+# ["multi_classic_precedence", "multi_comp_auction_classic_precedence", "multi_classic_precedence_comp_auction",
+# "multi_comp_auction"]
+# ["multi_classic_precedence", "multi_coop_auction_classic_precedence", "multi_classic_precedence_coop_auction",
+# "multi_coop_auction"]
 projects_multi = ["multi_classic_precedence", "multi_comp_auction_classic_precedence",
                   "multi_classic_precedence_comp_auction", "multi_comp_auction"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
