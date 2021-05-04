@@ -199,7 +199,7 @@ def run(numberOfVehicles, schema, sumoCmd, path, index, queue, seed,
     vehicles = generateVehicles(stepsSpawn, numberOfVehicles, vehicles, seed, junction_id, node_ids)
 
     if schema in ['n', 'N']:
-        colorVehicles(sum(numberOfVehicles))
+        colorVehicles(numberOfVehicles)
 
     # istanzio le matrici [nome_incrocio, variabile]
     attesa = []  # ordine di arrivo su lista, si resetta quando le auto liberano incrocio

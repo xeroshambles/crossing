@@ -5,19 +5,24 @@ from precedence_with_comp_auction.trafficElements.vehicle import Vehicle
 from config_adaptive import *
 import traci
 
+
 def getVehiclesInNet(vehicles):
-    return {k:v for (k, v) in vehicles.items() if v.getID() in traci.vehicle.getIDList()}
+    return {k: v for (k, v) in vehicles.items() if v.getID() in traci.vehicle.getIDList()}
+
 
 def getVehiclesNotCrossed(vehicles):
     vehs_in_net = getVehiclesInNet(vehicles)
-    return {k:v for (k, v) in vehs_in_net.items() if traci.vehicle.getLaneID(v.getID())[0:3] != f":n{junction_id}" and traci.vehicle.getLaneID(v.getID())[1:3] != f"0{junction_id}"}
+    return {k: v for (k, v) in vehs_in_net.items() if
+            traci.vehicle.getLaneID(v.getID())[0:3] != f":n{junction_id}" and traci.vehicle.getLaneID(v.getID())[
+                                                                              1:3] != f"0{junction_id}"}
+
 
 def cleanReservationArrays(arrayAuto_temp, lista_arrivo, vehicles, auto_per_lane_to_stop):
-
-    """Funzione che consente di rimuovere da ArrayAuto tutte le auto che non dovranno piu essere trattate a causa del cambio di
-    main_step(tutte quelle che si fermano prima dei 50 mt per consentire la pulizia dell incrocio oppure che sono dietro ad esse)"""
+    """Funzione che consente di rimuovere da ArrayAuto tutte le auto che non dovranno piu essere trattate a causa
+    del cambio di main_step(tutte quelle che si fermano prima dei 50 mt per consentire la pulizia dell incrocio oppure
+    che sono dietro ad esse)"""
     for (l, tup) in auto_per_lane_to_stop.items():
-        #devo rimuovere da arrayAuto_temp sia le auto che saranno fermate, sia tutte quelle dietro
+        # devo rimuovere da arrayAuto_temp sia le auto che saranno fermate, sia tutte quelle dietro
         if tup[0] != "":
             if tup[0].getID() in arrayAuto_temp:
                 arrayAuto_temp.pop(arrayAuto_temp.index(tup[0].getID()))
@@ -33,6 +38,7 @@ def cleanReservationArrays(arrayAuto_temp, lista_arrivo, vehicles, auto_per_lane
 
     return arrayAuto_temp, lista_arrivo
 
+
 def updateReservationArray(arrayAuto_temp, clean=False):
     """Costruzione dell'array composto dal nome delle auto presenti nella simulazione"""
 
@@ -45,14 +51,12 @@ def updateReservationArray(arrayAuto_temp, clean=False):
     for id_auto in arrivedIDList:
         if id_auto in arrayAuto_temp:
             arrayAuto_temp.pop(arrayAuto_temp.index(id_auto))
-    #if clean:
+    # if clean:
     #    arrayAuto_temp = cleanReservationArray(arrayAuto_temp)
     return arrayAuto_temp
 
 
-
 def mainStep2(total_time, n_steps, n_vehs):
-
     r = round(total_time)
 
     mod = r % (n_steps / len(n_vehs))
@@ -62,58 +66,62 @@ def mainStep2(total_time, n_steps, n_vehs):
     else:
         return False
 
+
 def mainStep(total_time, numberOfVehicles, simulation_time):
-
-
-    #mod = n_steps % (steps_per_main_step )
+    # mod = n_steps % (steps_per_main_step )
     mod = total_time % (simulation_time / len(numberOfVehicles))
     if total_time != 0 and mod == 0 and total_time <= simulation_time:
         return True
     else:
         return False
 
+
 def getVehiclesWithHigherDistanceFromEndLaneThan(vehicles, m=0):
     vehs_not_crossed = getVehiclesNotCrossed(getVehiclesInNet(vehicles))
-    return {k:v for (k,v) in vehs_not_crossed.items() if v.distanceFromEndLane() > m}
+    return {k: v for (k, v) in vehs_not_crossed.items() if v.distanceFromEndLane() > m}
+
 
 def saveIntermediateResults(n_vehs, main_step, vehicles, departed, m=0, removed=None):
-
     passed = 0
-    #floor = sum(n_vehs[0: main_step])
-    #ceil = floor + n_vehs[main_step]
-    #ids = {v.getID(): v for v in vehicles.values()}
-    vehs_departed = {k:v for (k, v) in vehicles.items() if v.getID() in departed}
+    # floor = sum(n_vehs[0: main_step])
+    # ceil = floor + n_vehs[main_step]
+    # ids = {v.getID(): v for v in vehicles.values()}
+    vehs_departed = {k: v for (k, v) in vehicles.items() if v.getID() in departed}
     vehs_departed_at_safe_distance = getVehiclesWithHigherDistanceFromEndLaneThan(vehs_departed, m)
-    vehs_departed_not_at_safe_distance = {k: v for (k, v) in vehs_departed.items() if v not in vehs_departed_at_safe_distance.values()}
-    #current_main_step_vehicles_to_consider = {k:v for (k,v) in vehs_departed_crossed.items() if floor <= int(v.getID()[3:]) < ceil}
+    vehs_departed_not_at_safe_distance = {k: v for (k, v) in vehs_departed.items() if
+                                          v not in vehs_departed_at_safe_distance.values()}
+    # current_main_step_vehicles_to_consider = {k:v for (k,v) in vehs_departed_crossed.items() if
+    # floor <= int(v.getID()[3:]) < ceil}
     n = len(vehs_departed_not_at_safe_distance)
-    for v in vehs_departed_not_at_safe_distance.values(): #current_main_step_vehicles_to_consider.values():
-        #if v not in removed.values():
-        #if int(num) <= departed:
+    for v in vehs_departed_not_at_safe_distance.values():  # current_main_step_vehicles_to_consider.values():
+        # if v not in removed.values():
+        # if int(num) <= departed:
         passed += v.hasPassed
-    mean_th = passed / n #current_main_step_vehicles_to_consider)
+    mean_th = passed / n  # current_main_step_vehicles_to_consider)
 
-    return mean_th, passed, n #current_main_step_vehicles_to_consider, vehs_not_crossed
+    return mean_th, passed, n  # current_main_step_vehicles_to_consider, vehs_not_crossed
 
-def checkIfMainStep(total_time, steps_per_main_step, n_steps, spawn_duration, numberOfVehicles, main_step, vehicles, departed, mean_th_per_num, m=0):
 
+def checkIfMainStep(total_time, steps_per_main_step, n_steps, spawn_duration, numberOfVehicles, main_step, vehicles,
+                    departed, mean_th_per_num, m=0):
     if total_time != 0 and mainStep(total_time, steps_per_main_step, n_steps, spawn_duration):
-            mean_th_per_num[main_step] = saveIntermediateResults(numberOfVehicles, main_step, vehicles, departed, m)
-            if main_step < (len(numberOfVehicles) - 1):
-                main_step += 1
-            departed = 0
+        mean_th_per_num[main_step] = saveIntermediateResults(numberOfVehicles, main_step, vehicles, departed, m)
+        if main_step < (len(numberOfVehicles) - 1):
+            main_step += 1
+        departed = 0
 
     return mean_th_per_num, main_step, departed
 
-def checkIfMainStep2(total_time, n_steps, n_vehs, step, vehicles, departed, mean_th_per_num):
 
+def checkIfMainStep2(total_time, n_steps, n_vehs, step, vehicles, departed, mean_th_per_num):
     if mainStep(total_time, n_steps, n_vehs):
-            mean_th_per_num[step] = saveIntermediateResults(n_vehs, step, vehicles, departed)
-            if step < (len(n_vehs) - 1):
-                step += 1
-            departed = 0
+        mean_th_per_num[step] = saveIntermediateResults(n_vehs, step, vehicles, departed)
+        if step < (len(n_vehs) - 1):
+            step += 1
+        departed = 0
 
     return mean_th_per_num, step, departed
+
 
 def getLaneIndexFromEdges(start, end, node_ids):
     """Funzione che trova la lane corretta da far seguire al veicolo dati il nodo di partenza e quello di
@@ -205,7 +213,8 @@ def generateLaneSequence(conf, numberOfVehicles, seed):
     return sequence
 
 
-def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids, spawn_balancing=spawn_balancing, wallet=False, allowLaneChange=True):
+def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_id, node_ids,
+                     spawn_balancing=spawn_balancing, wallet=False, allowLaneChange=True):
     """Genero veicoli per ogni route possibile"""
 
     c = 0
@@ -239,30 +248,30 @@ def generateVehicles(numberOfSteps, numberOfVehicles, vehicles, seed, junction_i
         if wallet:
             traci.vehicle.setParameter(idV, "wallet", str(50))
 
-
     return vehicles
 
 
 def colorVehicles(numberOfVehicles):
     """Assegno un colore diverso alle auto"""
 
-    for i in range(0, numberOfVehicles):
+    for i in range(0, sum(numberOfVehicles)):
         if i % 8 == 1:
-            traci.vehicle.setColor(f'{i}', (0, 255, 255))  # azzurro
+            traci.vehicle.setColor(f'idV{i}', (0, 255, 255))  # azzurro
         if i % 8 == 2:
-            traci.vehicle.setColor(f'{i}', (160, 100, 100))  # rosa
+            traci.vehicle.setColor(f'idV{i}', (160, 100, 100))  # rosa
         if i % 8 == 3:
-            traci.vehicle.setColor(f'{i}', (255, 0, 0))  # rosso
+            traci.vehicle.setColor(f'idV{i}', (255, 0, 0))  # rosso
         if i % 8 == 4:
-            traci.vehicle.setColor(f'{i}', (0, 255, 0))  # verde
+            traci.vehicle.setColor(f'idV{i}', (0, 255, 0))  # verde
         if i % 8 == 5:
-            traci.vehicle.setColor(f'{i}', (0, 0, 255))  # blu
+            traci.vehicle.setColor(f'idV{i}', (0, 0, 255))  # blu
         if i % 8 == 6:
-            traci.vehicle.setColor(f'{i}', (255, 255, 255))  # bianco
+            traci.vehicle.setColor(f'idV{i}', (255, 255, 255))  # bianco
         if i % 8 == 7:
-            traci.vehicle.setColor(f'{i}', (255, 0, 255))  # viola
+            traci.vehicle.setColor(f'idV{i}', (255, 0, 255))  # viola
         if i % 8 == 8:
-            traci.vehicle.setColor(f'{i}', (255, 100, 0))  # arancione
+            traci.vehicle.setColor(f'idV{i}', (255, 100, 0))  # arancione
+
 
 def checkVehiclesAdaptive(vehicles, tails_per_lane, time, schema, step_duration):
     """Funzione che controlla il posizionamento dei veicoli nell'incrocio e prende le misure"""
@@ -345,6 +354,7 @@ def checkVehiclesAdaptive(vehicles, tails_per_lane, time, schema, step_duration)
 
     return vehicles, tails_per_lane
 
+
 def checkVehicles(vehicles, tails_per_lane, time, schema):
     """Funzione che controlla il posizionamento dei veicoli nell'incrocio e prende le misure"""
 
@@ -426,6 +436,7 @@ def checkVehicles(vehicles, tails_per_lane, time, schema):
 
     return vehicles, tails_per_lane
 
+
 def saveResultsAdaptive(vehicles, removed, numberOfVehicles, departed, tails_per_lane_per_step, passed, considered):
     """Funzione che calcola le misure adottate"""
     steps = len(numberOfVehicles)
@@ -478,14 +489,13 @@ def saveResultsAdaptive(vehicles, removed, numberOfVehicles, departed, tails_per
         throughput.append(0)
         stDevTail.append(0)
 
-
-
-        #floor = sum(numberOfVehicles[0: s])
-        #ceil = floor + numberOfVehicles[s]
-        current_step_departed = {k:v for (k, v) in vehicles.items() if v.getID() in departed[s]}
-        #vehs_to_consider_per_step = {k:v for (k, v) in vehs_departed.items() if floor <= int(v.getID()[3:]) < ceil} #and k not in removed.keys()}
+        # floor = sum(numberOfVehicles[0: s])
+        # ceil = floor + numberOfVehicles[s]
+        current_step_departed = {k: v for (k, v) in vehicles.items() if v.getID() in departed[s]}
+        # vehs_to_consider_per_step = {k:v for (k, v) in vehs_departed.items() if
+        # floor <= int(v.getID()[3:]) < ceil} #and k not in removed.keys()}
         for (k, v) in current_step_departed.items():
-            #if int(v.getID()[3:]) < departed_per_step[s]:
+            # if int(v.getID()[3:]) < departed_per_step[s]:
             headTimes[s].append(v.headTime)
             tailTimes[s].append(v.tailTime)
             if len(v.speeds) > 0:
@@ -531,6 +541,7 @@ def saveResultsAdaptive(vehicles, removed, numberOfVehicles, departed, tails_per
     return meanHeadTime, stDevHeadTime, maxHeadTime, meanTailTime, stDevTailTime, maxTailTime, \
            meanSpeed, stDevSpeed, meanTail, stDevTail, maxTail, stoppedVehicles, throughput
 
+
 def saveResults(vehicles, departed, tails_per_lane):
     """Funzione che calcola le misure adottate"""
 
@@ -547,7 +558,7 @@ def saveResults(vehicles, departed, tails_per_lane):
     passed = 0  # numero di veicoli arrivati a destinazione
 
     for veh in vehicles:
-        if int(veh[-1]) < departed: #????
+        if int(veh[-1]) < departed:  # ????
             headTimes.append(vehicles[veh].headTime)
             tailTimes.append(vehicles[veh].tailTime)
             if len(vehicles[veh].speeds) > 0:
