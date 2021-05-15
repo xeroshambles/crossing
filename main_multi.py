@@ -183,8 +183,8 @@ if __name__ == "__main__":
                 continue
             titles.append(k)
             for i in range(0, len(group_measures_multi[k])):
-                if "tutti" in group_measures_multi[k][i]['label']:
-                    if "Massima" in group_measures_multi[k][i]['label']:
+                if "all" in group_measures_multi[k][i]['label']:
+                    if "Max" in group_measures_multi[k][i]['label']:
                         maxs = [-1 for i in range(0, len(group_measures_multi[k][i]['values'][0]))]
                         for j in range(0, len(group_measures_multi[k][i]['values'])):
                             for h in range(0, len(group_measures_multi[k][i]['values'][j])):
