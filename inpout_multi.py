@@ -181,18 +181,7 @@ def checkInput(val, inp, default, err, mode='', auto_ret='', auto_value=0, min_i
     return i
 
 
-def autoLabel(values, r, offset, ax):
-    """Funzione per mettere il numero sopra la barra dell'istogramma"""
-
-    i = 0
-
-    for value in values:
-        ax.annotate(f'{value}', xy=(r[i] + offset, value), xytext=(0, 3), textcoords="offset points", ha='center',
-                    va='bottom')
-        i += 1
-
-
-def linesPerGroups(sims, values, labels, titles, colors, groups, stepsSpawn, dir, project_label):
+def linesPerGroups(sims, values, labels, titles, colors, groups, stepsSpawn, dir, project_label, marker):
     """Salvo su immagini le misure di un progetto per ogni scenario di traffico"""
 
     j = 0
@@ -215,23 +204,23 @@ def linesPerGroups(sims, values, labels, titles, colors, groups, stepsSpawn, dir
                     ax.bar(r + offset, values[j], width, color=colors[j], label=labels[j])
                     offset -= width
             else:
-                ax.plot(r, values[j], color=colors[j], label=labels[j], lw=2, marker='s')
-            # autolabel(values[j], r, 0, ax)
+                ax.plot(r, values[j], color=colors[j], label=labels[j], lw=2, marker=marker)
             j += 1
             count -= 1
         ax.set_xticks(r)
-        ax.set_title(project_label)
+        ax.set_ylabel(project_label)
         if i > len(groups) - 3:
             ax.set_xticklabels([f'I{incr}' for incr in range(1, 26)])
         else:
-            ax.set_xticklabels([f'{round(sum(eval(sim)) / stepsSpawn)} veicoli / s' for sim in sims])
+            ax.set_xticklabels([f'{round(sum(eval(sim)) / stepsSpawn)}' for sim in sims])
+        ax.set_xlabel("Vehicles / s")
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(dir + "/" + titles[i] + '_' + date.today().strftime("%d-%m-%Y") + '.png', bbox_inches='tight')
         plt.close(fig)
 
 
 def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
-                    dir):
+                    dir, markers):
     """Salvo su immagini le misure di tutti i progetti per ogni scenario di traffico"""
 
     values = []
@@ -240,7 +229,7 @@ def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_
     i = 0
 
     for lab in labels:
-        if "tutti" in lab:
+        if "all" in lab:
             break
         for k in single_measures:
             for z in range(0, len(projects)):
@@ -250,11 +239,11 @@ def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_
         r = np.arange(len(vehs))
         fig, ax = plt.subplots()
         for j in range(0, len(projects)):
-            ax.plot(r, values[j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
-            # autoLabel(values[j], r, 0, ax)
+            ax.plot(r, values[j], color=colors[j], label=projects_labels[j], lw=2, marker=markers[j])
         ax.set_xticks(r)
-        ax.set_title(lab)
-        ax.set_xticklabels([f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])
+        ax.set_ylabel(lab)
+        ax.set_xticklabels([f'{round(sum(eval(veh)) / stepsSpawn)}' for veh in vehs])
+        ax.set_xlabel("Vehicles / s")
         ax.legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.savefig(dir + "/" + titles[i] + "_" + date.today().strftime("%d-%m-%Y") + '.png',
                     bbox_inches='tight')

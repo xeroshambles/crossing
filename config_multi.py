@@ -8,7 +8,7 @@ numberOfVehicles = [[25, 25, 25, 25], [50, 50, 50, 50], [75, 75, 75, 75], [100, 
 # [0.38, 0.49, 0.55, 0.57] (precedenze esterne)
 # [0.38, 0.48, 0.51, 0.51] (precedenze interne o precedenze + aste competitive)
 # [0.38, 0.49, 0.56, 0.61] (precedenze + prenotazioni)
-divertedPercents = [0.38, 0.48, 0.51, 0.51]
+divertedPercents = [0.38, 0.49, 0.56, 0.61]
 stepsSpawn = 100  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = stepsSpawn + 100  # numero di step entro cui ogni simulazione deve terminare
 # (sempre maggiore di stepsSpawn)
@@ -38,8 +38,9 @@ dimensionOfGroups = 5  # dimensione del gruppo degli sponsor (da 1 a 7 o -1 per 
 # "multi_comp_auction"]
 # ["multi_classic_precedence", "multi_coop_auction_classic_precedence", "multi_classic_precedence_coop_auction",
 # "multi_coop_auction"]
-projects_multi = ["multi_classic_precedence", "multi_comp_auction_classic_precedence",
-                  "multi_classic_precedence_comp_auction", "multi_comp_auction"]
+projects_multi = ["multi_classic_precedence", "multi_classic_precedence_reservation",
+                  "multi_reservation_classic_precedence", "multi_classic_precedence_comp_auction",
+                  "multi_comp_auction_classic_precedence", "multi_reservation"]
 external_north_junctions_ids = [26, 27, 28, 29, 30]
 external_east_junctions_ids = [55, 60, 65, 70, 75]
 external_south_junctions_ids = [46, 47, 48, 49, 50]
@@ -49,17 +50,19 @@ lateral_junctions_ids = [2, 3, 4, 6, 10, 11, 15, 16, 20, 22, 23, 24]  # id degli
 central_junctions_ids = [7, 8, 9, 12, 13, 14, 17, 18, 19]  # id degli incroci centrali
 routeMode = True  # generazione delle route dei veicoli in modo statico (True) o dinamico (False)
 
-labels_multi = ['Tempo medio di percorrenza (s)', 'Deviazione standard tempo di percorrenza (s)',
-                'Massimo tempo di percorrenza (s)', 'Tempo medio in testa (s)',
-                'Deviazione standard tempo in testa (s)', 'Massimo tempo in testa (s)', 'Tempo medio in coda (s)',
-                'Deviazione standard tempo in coda (s)', 'Massimo tempo in coda (s)', 'Velocità media (m/s)',
-                'Deviazione standard velocità (m/s)', 'Lunghezza media delle code',
-                'Deviazione standard lunghezza delle code', 'Massima lunghezza delle code', 'Throughput medio',
-                'Numero medio di veicoli deviati', 'Lunghezza media delle code (tutti gli incroci)',
-                'Deviazione standard lunghezza delle code (tutti gli incroci)',
-                'Massima lunghezza delle code (tutti gli incroci)', 'Throughput medio (tutti gli incroci)']
+markers = ['s', '^', 'o', 'D', 'P', '*']
 
-colors_multi = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', '#33FFE3']
+labels_multi = ['Mean trip time (s)', 'Standard deviation trip time (s)',
+                'Max trip time (s)', 'Mean leader time (s)',
+                'Standard deviation leader time (s)', 'Max leader time (s)', 'Mean tail time (s)',
+                'Standard deviation tail time (s)', 'Max tail time (s)', 'Mean speed (m/s)',
+                'Standard deviation speed (m/s)', 'Mean tails length',
+                'Standard deviation tails length', 'Max tails length', 'Mean throughput',
+                'Mean diverted vehicles', 'Mean tails length (all crossings)',
+                'Standard deviation tails length (all crossings)',
+                'Max tails length (all crossings)', 'Mean throughput (all crossings)']
+
+colors_multi = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', 'FF33E6', '#33FFE3']
 
 head_titles_multi = ['trip_time', 'head_time', 'tail_time', 'speed', 'tail_length', 'throughput', 'diverted_vehicles',
                      'tail_lengths', 'throughputs']
@@ -76,29 +79,29 @@ projects_labels_multi = []
 
 for project in projects_multi:
     if project == "multi_classic_tls_classic_precedence":
-        projects_labels_multi.append("Precedenze esterne, semafori interni")
+        projects_labels_multi.append("External precedences, internal traffic lights")
     if project == "multi_classic_precedence_classic_tls":
-        projects_labels_multi.append("Semafori esterni, precedenze interne")
+        projects_labels_multi.append("External traffic lights, internal precedences")
     if project == "multi_classic_precedence":
-        projects_labels_multi.append("Solo precedenze")
+        projects_labels_multi.append("Only precedences")
     if project == "multi_reservation":
-        projects_labels_multi.append("Solo prenotazioni")
+        projects_labels_multi.append("Only reservations")
     if project == "multi_reservation_classic_precedence":
-        projects_labels_multi.append("Precedenze esterne, prenotazioni interne")
+        projects_labels_multi.append("External precedences, internal reservations")
     if project == "multi_classic_precedence_reservation":
-        projects_labels_multi.append("Prenotazioni esterne, precedenze interne")
+        projects_labels_multi.append("External reservations, internal precedences")
     if project == "multi_comp_auction":
-        projects_labels_multi.append("Solo aste competitive")
+        projects_labels_multi.append("Only competitive auctions")
     if project == "multi_comp_auction_classic_precedence":
-        projects_labels_multi.append("Precedenze esterne, aste competitive interne")
+        projects_labels_multi.append("External precedences, internal competitive auctions")
     if project == "multi_classic_precedence_comp_auction":
-        projects_labels_multi.append("Aste competitive esterne, precedenze interne")
+        projects_labels_multi.append("External competitive auctions, internal precedences")
     if project == "multi_coop_auction":
-        projects_labels_multi.append("Solo aste cooperative")
+        projects_labels_multi.append("Only cooperative auctions")
     if project == "multi_coop_auction_classic_precedence":
-        projects_labels_multi.append("Precedenze esterne, aste cooperative interne")
+        projects_labels_multi.append("External precedences, internal cooperative auctions")
     if project == "multi_classic_precedence_coop_auction":
-        projects_labels_multi.append("Aste cooperative esterne, precedenze interne")
+        projects_labels_multi.append("External cooperative auctions, internal precedences")
 
 group_measures_multi = {}
 

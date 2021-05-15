@@ -36,6 +36,8 @@ if __name__ == "__main__":
 
         project_label = projects_labels_multi[projects_multi.index(project)]
 
+        marker = markers[projects_multi.index(project)]
+
         try:
             module = importlib.import_module(".main", package=project)
         except Exception:
@@ -201,9 +203,9 @@ if __name__ == "__main__":
                 labels.append(group_measures_multi[k][i]['label'])
                 colors.append(group_measures_multi[k][i]['color'])
 
-        linesPerGroups(sims, values, labels, titles, colors, groups_multi, stepsSpawn, dir, project_label)
+        linesPerGroups(sims, values, labels, titles, colors, groups_multi, stepsSpawn, dir, project_label, marker)
 
         clearMeasures(group_measures_multi, groups_multi, head_titles_multi)
 
     linesPerMeasure(single_measures_multi, labels_multi, titles_multi, colors_multi, projects_multi,
-                    projects_labels_multi, numberOfVehicles, stepsSpawn, path)
+                    projects_labels_multi, numberOfVehicles, stepsSpawn, path, markers)
