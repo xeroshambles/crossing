@@ -62,7 +62,7 @@ labels_multi = ['Mean trip time (s)', 'Standard deviation trip time (s)',
                 'Standard deviation tails length (all crossings)',
                 'Max tails length (all crossings)', 'Mean throughput (all crossings)']
 
-colors_multi = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', 'FF33E6', '#33FFE3']
+colors_multi = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', '#FF33E6', '#33FFE3']
 
 head_titles_multi = ['trip_time', 'head_time', 'tail_time', 'speed', 'tail_length', 'throughput', 'diverted_vehicles',
                      'tail_lengths', 'throughputs']
