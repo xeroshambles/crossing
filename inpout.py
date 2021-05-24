@@ -483,7 +483,9 @@ def linesPerMeasureAdaptive(single_measures, labels, titles, colors, markers, pr
                 axes[sc_index].set_title(spawn_config)
 
             if len(values[spawn_confs_names[0]][0]) > 1:
-                x_labels = [f"{int(numberOfVehicles[0][s]/(stepsSpawn/len(numberOfVehicles[0])))} v / s" for s in range(0, len(numberOfVehicles[0]))]
+                #x_labels = [f"{int(numberOfVehicles[0][s]/(stepsSpawn/len(numberOfVehicles[0])))} v / s" for s in range(0, len(numberOfVehicles[0]))]
+                x_labels = [f"{int(numberOfVehicles[0][s] / (stepsSpawn / len(numberOfVehicles[0])))}" for s in
+                            range(0, len(numberOfVehicles[0]))]
                 if (len(spawn_configs) == 1):
                     axes.set_xticklabels(x_labels)
                 else:
@@ -491,9 +493,11 @@ def linesPerMeasureAdaptive(single_measures, labels, titles, colors, markers, pr
             if (len(spawn_configs) == 1):
                 axes.legend(title='Legend', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
                 axes.set_ylabel(lab)
+                axes.set_xlabel("vehicles spawned/sec")
             else:
                 axes[sc_index].legend(title='Legend', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
                 axes[sc_index].set_ylabel(lab)
+                axes[sc_index].set_xlabel("vehicles/sec")
             sc_index += 1
         plt.savefig(dir + "/" + titles[i] + "_" + date.today().strftime("%d-%m-%Y") + '.png',
                     bbox_inches='tight')
