@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
         config_file = os.path.join(os.path.split(__file__)[0], sim,
                                    "intersection.sumocfg")  # file di configurazione della simulazione
-
+        '''
         #default dati
         choice = checkChoice(['d', 'D', 'g', 'G'],
                              '\nVuoi raccogliere dati o avere una visualizzazione grafica? (g = grafica, '
@@ -166,7 +166,7 @@ if __name__ == "__main__":
                              "\nUtilizzo la modalità dati come default...",
                              '\nInserire un carattere tra d e g!',
                              mode)
-        '''
+
         sumoBinary = checkBinary('sumo') if choice in ['d', 'D'] else checkBinary('sumo-gui')
 
         sumoCmd = [sumoBinary, "-c", config_file, "--time-to-teleport", "-1"] if choice in ['d', 'D'] else \
@@ -201,8 +201,10 @@ if __name__ == "__main__":
                 sys.exit(-1)
 
 
-        for rt in range(0, repeat_train):
-
+        #for rt in range(0, repeat_train):
+        for GGG in range(0, 1):
+            rt = 13
+            #rt = repeat_train - 1
             if project == "adaptive":
                 print(f"\nTraining per misura {labels[rt]}")
                 dir = os.path.join(path, f"adaptive_{titles[rt]}_training")
