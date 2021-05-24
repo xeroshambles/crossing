@@ -7,7 +7,7 @@ numberOfVehicles = [[50, 100, 150, 200]]
 stepsSpawn = 200  # numero di step entro cui generare tutti i veicoli della simulazione
 numberOfSteps = 250  # numero di step entro cui ogni simulazione deve terminare
 # Semi: [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]
-seeds = [9001]#, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
+seeds = [9001, 2, 350, 39, 78, 567, 1209, 465, 21, 987]  # semi iniziali delle simulazioni
 repeatSim = len(seeds)  # numero di volte per cui la stessa simulazione deve essere ripetuta
 diffSim = len(numberOfVehicles)  # numero di simulazioni diverse che devono essere eseguite
 
@@ -30,7 +30,7 @@ spawn_configs = {"balanced": [33, 33, 34]}#, "unbalanced": [10, 33, 57]}
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_comp_auction",
 # "multi_auction_classic_tls"]
-projects = ["classic_precedence", "precedence_with_comp_auction"]#, "reservation"]
+projects = ["classic_precedence", "precedence_with_comp_auction", "adaptive"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',

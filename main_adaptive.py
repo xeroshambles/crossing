@@ -201,10 +201,10 @@ if __name__ == "__main__":
                 print(f"\nCreazione della cartella {dir} fallita...")
                 sys.exit(-1)
 
-
+        mes = [12, 13]
         #for rt in range(0, repeat_train):
-        for GGG in range(0, 1):
-            rt = 13
+        for GGG in range(0, 2):
+            rt = mes[GGG]
             #rt = repeat_train - 1
             if project == "adaptive":
                 print(f"\nTraining per misura {labels[rt]}")
@@ -269,7 +269,8 @@ if __name__ == "__main__":
                 #linesPerGroupsAdaptive(group_measures, groups, stepsSpawn, dir, project_label, len(numberOfVehicles[0]))
 
             clearMeasures(group_measures, groups, head_titles)
-            if train == False or c == len([p for p in projects if p != "adaptive"]):
+            if train == False:
+                #or c == len([p for p in projects if p != "adaptive"]):
                 linesPerMeasureAdaptive(single_measures, labels, titles, colors, markers, projects, projects_labels,
                                         numberOfVehicles, stepsSpawn,
                                         dir)
