@@ -125,10 +125,11 @@ if __name__ == "__main__":
 
     sim = "adaptive"
     repeat_train = 1
-
+    c = 0
 
     intermediate_group_measures = {}
     for project in projs:
+        c += 1
         if project == "adaptive":
             train = False
             sims_per_main_step = trainFromCollectedMeasures(intermediate_measures, numberOfVehicles)
@@ -268,8 +269,8 @@ if __name__ == "__main__":
                 #linesPerGroupsAdaptive(group_measures, groups, stepsSpawn, dir, project_label, len(numberOfVehicles[0]))
 
             clearMeasures(group_measures, groups, head_titles)
-            if train == False:
-                linesPerMeasureAdaptive(single_measures, labels, titles, colors, projects, projects_labels,
+            if train == False or c == len([p for p in projects if p != "adaptive"]):
+                linesPerMeasureAdaptive(single_measures, labels, titles, colors, markers, projects, projects_labels,
                                         numberOfVehicles, stepsSpawn,
                                         dir)
 

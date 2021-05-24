@@ -434,7 +434,7 @@ def linesPerMeasure(single_measures, labels, titles, colors, projects, projects_
 
         values = []
 
-def linesPerMeasureAdaptive(single_measures, labels, titles, colors, projects, projects_labels, numberOfVehicles, stepsSpawn,
+def linesPerMeasureAdaptive(single_measures, labels, titles, colors, markers, projects, projects_labels, numberOfVehicles, stepsSpawn,
                     dir):
     """Salvo su immagini gli istogrammi con le misure medie per ogni simulazione"""
 
@@ -463,17 +463,37 @@ def linesPerMeasureAdaptive(single_measures, labels, titles, colors, projects, p
         for spawn_config in spawn_configs:
             for j in range(0, len(projects)):
                 if isinstance(values[spawn_config][j], list):
-                    axes[sc_index].plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
+                    if (len(spawn_configs) == 1):
+                        axes.plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2,
+                                            marker=markers[j])
+                    else:
+                        axes[sc_index].plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2, marker=markers[j])
                 else:
-                    axes[sc_index].plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2, marker='s')
+                    if (len(spawn_configs) == 1):
+                        axes.plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2,
+                                            marker=markers[j])
+                    else:
+                        axes[sc_index].plot(r, values[spawn_config][j], color=colors[j], label=projects_labels[j], lw=2, marker=markers[j])
                 # autolabel(values[j], r, 0, ax)
+            if (len(spawn_configs) == 1):
+                axes.set_xticks(r)
+                axes.set_title(spawn_config)
+            else:
+                axes[sc_index].set_xticks(r)
+                axes[sc_index].set_title(spawn_config)
 
-            axes[sc_index].set_xticks(r)
-            axes[sc_index].set_title(spawn_config)
             if len(values[spawn_confs_names[0]][0]) > 1:
                 x_labels = [f"{int(numberOfVehicles[0][s]/(stepsSpawn/len(numberOfVehicles[0])))} v / s" for s in range(0, len(numberOfVehicles[0]))]
-                axes[sc_index].set_xticklabels(x_labels)#f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])
-            axes[sc_index].legend(title='Legenda', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                if (len(spawn_configs) == 1):
+                    axes.set_xticklabels(x_labels)
+                else:
+                    axes[sc_index].set_xticklabels(x_labels)#f'{round(sum(eval(veh)) / stepsSpawn)} veicoli / s' for veh in vehs])
+            if (len(spawn_configs) == 1):
+                axes.legend(title='Legend', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                axes.set_ylabel(lab)
+            else:
+                axes[sc_index].legend(title='Legend', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                axes[sc_index].set_ylabel(lab)
             sc_index += 1
         plt.savefig(dir + "/" + titles[i] + "_" + date.today().strftime("%d-%m-%Y") + '.png',
                     bbox_inches='tight')

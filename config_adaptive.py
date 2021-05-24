@@ -30,7 +30,7 @@ spawn_configs = {"balanced": [33, 33, 34]}#, "unbalanced": [10, 33, 57]}
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_comp_auction",
 # "multi_auction_classic_tls"]
-projects = ["classic_precedence", "precedence_with_comp_auction", "reservation"]
+projects = ["classic_precedence", "precedence_with_comp_auction"]#, "reservation"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
@@ -46,7 +46,7 @@ labels = ['Total time (s)', 'Mean head time (s)', 'Mean head time standard devia
           'Max tail length', 'Stopped vehicles', 'Mean throughput']
 
 colors = ['#DF1515', '#1524DF', '#15DF1E', '#FCFF33', '#33FFE3']
-
+markers = ["o", "^", "d", "s", "*"]
 head_titles = ['total_time', 'head_time', 'tail_time', 'speed', 'tail_length', 'stopped_vehicles', 'throughput']
 
 titles = ['total_time', 'mean_head_time', 'st_dev_head_time', 'max_head_time', 'mean_tail_time', 'st_dev_tail_time',
