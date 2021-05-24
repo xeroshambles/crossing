@@ -30,7 +30,7 @@ spawn_configs = {"balanced": [33, 33, 34]}#, "unbalanced": [10, 33, 57]}
 
 # Progetti: ["classic_tls", "classic_precedence", "reservation", "precedence_with_comp_auction",
 # "multi_auction_classic_tls"]
-projects = ["classic_precedence", "precedence_with_comp_auction", "adaptive"]
+projects = ["classic_precedence", "precedence_with_comp_auction", "reservation", "adaptive"]
 junction_id = 7  # id dell'incrocio
 lanes = ['e02_07_0', 'e02_07_1', 'e02_07_2', 'e07_02_0', 'e07_02_1', 'e07_02_2',
          'e08_07_0', 'e08_07_1', 'e08_07_2', 'e07_08_0', 'e07_08_1', 'e07_08_2',
